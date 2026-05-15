@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Στο Prisma 7 το URL μένει κενό εδώ, το διαβάζει από το prisma.config.ts
+}
+
+enum Role {
+  ADMIN
+  ORGANIZER
+  ATTENDEE
+}
+
+enum UserStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  COMPLETED
+  CANCELLED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+model User {
+  id        String     @id @default(uuid())
+  username  String     @unique
+  password  String
+  firstName String
+  lastName  String
+  email     String     @unique
+  phone     String?
+  afm       String?    // Απαραίτητο για επαγγελματίες/διοργανωτές
+  
+  // Γεωγραφικά στοιχεία χρήστη (για OpenStreetMap)
+  address   String?
+  city      String?
+  zipCode   String?
+  country   String?
+  latitude  Float?
+  longitude Float?
+
+  role      Role       @default(ATTENDEE)
+  status    UserStatus @default(PENDING) // Για έγκριση από Admin
+  createdAt DateTime   @default(now())
+
+  organizedEvents  Event[]   @relation("OrganizerEvents")
+  bookings         Booking[]
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  
+  // Για τον αλγόριθμο συστάσεων (Biased Matrix Factorization)
+  viewedEvents     EventView[] 
+}
+
+model Event {
+  id            String      @id @default(uuid())
+  title         String
+  description   String
+  eventType     String      // π.χ. Συνέδριο, Σεμινάριο
+  
+  // Τοποθεσία εκδήλωσης
+  venue         String
+  address       String
+  city          String
+  latitude      Float?
+  longitude     Float?
+
+  startDateTime DateTime
+  endDateTime   DateTime
+  capacity      Int         // Συνολική χωρητικότητα
+  status        EventStatus @default(DRAFT)
+  createdAt     DateTime    @default(now())
+
+  organizer     User        @relation("OrganizerEvents", fields: [organizerId], references: [id])
+  organizerId   String
+
+  categories    EventCategory[]
+  ticketTypes   TicketType[]
+  bookings      Booking[]
+  photos        EventPhoto[]
+  messages      Message[]
+  views         EventView[] // Για τα recommendations
+}
+
+// Πίνακας για τον αλγόριθμο συστάσεων
+// Καταγράφει πόσες φορές ή πότε είδε ένας χρήστης μια εκδήλωση
+model EventView {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  event     Event    @relation(fields: [eventId], references: [id])
+  eventId   String
+  viewedAt  DateTime @default(now())
+}
+
+model EventCategory {
+  id      String @id @default(uuid())
+  name    String // π.χ. Τεχνολογία, Τέχνη
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId String
+}
+
+model TicketType {
+  id        String    @id @default(uuid())
+  name      String    // π.χ. VIP, General Admission
+  price     Float
+  quantity  Int       // Συνολικά διαθέσιμα
+  available Int       // Τρέχον υπόλοιπο (πολύ σημαντικό για τον έλεγχο)
+  event     Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId   String
+  bookings  Booking[]
+}
+
+model Booking {
+  id              String        @id @default(uuid())
+  time            DateTime      @default(now())
+  numberOfTickets Int
+  totalCost       Float
+  status          BookingStatus @default(PENDING)
+
+  attendee        User          @relation(fields: [attendeeId], references: [id])
+  attendeeId      String
+  event           Event         @relation(fields: [eventId], references: [id])
+  eventId         String
+  ticketType      TicketType    @relation(fields: [ticketTypeId], references: [id])
+  ticketTypeId    String
+}
+
+model EventPhoto {
+  id       String @id @default(uuid())
+  url      String // Το link για τη φωτογραφία
+  event    Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId  String
+}
+
+model Message {
+  id                String    @id @default(uuid())
+  content           String
+  sentAt            DateTime  @default(now())
+  readAt            DateTime?
+  
+  sender            User      @relation("SentMessages", fields: [senderId], references: [id])
+  senderId          String
+  receiver          User      @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  receiverId        String
+
+  event             Event?    @relation(fields: [eventId], references: [id])
+  eventId           String?
+}
