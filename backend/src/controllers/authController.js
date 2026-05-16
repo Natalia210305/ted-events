@@ -4,7 +4,7 @@ const prisma = require('../db');
 
 const register = async (req, res) => {
   try {
-    const { username, password, firstName, lastName, email, phone, address, city, country, afm } = req.body;
+    const { username, password, firstName, lastName, email, phone, address, city, country, afm, role } = req.body;
 
     const existingUser = await prisma.user.findUnique({ where: { username } });
     if (existingUser) {
@@ -23,7 +23,7 @@ const register = async (req, res) => {
         username, password: hashed,
         firstName, lastName, email,
         phone, address, city, country, afm,
-        role: 'ATTENDEE',
+        role: role === 'ORGANIZER' ? 'ORGANIZER' : 'ATTENDEE',  // ← μόνο αυτοί οι 2 ρόλοι
         status: 'PENDING'
       }
     });
