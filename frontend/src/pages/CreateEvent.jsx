@@ -63,8 +63,7 @@ export default function CreateEvent() {
   const labelStyle = { fontSize: '11px', letterSpacing: '1px', color: '#888', display: 'block', marginBottom: '6px' };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f5f0eb', fontFamily: 'Montserrat, sans-serif', padding: '60px 20px' }}>
-      <div style={{ maxWidth: '700px', margin: '0 auto' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: '#f5f0eb', fontFamily: 'Montserrat, sans-serif', padding: '60px 20px', overflowY: 'auto' }}>      <div style={{ maxWidth: '700px', margin: '0 auto' }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: '700', letterSpacing: '2px', marginBottom: '40px' }}>ΔΗΜΙΟΥΡΓΙΑ ΕΚΔΗΛΩΣΗΣ</h1>
 
         {error && <p style={{ color: 'red', marginBottom: '16px' }}>{error}</p>}
