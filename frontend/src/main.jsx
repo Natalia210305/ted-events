@@ -6,6 +6,8 @@ import Login from './components/Login'
 import Register from './components/Register'
 import Events from './pages/Events'
 import AdminUsers from './pages/AdminUsers'
+import CreateEvent from './pages/CreateEvent'
+import MyEvents from './pages/MyEvents'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -15,7 +17,9 @@ createRoot(document.getElementById('root')).render(
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/events" element={<Events />} />
-        <Route path="/admin/users" element={<AdminUsers />} /> 
+        <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/create-event" element={<CreateEvent />} />
+        <Route path="/my-events" element={<MyEvents />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>

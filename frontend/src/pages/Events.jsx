@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const PER_PAGE = 6;
 
@@ -15,14 +16,9 @@ const COLORS = {
   publishedBg: '#EAF3DE',
   publishedText: '#27500A'
 };
-// Μέσα στο MyEvents.jsx
-const user = JSON.parse(localStorage.getItem('user')); // Παίρνεις τον χρήστη από το login
-
-{user?.role === 'ORGANIZER' && (
-  <button onClick={() => navigate('/create-event')}>+ ΝΕΑ ΕΚΔΗΛΩΣΗ</button>
-)}
 
 export default function EventsBrowse() {
+  const navigate = useNavigate();
   // 1. Δημιουργία state για τα δυναμικά events της βάσης
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -88,13 +84,13 @@ export default function EventsBrowse() {
 
   // Συναρτήσεις διαχείρισης ενεργειών
   const handleViewEvent = (id) => {
-    console.log(`Δείξε μου τα αναλυτικά στοιχεία για την εκδήλωση ${id}`);
-  };
+  navigate(`/events/${id}`);
+};
 
-  const handleBookEvent = (e, id) => {
-    e.stopPropagation(); 
-    console.log(`Θέλω να κάνω κράτηση για την εκδήλωση ${id}`);
-  };
+const handleBookEvent = (e, id) => {
+  e.stopPropagation();
+  navigate(`/events/${id}`);
+};
 
   const filteredEvents = events.filter(event => {
   const eventCats = event.cats || event.categories || [];
