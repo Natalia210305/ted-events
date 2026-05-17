@@ -171,6 +171,35 @@ export default function EventsBrowse() {
             <option value="Θεσσαλονίκη">Θεσσαλονίκη</option>
             <option value="Πάτρα">Πάτρα</option>
             <option value="Ηράκλειο">Ηράκλειο</option>
+            <option value="Λάρισα">Λάρισα</option>
+            <option value="Βόλος">Βόλος</option>
+            <option value="Ιωάννινα">Ιωάννινα</option>
+            <option value="Χανιά">Χανιά</option>
+            <option value="Ρόδος">Ρόδος</option>
+            <option value="Καβάλα">Καβάλα</option>
+            <option value="Σέρρες">Σέρρες</option>
+            <option value="Αλεξανδρούπολη">Αλεξανδρούπολη</option>
+            <option value="Τρίκαλα">Τρίκαλα</option>
+            <option value="Πρέβεζα">Πρέβεζα</option>
+            <option value="Ηγουμενίτσα">Ηγουμενίτσα</option>
+            <option value="Καλαμάτα">Καλαμάτα</option>
+            <option value="Χαλκίδα">Χαλκίδα</option>
+            <option value="Λαμία">Λαμία</option>
+            <option value="Κομοτηνή">Κομοτηνή</option>
+            <option value="Κέρκυρα">Κέρκυρα</option>
+            <option value="Μυτιλήνη">Μυτιλήνη</option>
+            <option value="Κοζάνη">Κοζάνη</option>
+            <option value="Αγρίνιο">Αγρίνιο</option>
+            <option value="Βέροια">Βέροια</option>
+            <option value="Δράμα">Δράμα</option>
+            <option value="Αμφιλοχία">Αμφιλοχία</option>
+            <option value="Ξάνθη">Ξάνθη</option>
+            <option value="Κιλκίς">Κιλκίς</option>
+            <option value="Φλώρινα">Φλώρινα</option>
+            <option value="Σπάρτη">Σπάρτη</option>
+            <option value="Ναύπλιο">Ναύπλιο</option>
+            <option value="Άργος">Άργος</option>
+            <option value="Κόρινθος">Κόρινθος</option>
           </select>
 
           <select 
