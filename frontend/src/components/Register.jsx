@@ -12,7 +12,9 @@ const fieldLabels = {
   address: 'ΔΙΕΥΘΥΝΣΗ',
   city: 'ΠΟΛΗ',
   country: 'ΧΩΡΑ',
-  afm: 'ΑΦΜ'
+  afm: 'ΑΦΜ',
+  latitude: 'ΓΕΩΓΡΑΦΙΚΟ ΠΛΑΤΟΣ (LATITUDE)',
+  longitude: 'ΓΕΩΓΡΑΦΙΚΟ ΜΗΚΟΣ (LONGITUDE)'
 };
 
 const inputStyle = {
@@ -26,7 +28,8 @@ export default function RegisterModal({ onClose }) {
   const [form, setForm] = useState({
     username: '', password: '', confirmPassword: '',
     firstName: '', lastName: '', email: '',
-    phone: '', address: '', city: '', country: '', afm: '', role: 'ATTENDEE'
+    phone: '', address: '', city: '', country: '', afm: '', role: 'ATTENDEE', latitude: '', 
+    longitude: ''
   });
   const [usernameError, setUsernameError] = useState('');
   const [error, setError] = useState('');
@@ -48,8 +51,12 @@ export default function RegisterModal({ onClose }) {
 
     try {
       const { confirmPassword, ...data } = form;
-      console.log('Data που στέλνεται:', data);
-      await api.post('/auth/register', data);
+      const dataToSend = {
+        ...data,
+        latitude: parseFloat(data.latitude) || 0,
+        longitude: parseFloat(data.longitude) || 0
+      };
+      await api.post('/auth/register', dataToSend);
       setSubmitted(true);  // ← δείχνει μήνυμα αναμονής
     } catch (err) {
       const msg = err.response?.data?.error || 'Σφάλμα εγγραφής';

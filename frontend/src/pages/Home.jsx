@@ -48,7 +48,11 @@ export default function Home() {
                 ΕΓΓΡΑΦΗ
             </button>
             <button
-                onClick={() => navigate('/events')}
+                onClick={() => {
+                    localStorage.removeItem('token'); 
+                    localStorage.removeItem('user');
+                    navigate('/events'); 
+                }}                
                 style={{ padding: '12px 40px', fontSize: '14px', cursor: 'pointer', backgroundColor: 'transparent', color: 'black', border: '1px solid #d2b893', borderRadius: '1px', fontFamily: 'Montserrat, sans-serif', letterSpacing: '2px', fontWeight: '600' }}
             >
                 ΠΕΡΙΗΓΗΣΗ

@@ -15,6 +15,12 @@ const COLORS = {
   publishedBg: '#EAF3DE',
   publishedText: '#27500A'
 };
+// Μέσα στο MyEvents.jsx
+const user = JSON.parse(localStorage.getItem('user')); // Παίρνεις τον χρήστη από το login
+
+{user?.role === 'ORGANIZER' && (
+  <button onClick={() => navigate('/create-event')}>+ ΝΕΑ ΕΚΔΗΛΩΣΗ</button>
+)}
 
 export default function EventsBrowse() {
   // 1. Δημιουργία state για τα δυναμικά events της βάσης
@@ -90,18 +96,31 @@ export default function EventsBrowse() {
     console.log(`Θέλω να κάνω κράτηση για την εκδήλωση ${id}`);
   };
 
-  // Φιλτράρισμα και Ταξινόμηση δεδομένων (Εφαρμόζεται πλέον στο δυναμικό state `events`)
   const filteredEvents = events.filter(event => {
-    const eventCats = event.cats || event.categories || [];
-    if (activeCat && !eventCats.includes(activeCat)) return false;
-    if (selectedCity && event.city !== selectedCity) return false;
-    if (searchQuery && !event.title.toLowerCase().includes(searchQuery.toLowerCase()) && !event.desc.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+  const eventCats = event.cats || event.categories || [];
+  if (activeCat && !eventCats.includes(activeCat)) return false;
+
+  // Βελτιωμένο φίλτρο πόλης
+  if (selectedCity) {
+    // Παίρνουμε την πόλη από το event (είτε city είτε City βάσει DTD)
+    const eventCity = (event.city || event.City || "").toString().trim().toLowerCase();
+    const filterCity = selectedCity.trim().toLowerCase();
     
-    if (selectedPrice) {
-      const [lo, hi] = selectedPrice === '30+' ? [30, 99999] : selectedPrice.split('-').map(Number);
-      if (event.minPrice < lo || event.minPrice > hi) return false;
-    }
-    return true;
+    if (eventCity !== filterCity) return false;
+  }
+
+  if (searchQuery) {
+    const title = (event.title || "").toLowerCase();
+    const desc = (event.desc || event.description || "").toLowerCase();
+    const query = searchQuery.toLowerCase();
+    if (!title.includes(query) && !desc.includes(query)) return false;
+  }
+  
+  if (selectedPrice) {
+    const [lo, hi] = selectedPrice === '30+' ? [30, 99999] : selectedPrice.split('-').map(Number);
+    if (event.minPrice < lo || event.minPrice > hi) return false;
+  }
+  return true;
   }).sort((a, b) => {
     if (selectedSort === 'price_asc') return a.minPrice - b.minPrice;
     if (selectedSort === 'price_desc') return b.minPrice - a.minPrice;
