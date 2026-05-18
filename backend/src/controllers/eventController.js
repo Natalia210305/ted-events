@@ -148,5 +148,66 @@ const getMyEvents = async (req, res) => {
     res.status(500).json({ error: 'Σφάλμα server' });
   }
 };
+const createBooking = async (req, res) => {
+  console.log("--- ΝΕΑ ΠΡΟΣΠΑΘΕΙΑ ΚΡΑΤΗΣΗΣ ---");
+  try {
+    const { id } = req.params;
+    const { ticketTypeId, numberOfTickets, totalCost } = req.body;
+    const userId = req.user.id;
 
-module.exports = { getAllEvents, getEventById, createEvent, updateEvent, deleteEvent, getMyEvents };
+    console.log(`Event ID: ${id}, TicketType ID: ${ticketTypeId}, User: ${userId}`);
+
+    // 1. Έλεγχος διαθεσιμότητας
+    const ticketType = await prisma.ticketType.findUnique({
+      where: { id: ticketTypeId }
+    });
+
+    if (!ticketType) {
+      console.log("Σφάλμα: Ο τύπος εισιτηρίου δεν βρέθηκε.");
+      return res.status(404).json({ message: 'Ο τύπος εισιτηρίου δεν υπάρχει.' });
+    }
+
+    if (ticketType.available < numberOfTickets) {
+      console.log("Σφάλμα: Ανεπαρκή εισιτήρια.");
+      return res.status(400).json({ message: 'Δεν υπάρχουν αρκετά διαθέσιμα εισιτήρια.' });
+    }
+
+    // 2. Εκτέλεση Transaction στο Supabase
+    const result = await prisma.$transaction([
+      prisma.booking.create({
+        data: {
+          event: { connect: { id: id } },
+          // ΑΛΛΑΓΗ ΕΔΩ: από user σε attendee
+          attendee: { connect: { id: userId } }, 
+          ticketType: { connect: { id: ticketTypeId } },
+          numberOfTickets: parseInt(numberOfTickets),
+          totalCost: parseFloat(totalCost),
+          status: "CONFIRMED",
+        }
+      }),
+      prisma.ticketType.update({
+        where: { id: ticketTypeId },
+        data: {
+          available: { decrement: parseInt(numberOfTickets) }
+        }
+      })
+    ]);
+
+    console.log("✅ Η κράτηση αποθηκεύτηκε στο Supabase!");
+    res.status(201).json({ message: 'Επιτυχία!', booking: result[0] });
+
+  } catch (err) {
+    console.error("❌ ΣΦΑΛΜΑ PRISMA/SUPABASE:", err.message);
+    res.status(500).json({ message: 'Σφάλμα βάσης δεδομένων: ' + err.message });
+  }
+};
+
+module.exports = { 
+  getAllEvents, 
+  getEventById, 
+  createEvent, 
+  updateEvent, 
+  deleteEvent, 
+  getMyEvents, 
+  createBooking // ΠΡΟΣΘΕΣΕ ΑΥΤΟ
+};

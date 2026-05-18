@@ -150,7 +150,7 @@ function BookingModal({ event, ticketType, onConfirm, onCancel }) {
 export default function EventDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-
+  const [isBooking, setIsBooking] = useState(false);
   const [event, setEvent] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -186,35 +186,47 @@ export default function EventDetail() {
       })
   }, [id])
 
-  // 2. Υποβολή Κράτησης (Booking) χρησιμοποιώντας το api service
   async function handleConfirmBooking(quantity, totalCost) {
-    setBookingError(null)
-    setBookingSuccess(null)
-    
-    try {
-      await api.post(`/events/${id}/bookings`, {
-        ticketTypeId: selectedTicket.id,
-        numberOfTickets: quantity,
-        totalCost,
-      })
+  setIsBooking(true);
+  setBookingError(null);
+  
+  try {
+    console.log("Στέλνω κράτηση...");
+    const response = await api.post(`/events/${id}/bookings`, {
+      ticketTypeId: selectedTicket.id,
+      numberOfTickets: quantity,
+      totalCost,
+    });
 
-      // Local update του state για άμεση μείωση των εισιτηρίων στην οθόνη
-      setEvent(prev => ({
+    console.log("Απάντηση Backend:", response.data);
+
+    // Ενημέρωση State
+    setEvent(prev => {
+      const updatedTickets = prev.ticketTypes.map(t =>
+        t.id === selectedTicket.id ? { ...t, available: t.available - quantity } : t
+      );
+      return {
         ...prev,
-        ticketTypes: prev.ticketTypes.map(t =>
-          t.id === selectedTicket.id
-            ? { ...t, available: t.available - quantity }
-            : t
-        ),
-        available: prev.available - quantity
-      }))
+        ticketTypes: updatedTickets,
+        available: updatedTickets.reduce((sum, t) => sum + t.available, 0)
+      };
+    });
 
-      setBookingSuccess(`Η κράτησή σας υποβλήθηκε επιτυχώς! (${quantity} εισιτήρια, σύνολο €${totalCost})`)
-      setShowModal(false)
-    } catch (e) {
-      setBookingError(e.response?.data?.message || 'Αποτυχία κράτησης.')
-    }
+    // ΑΥΤΟ ΘΑ ΒΓΕΙ ΟΠΩΣΔΗΠΟΤΕ
+    window.alert("Η κράτηση ολοκληρώθηκε επιτυχώς!"); 
+    
+    setShowModal(false);
+    setBookingSuccess("Επιτυχής κράτηση!");
+
+  } catch (e) {
+    console.error("Σφάλμα κράτησης:", e);
+    const errorMsg = e.response?.data?.message || 'Αποτυχία κράτησης στο Supabase.';
+    window.alert("Σφάλμα: " + errorMsg); // Θα σου πει ακριβώς τι φταίει
+    setBookingError(errorMsg);
+  } finally {
+    setIsBooking(false);
   }
+}
 
   if (loading) return (
     <div style={styles.statusPage}>
@@ -387,6 +399,7 @@ export default function EventDetail() {
           ticketType={selectedTicket}
           onConfirm={handleConfirmBooking}
           onCancel={() => setShowModal(false)}
+          isBooking={isBooking} // Εδώ θα προσθέσεις το νέο prop για το loading
         />
       )}
     </div>
