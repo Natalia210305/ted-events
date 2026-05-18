@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 const COLORS = {
   primary: '#d2b893',      // Το μπεζ/χρυσό
@@ -12,22 +12,40 @@ const COLORS = {
 
 function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [searchVal, setSearchVal] = useState('');
 
-  // Στοιχεία για το Dropdown του Profile
-  const profileDropdownItems = [
-    { title: "ΤΟ ΠΡΟΦΙΛ ΜΟΥ", path: "/profile", desc: "Δείτε και επεξεργαστείτε τα στοιχεία σας", icon: "👤" },
-    { title: "ΡΥΘΜΙΣΕΙΣ", path: "/settings", desc: "Διαχειριστείτε τον λογαριασμό σας", icon: "⚙️" },
-    { title: "ΑΠΟΣΥΝΔΕΣΗ", path: "/logout", desc: "Έξοδος από την εφαρμογή", icon: "🚪", isLogout: true },
-  ];
+  // Απόκρυψη στην αρχική σελίδα
+  if (location.pathname === '/') {
+    return null;
+  }
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (searchVal.trim()) {
-      navigate(`/events?search=${encodeURIComponent(searchVal)}`);
-    }
+  const storedUser = localStorage.getItem('user');
+  const user = storedUser ? JSON.parse(storedUser) : null;
+  const role = user ? user.role : null;
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setIsDropdownOpen(false);
+    navigate('/');
   };
+
+  // Βοηθητική συνάρτηση για δυναμικό στυλ στο ενεργό Link (Υπογράμμιση)
+  const getActiveStyle = (path) => {
+    const isActive = location.pathname === path;
+    return {
+      ...linkStyle,
+      color: isActive ? COLORS.primary : COLORS.dark,
+      borderBottom: isActive ? `3px solid ${COLORS.primary}` : '3px solid transparent',
+      paddingBottom: '5px', // Δημιουργεί χώρο ανάμεσα στο κείμενο και την υπογράμμιση
+    };
+  };
+
+  const profileDropdownItems = [
+    { title: "ΤΟ ΠΡΟΦΙΛ ΜΟΥ", path: "/profile", desc: "Δείτε και επεξεργαστείτε τα στοιχεία soaps", icon: "👤" },
+    { title: "ΡΥΘΜΙΣΕΙΣ", path: "/settings", desc: "Διαχειριστείτε τον λογαριασμό σας", icon: "⚙️" },
+  ];
 
   return (
     <nav style={navStyle}>
@@ -44,77 +62,122 @@ function Navbar() {
         </div>
       </Link>
 
-      {/* ─── DESKTOP LINKS AREA ─── */} 
+      {/* ─── ΔΥΝΑΜΙΚΟ LINKS AREA ─── */} 
       <div style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
-        <Link to="/" style={linkStyle} onMouseOver={(e) => e.currentTarget.style.color = COLORS.primary}
-              onMouseOut={(e) => e.currentTarget.style.color = COLORS.dark}>ΑΡΧΙΚΗ</Link>
         
-        <Link to="/events" style={linkStyle} onMouseOver={(e) => e.currentTarget.style.color = COLORS.primary}
-              onMouseOut={(e) => e.currentTarget.style.color = COLORS.dark}>ΠΕΡΙΗΓΗΣΗ ΣΕ ΕΚΔΗΛΩΣΕΙΣ</Link>
+        {/* Κοινό μενού για όλους εκτός Admin */}
+        {role !== 'ADMIN' && (
+          <>
+            <Link to="/" style={getActiveStyle('/')}>ΑΡΧΙΚΗ</Link>
+            <Link to="/events" style={getActiveStyle('/events')}>ΠΕΡΙΗΓΗΣΗ ΣΕ ΕΚΔΗΛΩΣΕΙΣ</Link>
+          </>
+        )}
 
+        {/* Μενού για ADMIN */}
+        {role === 'ADMIN' && (
+          <>
+            <Link to="/admin/users" style={getActiveStyle('/admin/users')}>ΔΙΑΧΕΙΡΙΣΗ ΧΡΗΣΤΩΝ</Link>
+            <Link to="/admin/export" style={getActiveStyle('/admin/export')}>ΕΞΑΓΩΓΗ ΕΚΔΗΛΩΣΕΩΝ</Link>
+          </>
+        )}
 
-        <div style={dividerStyle} />
+        {/* Μενού για ORGANIZER */}
+        {role === 'ORGANIZER' && (
+          <>
+            <div style={dividerStyle} />
+            <Link to="/my-events" style={getActiveStyle('/my-events')}>ΟΙ ΕΚΔΗΛΩΣΕΙΣ ΜΟΥ</Link>
+          </>
+        )}
 
-        {/* ORGANIZER LINKS */}
-        <Link to="/my-events" style={linkStyle} onMouseOver={(e) => e.currentTarget.style.color = COLORS.primary}
-              onMouseOut={(e) => e.currentTarget.style.color = COLORS.dark}>ΟΙ ΕΚΔΗΛΩΣΕΙΣ ΜΟΥ</Link>
+        {/* Μενού για ΣΥΜΜΕΤΕΧΟΝΤΑ */}
+        {(role === 'ATTENDEE' || role === 'USER') && (
+          <>
+            <div style={dividerStyle} />
+            <Link to="/history" style={getActiveStyle('/history')}>ΙΣΤΟΡΙΚΟ</Link>
+          </>
+        )}
 
-        {/* ICONS AREA */}
-        <Link to="/messages" style={iconLinkStyle} title="Messages">💬</Link>
-        <Link to="/notifications" style={iconLinkStyle} title="Notifications">🔔</Link>
+        {/* Μηνύματα & Ειδοποιήσεις */}
+        {user && role !== 'ADMIN' && (
+          <>
+            <Link to="/messages" style={{ ...iconLinkStyle, color: location.pathname === '/messages' ? COLORS.primary : COLORS.dark }} title="Messages">💬</Link>
+            <Link to="/notifications" style={{ ...iconLinkStyle, color: location.pathname === '/notifications' ? COLORS.primary : COLORS.dark }} title="Notifications">🔔</Link>
+          </>
+        )}
 
-        {/* PREMIUM PROFILE DROPDOWN */}
-        <div 
-          style={{ position: 'relative', height: '90px', display: 'flex', alignItems: 'center' }}
-          onMouseEnter={() => setIsDropdownOpen(true)}
-          onMouseLeave={() => setIsDropdownOpen(false)}
-        >
-          <span style={{ ...linkStyle, color: isDropdownOpen ? COLORS.primary : COLORS.dark, cursor: 'pointer' }}>
-            ΠΡΟΦΙΛ <span style={{ fontSize: '0.8rem' }}>▼</span>
-          </span>
+        {/* Dropdown Προφίλ */}
+        {user && (
+          <div 
+            style={{ position: 'relative', height: '90px', display: 'flex', alignItems: 'center' }}
+            onMouseEnter={() => setIsDropdownOpen(true)}
+            onMouseLeave={() => setIsDropdownOpen(false)}
+          >
+            <span style={{ 
+              ...linkStyle, 
+              color: isDropdownOpen || ['/profile', '/settings'].includes(location.pathname) ? COLORS.primary : COLORS.dark, 
+              cursor: 'pointer',
+              borderBottom: ['/profile', '/settings'].includes(location.pathname) ? `3px solid ${COLORS.primary}` : '3px solid transparent',
+              paddingBottom: '5px'
+            }}>
+              ΠΡΟΦΙΛ <span style={{ fontSize: '0.8rem' }}>▼</span>
+            </span>
 
-          {isDropdownOpen && (
-            <div style={dropdownWrapper}>
-              <div style={dropdownCard}>
-                {profileDropdownItems.map((item, index) => (
-                  <Link 
-                    key={index} 
-                    to={item.path} 
+            {isDropdownOpen && (
+              <div style={dropdownWrapper}>
+                <div style={dropdownCard}>
+                  {profileDropdownItems.map((item, index) => (
+                    <Link 
+                      key={index} 
+                      to={item.path} 
+                      style={dropdownItem} 
+                      onClick={() => setIsDropdownOpen(false)}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.bgLight}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      <div style={{ ...iconBox, color: COLORS.dark }}>
+                        {item.icon}
+                      </div>
+                      <div>
+                        <div style={{ ...itemTitle, color: COLORS.dark }}>{item.title}</div>
+                        <div style={itemDesc}>{item.desc}</div>
+                      </div>
+                    </Link>
+                  ))}
+                  
+                  <div 
                     style={dropdownItem} 
-                    onClick={() => setIsDropdownOpen(false)}
+                    onClick={handleLogout}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.bgLight}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <div style={{ ...iconBox, color: item.isLogout ? '#791F1F' : COLORS.dark }}>
-                      {item.icon}
-                    </div>
+                    <div style={{ ...iconBox, color: '#791F1F' }}>🚪</div>
                     <div>
-                      <div style={{ ...itemTitle, color: item.isLogout ? '#791F1F' : COLORS.dark }}>{item.title}</div>
-                      <div style={itemDesc}>{item.desc}</div>
+                      <div style={{ ...itemTitle, color: '#791F1F' }}>ΑΠΟΣΥΝΔΕΣΗ</div>
+                      <div style={itemDesc}>Έξοδος από την εφαρμογή</div>
                     </div>
-                  </Link>
-                ))}
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
-        {/* CREATE EVENT BUTTON */}
-        <button 
-          onClick={() => navigate('/create-event')} 
-          style={createButtonStyle}
-          onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-          onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-        >
-          + ΔΗΜΙΟΥΡΓΙΑ ΕΚΔΗΛΩΣΗΣ
-        </button>
+        {role === 'ORGANIZER' && (
+          <button 
+            onClick={() => navigate('/create-event')} 
+            style={createButtonStyle}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            + ΔΗΜΙΟΥΡΓΙΑ ΕΚΔΗΛΩΣΗΣ
+          </button>
+        )}
       </div>
     </nav>
   );
 }
 
 // ─── STYLES ───
-
 const navStyle = {
   display: 'flex', 
   alignItems: 'center', 
@@ -131,10 +194,9 @@ const navStyle = {
 
 const linkStyle = {
   textDecoration: 'none',
-  color: COLORS.dark,
   fontSize: '1.05rem',
   fontWeight: '600',
-  transition: '0.3s',
+  transition: 'color 0.2s, border-color 0.2s',
   cursor: 'pointer'
 };
 
@@ -143,33 +205,6 @@ const iconLinkStyle = {
   fontSize: '1.3rem',
   cursor: 'pointer',
   transition: 'transform 0.2s',
-};
-
-const searchFormStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  border: `1px solid ${COLORS.border}`,
-  backgroundColor: COLORS.bgLight,
-  padding: '6px 12px',
-  borderRadius: '50px', 
-  width: '180px',
-};
-
-const searchInputStyle = {
-  border: 'none',
-  background: 'transparent',
-  outline: 'none',
-  fontSize: '12px',
-  fontFamily: 'Montserrat, sans-serif',
-  width: '100%',
-  color: COLORS.dark,
-};
-
-const searchBtnStyle = {
-  border: 'none',
-  background: 'transparent',
-  cursor: 'pointer',
-  fontSize: '12px',
 };
 
 const dividerStyle = {
@@ -181,8 +216,7 @@ const dividerStyle = {
 const dropdownWrapper = {
   position: 'absolute',
   top: '80px',
-  left: '50%',
-  transform: 'translateX(-50%)',
+  right: '0px', 
   paddingTop: '15px', 
   zIndex: 2100,
 };
