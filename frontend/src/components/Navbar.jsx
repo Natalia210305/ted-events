@@ -72,14 +72,16 @@ function Navbar() {
 
       {/* ─── LOGO ─── */}
       <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: '1.7rem', fontWeight: '800', color: COLORS.dark, lineHeight: '1', fontFamily: 'Montserrat, sans-serif' }}>
-            EVENT<span style={{ color: COLORS.primary }}>Q</span>
-          </span>
-          <span style={{ fontSize: '0.65rem', fontWeight: '700', color: COLORS.primary, textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px' }}>
-            Management
-          </span>
-        </div>
+        {/* Το νέο σου Logo Image */}
+        <img 
+          src="/logo.png" 
+          alt="EventQ Logo" 
+          style={{ 
+            width: '150px',       // Ρυθμίζεις το πλάτος ανάλογα με το πώς σου κάθεται στο μάτι
+            height: '150px',      // Ρυθμίζεις το ύψος
+            objectFit: 'contain' // Κρατάει τις αναλογίες της εικόνας χωρίς να την παραμορφώνει
+          }} 
+        />
       </Link>
 
       {/* ─── ΔΥΝΑΜΙΚΟ LINKS AREA ─── */} 
