@@ -44,7 +44,6 @@ function availabilityColor(available, quantity) {
 function EventMap({ latitude, longitude, venue }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
-
   useEffect(() => {
     if (!latitude || !longitude) return
     if (mapInstanceRef.current) return
@@ -154,7 +153,7 @@ export default function EventDetail() {
   const [event, setEvent] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-
+  const [showContactModal, setShowContactModal] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [bookingSuccess, setBookingSuccess] = useState(null)

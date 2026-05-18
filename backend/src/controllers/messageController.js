@@ -111,4 +111,19 @@ const deleteMessage = async (req, res) => {
   }
 };
 
-module.exports = { sendMessage, getMyMessages, getConversation, deleteMessage };
+const getUnreadCount = async (req, res) => {
+  try {
+    const count = await prisma.message.count({
+      where: {
+        receiverId: req.user.id,
+        readAt: null,
+        deletedByReceiver: false
+      }
+    });
+    res.json({ unreadCount: count });
+  } catch (err) {
+    res.status(500).json({ error: 'Σφάλμα server' });
+  }
+};
+
+module.exports = { sendMessage, getMyMessages, getConversation, deleteMessage, getUnreadCount };

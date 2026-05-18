@@ -58,7 +58,7 @@ model User {
   bookings         Booking[]
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
-  
+  notifications Notification[]
   // Για τον αλγόριθμο συστάσεων (Biased Matrix Factorization)
   viewedEvents     EventView[] 
 }
@@ -75,7 +75,7 @@ model Event {
   city          String
   latitude      Float?
   longitude     Float?
-
+  country String?
   startDateTime DateTime
   endDateTime   DateTime
   capacity      Int         // Συνολική χωρητικότητα
@@ -154,7 +154,21 @@ model Message {
   senderId          String
   receiver          User      @relation("ReceivedMessages", fields: [receiverId], references: [id])
   receiverId        String
-
+  // Μέσα στο model Message
+  deletedBySender   Boolean @default(false)
+  deletedByReceiver Boolean @default(false)
   event             Event?    @relation(fields: [eventId], references: [id])
   eventId           String?
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  message   String
+  type      String   // π.χ. "EVENT_CANCELLED", "NEW_MESSAGE"
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Σύνδεση με τον χρήστη
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
 }

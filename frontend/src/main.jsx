@@ -11,6 +11,8 @@ import MyEvents from './pages/MyEvents'
 import Messages from './pages/Messages'
 import EventDetail from './pages/EventDetail'
 import Navbar from './components/Navbar'
+import MyBookings from './pages/MyBookings'
+import Notifications from './pages/Notifications';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -26,6 +28,9 @@ createRoot(document.getElementById('root')).render(
         <Route path="/my-events" element={<MyEvents />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/events/:id" element={<EventDetail />} />
+        <Route path="/my-bookings" element={<MyBookings />} />
+        <Route path="/history" element={<MyBookings />} />
+        <Route path="/notifications" element={<Notifications />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>

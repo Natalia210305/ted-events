@@ -49,7 +49,9 @@ const createEvent = async (req, res) => {
       data: {
         title, description, eventType,
         venue, address, city, country: country || 'Greece',
-        latitude, longitude,
+        // Μέσα στο prisma.event.create
+        latitude: parseFloat(latitude), 
+        longitude: parseFloat(longitude),
         startDateTime: new Date(startDateTime),
         endDateTime: new Date(endDateTime),
         capacity,
@@ -112,6 +114,7 @@ const deleteEvent = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // 1. Φέρνουμε την εκδήλωση μαζί με τις κρατήσεις
     const event = await prisma.event.findUnique({
       where: { id },
       include: { bookings: true }
@@ -119,15 +122,31 @@ const deleteEvent = async (req, res) => {
 
     if (!event) return res.status(404).json({ error: 'Εκδήλωση δεν βρέθηκε' });
 
-    if (event.status === 'PUBLISHED' && event.bookings.length > 0) {
-      return res.status(400).json({ error: 'Δεν μπορείτε να διαγράψετε εκδήλωση με κρατήσεις' });
+    // 2. Αντί για delete, κάνουμε UPDATE το status σε CANCELLED
+    await prisma.event.update({
+      where: { id },
+      data: { status: 'CANCELLED' }
+    });
+
+    // 3. ΕΛΕΓΧΟΣ ΚΑΙ ΕΙΔΟΠΟΙΗΣΕΙΣ
+    if (event.bookings.length > 0) {
+      const notificationsData = event.bookings.map(booking => ({
+        userId: booking.attendeeId, // Ο χρήστης που έκανε την κράτηση
+        message: `Η εκδήλωση "${event.title}" στην οποία είχατε κάνει κράτηση ακυρώθηκε.`,
+        type: 'EVENT_CANCELLED'
+      }));
+
+      // Αποθήκευση όλων των ειδοποιήσεων μαζί
+      await prisma.notification.createMany({
+        data: notificationsData
+      });
     }
 
-    await prisma.event.delete({ where: { id } });
-    res.json({ message: 'Η εκδήλωση διαγράφηκε!' });
+    res.json({ message: 'Η εκδήλωση ακυρώθηκε επιτυχώς και οι συμμετέχοντες ειδοποιήθηκαν!' });
+    
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Σφάλμα server' });
+    res.status(500).json({ error: 'Σφάλμα κατά την ακύρωση της εκδήλωσης' });
   }
 };
 
@@ -202,6 +221,49 @@ const createBooking = async (req, res) => {
   }
 };
 
+const getMyBookings = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const bookings = await prisma.booking.findMany({
+      where: {
+        attendeeId: userId 
+      },
+      include: {
+        event: {
+          select: {
+            title: true,
+            startDateTime: true,
+            venue: true,
+            city: true
+          }
+        },
+        ticketType: {
+          select: {
+            name: true,
+            price: true
+          }
+        },
+        attendee: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        }
+      },
+      orderBy: {
+        time: "desc" // Εδώ βάλαμε 'time' γιατί έτσι το είδαμε στη φωτό σου
+      }
+    });
+
+    res.json(bookings);
+  } catch (err) {
+    console.error("Σφάλμα στο getMyBookings:", err);
+    res.status(500).json({ error: 'Σφάλμα κατά την ανάκτηση του ιστορικού' });
+  }
+};
+
 module.exports = { 
   getAllEvents, 
   getEventById, 
@@ -209,5 +271,6 @@ module.exports = {
   updateEvent, 
   deleteEvent, 
   getMyEvents, 
-  createBooking // ΠΡΟΣΘΕΣΕ ΑΥΤΟ
+  createBooking,
+  getMyBookings // ΠΡΟΣΘΕΣΕ ΑΥΤΟ ΕΔΩ!
 };

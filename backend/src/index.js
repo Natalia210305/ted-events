@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
+const notificationRoutes = require('./routes/notificationRoutes'); // <--- ΑΥΤΟ ΛΕΙΠΕΙ
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const eventRoutes = require('./routes/events');
@@ -17,7 +18,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/messages', messageRoutes);
-
+app.use('/api/notifications', notificationRoutes);
 app.get('/', (req, res) => {
   res.send('TED Events API is running!');
 });

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Πρόσθεσε το useEffect
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import api from '../services/api'; // Βεβαιώσου ότι το path για το api service είναι σωστό
 
 const COLORS = {
   primary: '#d2b893',      // Το μπεζ/χρυσό
@@ -14,7 +15,26 @@ function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      const storedUser = localStorage.getItem('user');
+      const userObj = storedUser ? JSON.parse(storedUser) : null;
+      
+      if (!userObj) return;
 
+      try {
+        const response = await api.get('/messages/unread-count');
+        setUnreadCount(response.data.unreadCount);
+      } catch (error) {
+        console.error("Error fetching unread count", error);
+      }
+    };
+
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [location.pathname]);
   // Απόκρυψη στην αρχική σελίδα
   if (location.pathname === '/') {
     return null;
@@ -89,18 +109,26 @@ function Navbar() {
           </>
         )}
 
-        {/* Μενού για ΣΥΜΜΕΤΕΧΟΝΤΑ */}
-        {(role === 'ATTENDEE' || role === 'USER') && (
+        {/* Το βλέπουν όλοι εκτός από τον Admin (που συνήθως δεν κάνει κρατήσεις) */}
+        {user && role !== 'ADMIN' && (
           <>
             <div style={dividerStyle} />
-            <Link to="/history" style={getActiveStyle('/history')}>ΙΣΤΟΡΙΚΟ</Link>
+            <Link to="/my-bookings" style={getActiveStyle('/my-bookings')}>ΙΣΤΟΡΙΚΟ</Link>
           </>
         )}
 
-        {/* Μηνύματα & Ειδοποιήσεις */}
         {user && role !== 'ADMIN' && (
           <>
-            <Link to="/messages" style={{ ...iconLinkStyle, color: location.pathname === '/messages' ? COLORS.primary : COLORS.dark }} title="Messages">💬</Link>
+            {/* ΑΝΤΙΚΑΤΑΣΤΑΣΗ ΕΔΩ */}
+            <Link to="/messages" style={iconLinkStyle} title="Messages">
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                💬
+                {unreadCount > 0 && (
+                  <span style={badgeStyle}>{unreadCount}</span>
+                )}
+              </div>
+            </Link>
+            
             <Link to="/notifications" style={{ ...iconLinkStyle, color: location.pathname === '/notifications' ? COLORS.primary : COLORS.dark }} title="Notifications">🔔</Link>
           </>
         )}
@@ -198,6 +226,24 @@ const linkStyle = {
   fontWeight: '600',
   transition: 'color 0.2s, border-color 0.2s',
   cursor: 'pointer'
+};
+
+const badgeStyle = {
+  position: 'absolute',
+  top: '-8px',
+  right: '-8px',
+  backgroundColor: '#ff4d4f', // Κόκκινο "alert"
+  color: 'white',
+  borderRadius: '50%',
+  padding: '2px 6px',
+  fontSize: '10px',
+  fontWeight: 'bold',
+  border: '2px solid white',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minWidth: '18px',
+  height: '18px'
 };
 
 const iconLinkStyle = {
