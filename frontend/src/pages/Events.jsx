@@ -343,7 +343,7 @@ const handleBookEvent = (e, id) => {
                     {/* Card Footer */}
                     <div style={{ marginTop: 'auto', paddingTop: '15px', borderTop: `1px solid ${COLORS.bgLight}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontSize: '11px', color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '1px' }}>Τιμη</div>
+                        <div style={{ fontSize: '11px', color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '1px' }}>Τιμη απο</div>
                         <div style={{ fontSize: '16px', fontWeight: '700', color: COLORS.dark }}>
                           {event.minPrice === 0 ? 'Δωρεάν' : `${event.minPrice}€`}
                         </div>

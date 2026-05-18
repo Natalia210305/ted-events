@@ -8,10 +8,13 @@ import Events from './pages/Events'
 import AdminUsers from './pages/AdminUsers'
 import CreateEvent from './pages/CreateEvent'
 import MyEvents from './pages/MyEvents'
+import EventDetail from './pages/EventDetail'
+import Navbar from './components/Navbar'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
+      <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -20,6 +23,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/create-event" element={<CreateEvent />} />
         <Route path="/my-events" element={<MyEvents />} />
+        <Route path="/events/:id" element={<EventDetail />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>

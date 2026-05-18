@@ -5,7 +5,7 @@ const { authenticate, authorize } = require('../middleware/auth');
 
 router.get('/', getAllEvents);
 router.get('/my', authenticate, authorize('ORGANIZER', 'ADMIN'), getMyEvents);
-router.get('/:id', authenticate, getEventById);
+router.get('/:id', getEventById);
 router.post('/', authenticate, authorize('ORGANIZER', 'ADMIN'), createEvent);
 router.patch('/:id', authenticate, authorize('ORGANIZER', 'ADMIN'), updateEvent);
 router.delete('/:id', authenticate, authorize('ADMIN'), deleteEvent);
