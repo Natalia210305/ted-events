@@ -91,7 +91,7 @@ function EventMap({ latitude, longitude, venue }) {
 }
 
 // ── Booking Modal Component ───────────────────────────────────────────────────
-function BookingModal({ event, ticketType, onConfirm, onCancel }) {
+function BookingModal({ event, ticketType, onConfirm, onCancel, isBooking }) {
   const [quantity, setQuantity] = useState(1)
   const total = (quantity * parseFloat(ticketType.price || 0)).toFixed(2)
 
@@ -135,9 +135,13 @@ function BookingModal({ event, ticketType, onConfirm, onCancel }) {
         </p>
 
         <div style={styles.modalButtons}>
-          <button style={styles.cancelBtn} onClick={onCancel}>Ακύρωση</button>
-          <button style={styles.confirmBtn} onClick={() => onConfirm(quantity, total)}>
-            Οριστική Υποβολή
+          <button style={styles.cancelBtn} onClick={onCancel} disabled={isBooking}>Ακύρωση</button>
+          <button 
+            style={{...styles.confirmBtn, opacity: isBooking ? 0.7 : 1}} 
+            onClick={() => onConfirm(quantity, total)}
+            disabled={isBooking}
+          >
+            {isBooking ? 'Γίνεται κράτηση...' : 'Οριστική Υποβολή'}
           </button>
         </div>
       </div>
@@ -158,6 +162,17 @@ export default function EventDetail() {
   const [showModal, setShowModal] = useState(false)
   const [bookingSuccess, setBookingSuccess] = useState(null)
   const [bookingError, setBookingError] = useState(null)
+  const handleContactOrganizer = () => {
+  // Στέλνουμε τον χρήστη στα μηνύματα και περνάμε στο state 
+  // το ID του διοργανωτή και το όνομα του Event
+  navigate('/messages', { 
+    state: { 
+      recipientId: event.organizerId, 
+      recipientName: `${event.organizer.firstName} ${event.organizer.lastName}`,
+      subject: event.title 
+    } 
+  });
+};
 
   // 1. Fetch Event Details χρησιμοποιώντας το api service (Axios)
   useEffect(() => {
@@ -278,6 +293,26 @@ export default function EventDetail() {
           <p style={styles.meta}>
             {event.eventType} · {event.venue}, {event.city}, {event.country}
           </p>
+          {/* ΤΟ ΚΟΥΜΠΙ ΕΠΙΚΟΙΝΩΝΙΑΣ */}
+          <button 
+            onClick={handleContactOrganizer}
+            style={{
+              background: 'none',
+              border: `1px solid ${COLORS.primary}`,
+              color: COLORS.dark,
+              padding: '6px 12px',
+              fontSize: '12px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              borderRadius: '4px',
+              marginTop: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px'
+            }}
+          >
+  💬 Επικοινωνία με Διοργανωτή
+</button>
           <p style={styles.dates}>
             🗓 {formatDateTime(event.start || event.startDateTime)} — {formatDateTime(event.endDateTime)}
           </p>

@@ -1,5 +1,45 @@
+import { useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from '../services/api';
+
+const COLORS = {
+  primary: '#d2b893',
+  dark: '#2c2c2c',
+  border: '#e4dfda',
+  bgLight: '#f9f7f5'
+};
+
+const styles = {
+  container: { display: 'flex', height: 'calc(100vh - 80px)', backgroundColor: '#fff' },
+  sidebar: { width: '350px', borderRight: `1px solid ${COLORS.border}`, display: 'flex', flexDirection: 'column' },
+  tabContainer: { display: 'flex', padding: '20px', gap: '10px' },
+  tab: { flex: 1, padding: '10px', border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold' },
+  convList: { overflowY: 'auto', flex: 1 },
+  convCard: { padding: '15px', borderBottom: `1px solid ${COLORS.border}`, cursor: 'pointer' },
+  chatWindow: { flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#fdfcfb' },
+  newMessageArea: { padding: '40px', display: 'flex', flexDirection: 'column' },
+  textarea: { height: '200px', padding: '15px', borderRadius: '8px', border: `1px solid ${COLORS.border}`, resize: 'none', marginBottom: '20px' },
+  sendBtn: { padding: '12px 24px', backgroundColor: COLORS.dark, color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', alignSelf: 'flex-end' },
+  conversationArea: { display: 'flex', flexDirection: 'column', height: '100%' },
+  chatHeader: { padding: '20px', borderBottom: `1px solid ${COLORS.border}`, fontWeight: 'bold' },
+  messagesList: { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px' },
+  bubble: { padding: '10px 15px', borderRadius: '15px', maxWidth: '70%', fontSize: '14px', position: 'relative' },
+  bubbleDate: { fontSize: '10px', marginTop: '5px', opacity: 0.6 },
+  inputBox: { padding: '20px', borderTop: `1px solid ${COLORS.border}`, display: 'flex', gap: '10px' },
+  chatInput: { flex: 1, padding: '10px', borderRadius: '20px', border: `1px solid ${COLORS.border}` },
+  replyBtn: { backgroundColor: COLORS.dark, color: 'white', border: 'none', padding: '0 20px', borderRadius: '20px', cursor: 'pointer' },
+  emptyState: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#999' },
+  badge: { backgroundColor: '#ff4444', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '10px', marginLeft: '5px' },
+  previewText: { fontSize: '12px', color: '#777', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '5px' },
+  dateText: { fontSize: '10px', color: '#999' },
+  emptyMsg: { textAlign: 'center', marginTop: '40px', color: '#999' }
+};
+
+
+
+
+
+
 
 export default function Messages() {
   const [messages, setMessages] = useState([]);
@@ -9,7 +49,8 @@ export default function Messages() {
   const [newMessage, setNewMessage] = useState('');
   const [error, setError] = useState('');
   const user = JSON.parse(localStorage.getItem('user'));
-
+  const location = useLocation();
+  const [content, setContent] = useState("");
   const fetchMessages = async () => {
     try {
       const res = await api.get('/messages/my');
@@ -18,7 +59,7 @@ export default function Messages() {
       setError('Σφάλμα φόρτωσης μηνυμάτων');
     }
   };
-
+  const newContact = location.state;
   useEffect(() => { fetchMessages(); }, []);
 
   const fetchConversation = async (userId) => {
@@ -53,6 +94,22 @@ export default function Messages() {
     }
   };
 
+  const handleSendNewMessage = async () => {
+    if (!content.trim()) return;
+    try {
+      await api.post('/messages', {
+        receiverId: newContact.recipientId,
+        content: content,
+        eventId: newContact.eventId
+      });
+      alert("Το μήνυμα στάλθηκε!");
+      setContent("");
+      // Εδώ μπορείς να κάνεις navigate στο Inbox για να δεις τη συνομιλία
+    } catch (error) {
+      console.error("Σφάλμα αποστολής:", error);
+    }
+  };
+
   const inbox = messages.filter(m => m.receiverId === user?.id && !m.deletedByReceiver);
   const sent = messages.filter(m => m.senderId === user?.id && !m.deletedBySender);
   const unread = inbox.filter(m => !m.readAt).length;
@@ -70,66 +127,98 @@ export default function Messages() {
   const s = { fontFamily: 'Montserrat, sans-serif' };
 
   return (
-    <div style={{ ...s, minHeight: '100vh', backgroundColor: '#f5f0eb', padding: '40px 20px' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: '700', letterSpacing: '2px', marginBottom: '32px' }}>
-          ΜΗΝΥΜΑΤΑ {unread > 0 && <span style={{ backgroundColor: '#e53935', color: 'white', borderRadius: '50%', padding: '2px 8px', fontSize: '0.75rem', marginLeft: '8px' }}>{unread}</span>}
-        </h1>
-
-        {error && <p style={{ color: 'red', marginBottom: '16px' }}>{error}</p>}
-
-        <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '20px' }}>
-          <div style={{ backgroundColor: 'white', padding: '16px' }}>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-              <button onClick={() => setActiveTab('inbox')} style={{ flex: 1, padding: '8px', backgroundColor: activeTab === 'inbox' ? '#d2b893' : 'transparent', border: '1px solid #d2b893', cursor: 'pointer', ...s, fontSize: '12px', fontWeight: '600' }}>
-                ΕΙΣΕΡΧΟΜΕΝΑ {unread > 0 && `(${unread})`}
-              </button>
-              <button onClick={() => setActiveTab('sent')} style={{ flex: 1, padding: '8px', backgroundColor: activeTab === 'sent' ? '#d2b893' : 'transparent', border: '1px solid #d2b893', cursor: 'pointer', ...s, fontSize: '12px', fontWeight: '600' }}>
-                ΑΠΕΣΤΑΛΜΕΝΑ
-              </button>
-            </div>
-
-            {conversations.length === 0 ? (
-              <p style={{ color: '#888', fontSize: '13px', textAlign: 'center' }}>Δεν υπάρχουν συνομιλίες</p>
-            ) : (
-              conversations.map(conv => (
-                <div key={conv.userId} onClick={() => fetchConversation(conv.userId)} style={{ padding: '12px', marginBottom: '8px', backgroundColor: selectedConv === conv.userId ? '#f5f0eb' : 'transparent', cursor: 'pointer', borderLeft: selectedConv === conv.userId ? '3px solid #d2b893' : '3px solid transparent' }}>
-                  <div style={{ fontWeight: '600', fontSize: '14px' }}>{conv.name}</div>
-                </div>
-              ))
-            )}
-          </div>
-
-          <div style={{ backgroundColor: 'white', padding: '16px', display: 'flex', flexDirection: 'column', minHeight: '400px' }}>
-            {!selectedConv ? (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontSize: '14px' }}>
-                Επιλέξτε συνομιλία
-              </div>
-            ) : (
-              <>
-                <div style={{ flex: 1, overflowY: 'auto', maxHeight: '400px', marginBottom: '16px' }}>
-                  {conversation.map(msg => (
-                    <div key={msg.id} style={{ marginBottom: '12px', display: 'flex', flexDirection: 'column', alignItems: msg.senderId === user?.id ? 'flex-end' : 'flex-start' }}>
-                      <div style={{ backgroundColor: msg.senderId === user?.id ? '#d2b893' : '#f5f0eb', padding: '10px 14px', maxWidth: '70%', fontSize: '14px' }}>
-                        {msg.content}
-                      </div>
-                      <div style={{ fontSize: '11px', color: '#888', marginTop: '4px', display: 'flex', gap: '8px' }}>
-                        {formatDate(msg.sentAt)}
-                        <span onClick={() => handleDelete(msg.id)} style={{ cursor: 'pointer', color: '#e53935' }}>✕</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Γράψτε μήνυμα..." style={{ flex: 1, padding: '10px', border: '1px solid #e4dfda', ...s, fontSize: '14px' }} />
-                  <button onClick={handleSend} style={{ padding: '10px 20px', backgroundColor: '#d2b893', border: 'none', cursor: 'pointer', ...s, fontWeight: '700', fontSize: '13px' }}>
-                    ΑΠΟΣΤΟΛΗ
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+    <div style={styles.container}>
+      {/* --- ΑΡΙΣΤΕΡΗ ΠΛΕΥΡΑ: ΛΙΣΤΑ ΣΥΝΟΜΙΛΙΩΝ --- */}
+      <div style={styles.sidebar}>
+        <div style={styles.tabContainer}>
+          <button 
+            style={{...styles.tab, borderBottom: activeTab === 'inbox' ? `2px solid ${COLORS.primary}` : 'none'}}
+            onClick={() => setActiveTab('inbox')}
+          >
+            ΕΙΣΕΡΧΟΜΕΝΑ {unread > 0 && <span style={styles.badge}>{unread}</span>}
+          </button>
+          <button 
+            style={{...styles.tab, borderBottom: activeTab === 'sent' ? `2px solid ${COLORS.primary}` : 'none'}}
+            onClick={() => setActiveTab('sent')}
+          >
+            ΑΠΕΣΤΑΛΜΕΝΑ
+          </button>
         </div>
+
+        <div style={styles.convList}>
+          {(activeTab === 'inbox' ? inbox : sent).length === 0 ? (
+            <p style={styles.emptyMsg}>Δεν υπάρχουν μηνύματα</p>
+          ) : (
+            (activeTab === 'inbox' ? inbox : sent).map(m => (
+              <div 
+                key={m.id} 
+                style={{
+                  ...styles.convCard, 
+                  backgroundColor: selectedConv === (m.senderId === user.id ? m.receiverId : m.senderId) ? '#f0f0f0' : 'white',
+                  fontWeight: !m.readAt && m.receiverId === user.id ? 'bold' : 'normal'
+                }}
+                onClick={() => fetchConversation(m.senderId === user.id ? m.receiverId : m.senderId)}
+              >
+                <div style={{display:'flex', justifyContent:'space-between'}}>
+                  <span>{m.senderId === user.id ? `${m.receiver.firstName} ${m.receiver.lastName}` : `${m.sender.firstName} ${m.sender.lastName}`}</span>
+                  <span style={styles.dateText}>{formatDate(m.sentAt)}</span>
+                </div>
+                <div style={styles.previewText}>{m.content}</div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* --- ΔΕΞΙΑ ΠΛΕΥΡΑ: ΠΑΡΑΘΥΡΟ ΣΥΝΟΜΙΛΙΑΣ --- */}
+      <div style={styles.chatWindow}>
+        {newContact ? (
+          /* ΠΕΡΙΠΤΩΣΗ Α: ΝΕΟ ΜΗΝΥΜΑ ΑΠΟ EVENT */
+          <div style={styles.newMessageArea}>
+            <h3 style={{color: COLORS.primary, marginBottom: '10px'}}>Νέο μήνυμα προς: {newContact.recipientName}</h3>
+            <p style={{fontSize: '13px', color: '#666', marginBottom: '20px'}}>Θέμα: {newContact.subject}</p>
+            <textarea
+              style={styles.textarea}
+              placeholder="Γράψτε το μήνυμά σας εδώ..."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+            />
+            <button onClick={handleSendNewMessage} style={styles.sendBtn}>ΑΠΟΣΤΟΛΗ ΜΗΝΥΜΑΤΟΣ</button>
+          </div>
+        ) : selectedConv ? (
+          /* ΠΕΡΙΠΤΩΣΗ Β: ΥΠΑΡΧΟΥΣΑ ΣΥΝΟΜΙΛΙΑ */
+          <div style={styles.conversationArea}>
+            <div style={styles.chatHeader}>
+              Συνομιλία με τον χρήστη
+            </div>
+            <div style={styles.messagesList}>
+              {conversation.map(c => (
+                <div key={c.id} style={{
+                  ...styles.bubble,
+                  alignSelf: c.senderId === user.id ? 'flex-end' : 'flex-start',
+                  backgroundColor: c.senderId === user.id ? COLORS.primary : '#eee'
+                }}>
+                  {c.content}
+                  <div style={styles.bubbleDate}>{formatDate(c.sentAt)}</div>
+                </div>
+              ))}
+            </div>
+            <div style={styles.inputBox}>
+              <input 
+                style={styles.chatInput}
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Απάντηση..."
+              />
+              <button style={styles.replyBtn} onClick={handleSend}>ΣΤΕΙΛΕ</button>
+            </div>
+          </div>
+        ) : (
+          /* ΠΕΡΙΠΤΩΣΗ Γ: ΤΙΠΟΤΑ ΕΠΙΛΕΓΜΕΝΟ */
+          <div style={styles.emptyState}>
+            <p>Επιλέξτε μια συνομιλία για να δείτε τα μηνύματά σας</p>
+          </div>
+        )}
       </div>
     </div>
   );

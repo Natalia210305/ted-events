@@ -81,6 +81,7 @@ const createEvent = async (req, res) => {
 const updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log("Προσπάθεια ακύρωσης για το Event ID:", id); // Βάλε αυτό το log για να το βλέπεις στο τερματικό
     const { title, description, eventType, venue, address, city, country, latitude, longitude, startDateTime, endDateTime, capacity, status } = req.body;
 
     // Αν ακυρώνεται, ενημέρωσε και τις κρατήσεις
@@ -114,39 +115,40 @@ const deleteEvent = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // 1. Φέρνουμε την εκδήλωση μαζί με τις κρατήσεις
+    // ΒΗΜΑ 1: Φέρνουμε το event ΜΑΖΙ με τις κρατήσεις (include)
     const event = await prisma.event.findUnique({
-      where: { id },
-      include: { bookings: true }
+      where: { id: id },
+      include: { bookings: true } 
     });
 
-    if (!event) return res.status(404).json({ error: 'Εκδήλωση δεν βρέθηκε' });
+    if (!event) return res.status(404).json({ error: 'Event not found' });
 
-    // 2. Αντί για delete, κάνουμε UPDATE το status σε CANCELLED
+    // ΒΗΜΑ 2: Ενημερώνουμε το status
     await prisma.event.update({
-      where: { id },
+      where: { id: id },
       data: { status: 'CANCELLED' }
     });
 
-    // 3. ΕΛΕΓΧΟΣ ΚΑΙ ΕΙΔΟΠΟΙΗΣΕΙΣ
-    if (event.bookings.length > 0) {
+    // ΒΗΜΑ 3: Δημιουργούμε τις ειδοποιήσεις
+    // Τώρα το event.bookings ΔΕΝ είναι undefined επειδή βάλαμε το include παραπάνω!
+    if (event.bookings && event.bookings.length > 0) {
       const notificationsData = event.bookings.map(booking => ({
-        userId: booking.attendeeId, // Ο χρήστης που έκανε την κράτηση
-        message: `Η εκδήλωση "${event.title}" στην οποία είχατε κάνει κράτηση ακυρώθηκε.`,
+        userId: booking.attendeeId,
+        message: `Η εκδήλωση "${event.title}" ακυρώθηκε.`,
         type: 'EVENT_CANCELLED'
       }));
 
-      // Αποθήκευση όλων των ειδοποιήσεων μαζί
       await prisma.notification.createMany({
         data: notificationsData
       });
+      console.log("Ειδοποιήσεις στάλθηκαν σε:", notificationsData.length, "χρήστες");
     }
 
-    res.json({ message: 'Η εκδήλωση ακυρώθηκε επιτυχώς και οι συμμετέχοντες ειδοποιήθηκαν!' });
-    
+    res.json({ message: 'Επιτυχής ακύρωση' });
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Σφάλμα κατά την ακύρωση της εκδήλωσης' });
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
