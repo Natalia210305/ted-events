@@ -14,7 +14,12 @@ export default function LoginModal({ onClose }) {
       const res = await api.post('/auth/login', { username, password });
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
-      onClose();
+      
+      // Έλεγχος: Κλείσε το modal μόνο αν υπάρχει η συνάρτηση onClose
+      if (onClose) {
+        onClose();
+      }
+      
       const role = res.data.user.role;  
       if (role === 'ADMIN') {
         navigate('/admin/users');        
@@ -52,7 +57,13 @@ export default function LoginModal({ onClose }) {
       }}>
         {/* Κουμπί κλεισίματος */}
         <button
-          onClick={onClose}
+          onClick={() => {
+            if (onClose) {
+              onClose(); // Αν άνοιξε σαν modal, κλείστο
+            } else {
+              navigate('/events'); // Αν είμαστε στο /login route, γύρνα τον χρήστη πίσω
+            }
+          }}
           style={{
             position: 'absolute', top: '12px', right: '16px',
             background: 'none', border: 'none',
