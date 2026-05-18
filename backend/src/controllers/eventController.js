@@ -131,7 +131,10 @@ const deleteEvent = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 // Εκδηλώσεις διοργανωτή
+=======
+>>>>>>> 9498846 (Προσθήκη Messages και ενημέρωση Routes)
 const getMyEvents = async (req, res) => {
   try {
     const events = await prisma.event.findMany({

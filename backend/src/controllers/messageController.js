@@ -91,5 +91,24 @@ const getConversation = async (req, res) => {
     res.status(500).json({ error: 'Σφάλμα server' });
   }
 };
+const deleteMessage = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const message = await prisma.message.findUnique({ where: { id } });
+    if (!message) return res.status(404).json({ error: 'Μήνυμα δεν βρέθηκε' });
 
-module.exports = { sendMessage, getMyMessages, getConversation };
+    if (message.senderId === req.user.id) {
+      await prisma.message.update({ where: { id }, data: { deletedBySender: true } });
+    } else if (message.receiverId === req.user.id) {
+      await prisma.message.update({ where: { id }, data: { deletedByReceiver: true } });
+    } else {
+      return res.status(403).json({ error: 'Δεν έχετε δικαίωμα' });
+    }
+
+    res.json({ message: 'Διαγράφηκε!' });
+  } catch (err) {
+    res.status(500).json({ error: 'Σφάλμα server' });
+  }
+};
+
+module.exports = { sendMessage, getMyMessages, getConversation, deleteMessage };
