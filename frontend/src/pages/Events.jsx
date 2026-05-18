@@ -362,7 +362,7 @@ const handleBookEvent = (e, id) => {
                         onMouseEnter={(e) => { if(isAvailable) e.currentTarget.style.backgroundColor = '#c4aa82'; }}
                         onMouseLeave={(e) => { if(isAvailable) e.currentTarget.style.backgroundColor = COLORS.primary; }}
                       >
-                        {isAvailable ? 'ΚΡΑΤΗΣΗ' : 'ΜΗ ΔΙΑΘΕΣΙΜΟ'}
+                        {isAvailable ? 'ΠΕΡΙΣΣΟΤΕΡΑ' : 'ΜΗ ΔΙΑΘΕΣΙΜΟ'}
                       </button>
                     </div>
                   </div>

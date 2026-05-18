@@ -322,24 +322,41 @@ export default function EventDetail() {
                   <div style={{ color, fontSize: 12, marginBottom: 16 }}>
                     {t.available} / {t.quantity} διαθέσιμα
                   </div>
+                  {/* Έλεγχος αν η εκδήλωση είναι ενεργή και υπάρχουν εισιτήρια */}
                   {isActive && !sold ? (
-                    <button
-                      style={{
-                        ...styles.bookBtn,
-                        backgroundColor: isSelected ? COLORS.dark : COLORS.primary,
-                        color: isSelected ? COLORS.white : COLORS.dark,
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#c4aa82'}
-                      onMouseLeave={e => e.currentTarget.style.backgroundColor = isSelected ? COLORS.dark : COLORS.primary}
-                      onClick={() => {
-                        setSelectedTicket(t)
-                        setBookingSuccess(null)
-                        setBookingError(null)
-                        setShowModal(true)
-                      }}
-                    >
-                      ΚΡΑΤΗΣΗ
-                    </button>
+                    /* ΕΣΩΤΕΡΙΚΟΣ ΕΛΕΓΧΟΣ: Είναι ο χρήστης συνδεδεμένος; */
+                    localStorage.getItem('token') ? (
+                      <button
+                        style={{
+                          ...styles.bookBtn,
+                          backgroundColor: isSelected ? COLORS.dark : COLORS.primary,
+                          color: isSelected ? COLORS.white : COLORS.dark,
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#c4aa82'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = isSelected ? COLORS.dark : COLORS.primary}
+                        onClick={() => {
+                          setSelectedTicket(t)
+                          setBookingSuccess(null)
+                          setBookingError(null)
+                          setShowModal(true)
+                        }}
+                      >
+                        ΚΡΑΤΗΣΗ
+                      </button>
+                    ) : (
+                      /* ΑΝ ΔΕΝ ΕΙΝΑΙ ΣΥΝΔΕΔΕΜΕΝΟΣ: Δείξε μήνυμα προτροπής */
+                      <div style={{ textAlign: 'center', marginTop: 10 }}>
+                        <p style={{ fontSize: 11, color: '#b45309', fontWeight: 600, marginBottom: 8 }}>
+                          Συνδεθείτε για κράτηση
+                        </p>
+                        <button 
+                          style={{ ...styles.bookBtn, backgroundColor: '#eee', color: '#777', fontSize: 10 }}
+                          onClick={() => navigate('/login')}
+                        >
+                          ΕΙΣΟΔΟΣ
+                        </button>
+                      </div>
+                    )
                   ) : (
                     <span style={styles.soldOut}>
                       {isCancelled ? 'Ακυρώθηκε' : 'Εξαντλήθηκαν'}
