@@ -68,15 +68,15 @@ export default function AdminUsers() {
   const rest = users.filter(u => u.status !== 'PENDING');
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f5f0eb', fontFamily: 'Montserrat, sans-serif', padding: '60px 20px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f5f0eb', fontFamily: 'Poppins, sans-serif', padding: '60px 20px' }}>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-          <h1 style={{ textAlign: 'center', fontWeight: '700', fontSize: '1.5rem', letterSpacing: '2px', color: 'black' }}>
+          <h1 style={{ textAlign: 'center', fontWeight: '700', fontSize: '1.7rem', letterSpacing: '2px', color: 'black' }}>
             ΔΙΑΧΕΙΡΙΣΗ ΧΡΗΣΤΩΝ
           </h1>
           <button
             onClick={() => navigate('/events')}
-            style={{ padding: '10px 24px', backgroundColor: '#d2b893', border: '1px solid black', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', letterSpacing: '1px', fontSize: '0.8rem' }}
+            style={{ padding: '10px 24px', backgroundColor: '#d2b893', border: '1px solid black', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', letterSpacing: '1px', fontSize: '0.8rem' }}
           >
             ΕΚΔΗΛΩΣΕΙΣ
           </button>
@@ -103,9 +103,6 @@ export default function AdminUsers() {
             <UserCard key={user.id} user={user} onApprove={handleApprove} onReject={handleReject} onView={handleView} />
           ))}
         </div>
-      </div>
-      <div style={{ textAlign: 'center', marginTop: '60px'}}>
-            <img src="/account-manager (1).png" alt="" style={{ width: '150px' }} />
       </div>
 
       {/* Modal στοιχείων χρήστη */}
@@ -150,7 +147,7 @@ function UserCard({ user, onApprove, onReject, onView }) {
             {/* Κουμπί προβολής πάντα εμφανές */}
             <button
             onClick={() => onView(user.id)}
-            style={{ padding: '8px 16px', backgroundColor: 'transparent', color: '#2c2c2c', border: '1px solid #d2b893', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', fontSize: '0.8rem', letterSpacing: '1px' }}
+            style={{ padding: '8px 16px', backgroundColor: 'transparent', color: '#2c2c2c', border: '1px solid #d2b893', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontSize: '0.8rem', letterSpacing: '1px' }}
             >
             ΠΡΟΒΟΛΗ ΣΤΟΙΧΕΙΩΝ
             </button>
@@ -159,13 +156,13 @@ function UserCard({ user, onApprove, onReject, onView }) {
             <>
                 <button
                 onClick={() => onApprove(user.id)}
-                style={{ padding: '8px 16px', backgroundColor: '#4caf50', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', fontSize: '0.8rem', letterSpacing: '1px' }}
+                style={{ padding: '8px 16px', backgroundColor: '#4caf50', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontSize: '0.8rem', letterSpacing: '1px' }}
                 >
                 ΕΓΚΡΙΣΗ
                 </button>
                 <button
                 onClick={() => onReject(user.id)}
-                style={{ padding: '8px 16px', backgroundColor: '#e53935', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', fontSize: '0.8rem', letterSpacing: '1px' }}
+                style={{ padding: '8px 16px', backgroundColor: '#e53935', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontSize: '0.8rem', letterSpacing: '1px' }}
                 >
                 ΑΠΟΡΡΙΨΗ
                 </button>
@@ -177,7 +174,7 @@ function UserCard({ user, onApprove, onReject, onView }) {
     );
     }
 
-    function UserDetailsModal({ user, onClose }) {
+  function UserDetailsModal({ user, onClose }) {
     const fields = [
         { label: 'ΟΝΟΜΑ', value: `${user.firstName} ${user.lastName}` },
         { label: 'Username', value: `${user.username}` },
@@ -194,14 +191,18 @@ function UserCard({ user, onApprove, onReject, onView }) {
 
     return (
         <>
-        <div onClick={onClose} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 100 }} />
+        {/* ─── ΑΛΛΑΓΗ Z-INDEX ΣΤΟ OVERLAY (ΑΠΟ 100 ΣΕ 3000) ─── */}
+        <div onClick={onClose} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 3000 }} />
+        
+        {/* ─── ΑΛΛΑΓΗ Z-INDEX ΣΤΟ ΚΥΡΙΩΣ MODAL (ΑΠΟ 101 ΣΕ 3001) ─── */}
         <div style={{
             position: 'fixed', top: '50%', left: '50%',
             transform: 'translate(-50%, -50%)',
             backgroundColor: '#faf8f5',
-            padding: '40px', zIndex: 101,
+            padding: '40px', 
+            zIndex: 3001, // <--- Εδώ έγινε η αλλαγή
             minWidth: '400px', maxHeight: '85vh',
-            overflowY: 'auto', fontFamily: 'Montserrat, sans-serif'
+            overflowY: 'auto', fontFamily: 'Poppins, sans-serif'
         }}>
             <button onClick={onClose} style={{ position: 'absolute', top: '12px', right: '16px', background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#888' }}>✕</button>
 

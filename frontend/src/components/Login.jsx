@@ -53,7 +53,7 @@ export default function LoginModal({ onClose }) {
         zIndex: 101,
         minWidth: '340px',
         borderRadius: '1px',
-        fontFamily: 'Montserrat, sans-serif'
+        fontFamily: 'Poppins, sans-serif'
       }}>
         {/* Κουμπί κλεισίματος */}
         <button
@@ -86,7 +86,7 @@ export default function LoginModal({ onClose }) {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              style={{ width: '100%', padding: '10px', border: '1px solid #d2b893', outline: 'none', fontFamily: 'Montserrat, sans-serif', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '10px', border: '1px solid #d2b893', outline: 'none', fontFamily: 'Poppins, sans-serif', boxSizing: 'border-box' }}
             />
           </div>
           <div style={{ marginBottom: '24px' }}>
@@ -97,7 +97,7 @@ export default function LoginModal({ onClose }) {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{ width: '100%', padding: '10px', border: '1px solid #d2b893', outline: 'none', fontFamily: 'Montserrat, sans-serif', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '10px', border: '1px solid #d2b893', outline: 'none', fontFamily: 'Poppins, sans-serif', boxSizing: 'border-box' }}
             />
           </div>
           <button

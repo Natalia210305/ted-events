@@ -99,11 +99,11 @@ export default function Profile() {
     }
   };
 
-  const inputStyle = { width: '100%', padding: '12px', border: `1px solid ${COLORS.border}`, fontFamily: 'Montserrat, sans-serif', fontSize: '14px', boxSizing: 'border-box', backgroundColor: 'white', borderRadius: '4px' };
+  const inputStyle = { width: '100%', padding: '12px', border: `1px solid ${COLORS.border}`, fontFamily: 'Poppins, sans-serif', fontSize: '14px', boxSizing: 'border-box', backgroundColor: 'white', borderRadius: '4px' };
   const labelStyle = { fontSize: '11px', letterSpacing: '1px', color: '#888', display: 'block', marginBottom: '6px', fontWeight: '600' };
 
   return (
-    <div style={{ minHeight: 'calc(100vh - 90px)', backgroundColor: COLORS.bgLight, fontFamily: 'Montserrat, sans-serif', padding: '40px 20px' }}>
+    <div style={{ minHeight: 'calc(100vh - 90px)', backgroundColor: COLORS.bgLight, fontFamily: 'Poppins, sans-serif', padding: '40px 20px' }}>
       <div style={{ maxWidth: '650px', margin: '0 auto', backgroundColor: COLORS.white, padding: '4px 40px 40px 40px', borderRadius: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
         
         <h1 style={{ fontSize: '1.4rem', fontWeight: '700', letterSpacing: '2px', margin: '30px 0', textAlign: 'center', color: COLORS.dark }}>
@@ -170,10 +170,10 @@ export default function Profile() {
           </div>
 
           <div style={{ display: 'flex', gap: '12px', marginTop: '15px' }}>
-            <button type="submit" disabled={loading} style={{ flex: 1, padding: '14px', backgroundColor: COLORS.primary, color: COLORS.dark, border: 'none', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', fontWeight: '700', letterSpacing: '1px', fontSize: '14px', borderRadius: '50px', transition: '0.2s' }}>
+            <button type="submit" disabled={loading} style={{ flex: 1, padding: '14px', backgroundColor: COLORS.primary, color: COLORS.dark, border: 'none', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontWeight: '700', letterSpacing: '1px', fontSize: '14px', borderRadius: '50px', transition: '0.2s' }}>
               {loading ? 'ΑΠΟΘΗΚΕΥΣΗ...' : 'ΑΠΟΘΗΚΕΥΣΗ ΑΛΛΑΓΩΝ'}
             </button>
-            <button type="button" onClick={() => navigate(-1)} style={{ padding: '14px 25px', backgroundColor: 'transparent', border: `1px solid ${COLORS.border}`, cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', fontSize: '14px', borderRadius: '50px' }}>
+            <button type="button" onClick={() => navigate(-1)} style={{ padding: '14px 25px', backgroundColor: 'transparent', border: `1px solid ${COLORS.border}`, cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontSize: '14px', borderRadius: '50px' }}>
               ΑΚΥΡΟ
             </button>
           </div>

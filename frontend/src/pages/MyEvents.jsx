@@ -58,11 +58,11 @@ export default function MyEvents() {
   const formatDate = (str) => new Date(str).toLocaleDateString('el-GR', { day: '2-digit', month: 'short', year: 'numeric' });
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f5f0eb', fontFamily: 'Montserrat, sans-serif', padding: '60px 20px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f5f0eb', fontFamily: 'Poppins, sans-serif', padding: '60px 20px' }}>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
           <h1 style={{ fontSize: '1.5rem', fontWeight: '700', letterSpacing: '2px' }}>ΟΙ ΕΚΔΗΛΩΣΕΙΣ ΜΟΥ</h1>
-          <button onClick={() => navigate('/create-event')} style={{ padding: '10px 24px', backgroundColor: '#d2b893', border: 'none', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', fontWeight: '700', letterSpacing: '1px' }}>
+          <button onClick={() => navigate('/create-event')} style={{ padding: '10px 24px', backgroundColor: '#d2b893', border: 'none', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontWeight: '700', letterSpacing: '1px' }}>
             + ΝΕΑ ΕΚΔΗΛΩΣΗ
           </button>
         </div>
@@ -90,16 +90,16 @@ export default function MyEvents() {
               </span>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {event.status === 'DRAFT' && (
-                  <button onClick={() => handlePublish(event.id)} style={{ padding: '8px 16px', backgroundColor: '#4caf50', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', fontSize: '0.8rem' }}>
+                  <button onClick={() => handlePublish(event.id)} style={{ padding: '8px 16px', backgroundColor: '#4caf50', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontSize: '0.8rem' }}>
                     ΔΗΜΟΣΙΕΥΣΗ
                   </button>
                 )}
                 {event.status === 'PUBLISHED' && (
-                  <button onClick={() => handleCancel(event.id)} style={{ padding: '8px 16px', backgroundColor: '#e53935', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', fontSize: '0.8rem' }}>
+                  <button onClick={() => handleCancel(event.id)} style={{ padding: '8px 16px', backgroundColor: '#e53935', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontSize: '0.8rem' }}>
                     ΑΚΥΡΩΣΗ
                   </button>
                 )}
-                <button onClick={() => navigate(`/events/${event.id}`)} style={{ padding: '8px 16px', backgroundColor: 'transparent', border: '1px solid #d2b893', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', fontSize: '0.8rem' }}>
+                <button onClick={() => navigate(`/events/${event.id}`)} style={{ padding: '8px 16px', backgroundColor: 'transparent', border: '1px solid #d2b893', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontSize: '0.8rem' }}>
                   ΠΡΟΒΟΛΗ
                 </button>
                 {/* ── ΤΟ ΝΕΟ ΚΟΥΜΠΙ ΕΠΕΞΕΡΓΑΣΙΑΣ ── */}
@@ -113,7 +113,7 @@ export default function MyEvents() {
                       border: 'none', 
                       fontWeight: '600',
                       cursor: 'pointer', 
-                      fontFamily: 'Montserrat, sans-serif', 
+                      fontFamily: 'Poppins, sans-serif', 
                       fontSize: '0.8rem' 
                     }}
                   >
@@ -121,7 +121,7 @@ export default function MyEvents() {
                   </button>
                 )}
                 {(event.status === 'DRAFT' && event.bookings?.length === 0) && (
-                  <button onClick={() => handleDelete(event.id)} style={{ padding: '8px 16px', backgroundColor: 'transparent', border: '1px solid #e53935', color: '#e53935', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', fontSize: '0.8rem' }}>
+                  <button onClick={() => handleDelete(event.id)} style={{ padding: '8px 16px', backgroundColor: 'transparent', border: '1px solid #e53935', color: '#e53935', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontSize: '0.8rem' }}>
                     ΔΙΑΓΡΑΦΗ
                   </button>
                 )}

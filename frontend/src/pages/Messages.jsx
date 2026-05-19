@@ -124,7 +124,7 @@ export default function Messages() {
 
   const formatDate = (str) => new Date(str).toLocaleString('el-GR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-  const s = { fontFamily: 'Montserrat, sans-serif' };
+  const s = { fontFamily: 'Poppins, sans-serif' };
 
   return (
     <div style={styles.container}>
