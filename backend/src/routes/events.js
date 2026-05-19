@@ -24,7 +24,8 @@ router.get('/bookings/my', authenticate, getMyBookings);
 // 4. Δυναμικά routes με ID (Πάντα μετά από τα στατικά paths)
 router.get('/:id', getEventById);
 router.post('/', authenticate, authorize('ORGANIZER', 'ADMIN'), createEvent);
-router.patch('/:id', authenticate, authorize('ORGANIZER', 'ADMIN'), updateEvent);
+// Από router.patch σε router.put
+router.put('/:id', authenticate, authorize('ORGANIZER', 'ADMIN'), updateEvent);
 router.delete('/:id', authenticate, authorize('ADMIN'), deleteEvent);
 
 // 5. Κρατήσεις

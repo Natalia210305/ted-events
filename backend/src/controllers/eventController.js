@@ -81,9 +81,14 @@ const createEvent = async (req, res) => {
 const updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
-    const newData = req.body; // Τα νέα στοιχεία που έρχονται από τη φόρμα
+    
+    // 1. ΣΩΣΤΟ DESTRUCTURING: Παίρνουμε τα πεδία ξεχωριστά από το req.body
+    const { 
+      title, description, eventType, venue, address, city, country, 
+      latitude, longitude, startDateTime, endDateTime, capacity 
+    } = req.body;
 
-    // 1. Βρίσκουμε την εκδήλωση με τις τρέχουσες (παλιές) τιμές ΚΑΙ τις κρατήσεις
+    // 2. Βρίσκουμε την εκδήλωση με τις τρέχουσες (παλιές) τιμές ΚΑΙ τις κρατήσεις
     const oldEvent = await prisma.event.findUnique({
       where: { id: id },
       include: { bookings: true }
@@ -91,35 +96,49 @@ const updateEvent = async (req, res) => {
 
     if (!oldEvent) return res.status(404).json({ error: 'Η εκδήλωση δεν βρέθηκε' });
 
-    // 2. Ελέγχουμε τι ακριβώς άλλαξε για να φτιάξουμε το κατάλληλο μήνυμα
+    // 3. Ελέγχουμε τι ακριβώς άλλαξε για να φτιάξουμε το κατάλληλο μήνυμα
     let changeMessages = [];
 
     // Έλεγχος για αλλαγή ημερομηνίας/ώρας έναρξης
-    if (newData.startDateTime && new Date(newData.startDateTime).getTime() !== new Date(oldEvent.startDateTime).getTime()) {
+    if (startDateTime && new Date(startDateTime).getTime() !== new Date(oldEvent.startDateTime).getTime()) {
       changeMessages.push("την ημερομηνία/ώρα διεξαγωγής");
     }
 
     // Έλεγχος για αλλαγή τοποθεσίας/χώρου
-    if (newData.venue && newData.venue !== oldEvent.venue) {
-      changeMessages.push("τον χώρο διεξαγωγής ( venue )");
+    if (venue && venue !== oldEvent.venue) {
+      changeMessages.push("τον χώρο διεξαγωγής (venue)");
     }
 
-    // 3. Κάνουμε το κανονικό Update στη βάση
+    // 4. Εκτέλεση του Update στη βάση με σωστά Datatypes
     const updatedEvent = await prisma.event.update({
       where: { id: id },
-      data: newData
+      data: {
+        title,
+        description,
+        eventType,
+        venue,
+        address,
+        city,
+        country: country || 'Greece',
+        latitude: latitude !== '' && latitude !== null ? parseFloat(latitude) : null,
+        longitude: longitude !== '' && longitude !== null ? parseFloat(longitude) : null,
+        startDateTime: new Date(startDateTime),
+        endDateTime: new Date(endDateTime),
+        capacity: parseInt(capacity)
+      }
     });
 
-    // 4. Αν άλλαξε κάτι από τα παραπάνω ΚΑΙ υπάρχουν κρατήσεις, στέλνουμε ειδοποίηση
+    console.log(`✔ Το event "${updatedEvent.title}" ενημερώθηκε επιτυχώς στη βάση.`);
+
+    // 5. Αν άλλαξε κάτι από τα παραπάνω ΚΑΙ υπάρχουν κρατήσεις, στέλνουμε ειδοποίηση
     if (changeMessages.length > 0 && oldEvent.bookings && oldEvent.bookings.length > 0) {
       
-      // Φτιάχνουμε ένα όμορφο κείμενο, π.χ. "Ο διοργανωτής άλλαξε την ημερομηνία/ώρα διεξαγωγής στην εκδήλωση..."
       const MessageText = `Ο διοργανωτής τροποποίησε ${changeMessages.join(' και ')} στην εκδήλωση "${updatedEvent.title}". Παρακαλώ ελέγξτε τις νέες πληροφορίες.`;
 
       const notificationsData = oldEvent.bookings.map(booking => ({
-        userId: booking.attendeeId,
+        userId: booking.attendeeId, // Αντιστοίχιση με το πεδίο userId του πίνακα Notification
         message: MessageText,
-        type: 'EVENT_UPDATED', // Νέος τύπος ειδοποίησης
+        type: 'EVENT_UPDATED',
         isRead: false
       }));
 
@@ -135,7 +154,7 @@ const updateEvent = async (req, res) => {
 
   } catch (err) {
     console.error("❌ Σφάλμα κατά την ενημέρωση:", err);
-    return res.status(500).json({ error: 'Σφάλμα server' });
+    return res.status(500).json({ error: 'Σφάλμα server κατά την αποθήκευση.' });
   }
 };
 

@@ -76,46 +76,36 @@ export default function CreateEvent() {
   const addTicket = () => setTicketTypes([...ticketTypes, { name: '', price: '', quantity: '' }]);
   const removeTicket = (i) => setTicketTypes(ticketTypes.filter((_, idx) => idx !== i));
 
-  const handleSubmit = async () => {
-    setError('');
-    setLoading(true);
-    try {
-      const categories = form.categories.split(',').map(c => c.trim()).filter(Boolean);
-      
-      // Διαχείριση των προαιρετικών συντεταγμένων για να μην κρασάρει η Prisma
-      const lat = form.latitude !== '' ? parseFloat(form.latitude) : null;
-      const lng = form.longitude !== '' ? parseFloat(form.longitude) : null;
+const handleSubmit = async () => {
+  setError('');
+  setLoading(true);
+  try {
+    const categories = form.categories.split(',').map(c => c.trim()).filter(Boolean);
+    
+    const payload = {
+      ...form,
+      categories,
+    };
 
-      const payload = {
-        ...form,
-        latitude: lat,
-        longitude: lng,
-        capacity: parseInt(form.capacity),
-        categories,
-        ticketTypes: ticketTypes.map(t => ({
-          name: t.name,
-          price: parseFloat(t.price) || 0,
-          quantity: parseInt(t.quantity) || 0,
-        }))
-      };
-
-      if (isEditMode) {
-        // Αλλαγή σε PUT για την επεξεργασία
-        await api.put(`/events/${editEvent.id}`, payload);
-        alert('Η εκδήλωση ενημερώθηκε επιτυχώς!');
-      } else {
-        // Κανονικό POST για νέα εκδήλωση
-        await api.post('/events', payload);
-        alert('Η εκδήλωση δημιουργήθηκε επιτυχώς!');
-      }
-      
-      navigate('/my-events');
-    } catch (err) {
-      setError(err.response?.data?.error || 'Σφάλμα κατά την αποθήκευση');
-    } finally {
-      setLoading(false);
+    if (isEditMode) {
+      // Στέλνουμε PUT στο backend
+      const response = await api.put(`/events/${editEvent.id}`, payload);
+      console.log("Απάντηση backend για το update:", response.data);
+      alert('Η εκδήλωση ενημερώθηκε επιτυχώς!');
+    } else {
+      await api.post('/events', payload);
+      alert('Η εκδήλωση δημιουργήθηκε επιτυχώς!');
     }
-  };
+    
+    // Αφού πατηθεί το OK στο alert, σε γυρνάει πίσω στην λίστα σου
+    navigate('/my-events');
+  } catch (err) {
+    console.error("Σφάλμα στο Frontend:", err);
+    setError(err.response?.data?.error || 'Σφάλμα κατά την αποθήκευση');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const inputStyle = { width: '100%', padding: '10px', border: '1px solid #e4dfda', fontFamily: 'Montserrat, sans-serif', fontSize: '14px', boxSizing: 'border-box', backgroundColor: 'white' };
   const labelStyle = { fontSize: '11px', letterSpacing: '1px', color: '#888', display: 'block', marginBottom: '6px' };

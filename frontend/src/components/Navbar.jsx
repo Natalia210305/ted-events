@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'; // Πρόσθεσε το useEffect
+import React, { useState, useEffect } from 'react'; 
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import api from '../services/api'; // Βεβαιώσου ότι το path για το api service είναι σωστό
+import api from '../services/api'; 
 
 const COLORS = {
   primary: '#d2b893',      // Το μπεζ/χρυσό
@@ -16,25 +16,38 @@ function Navbar() {
   const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  
+  // 1. ΝΕΟ STATE ΓΙΑ ΤΙΣ ΕΙΔΟΠΟΙΗΣΕΙΣ
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+
   useEffect(() => {
-    const fetchUnreadCount = async () => {
+    const fetchUnreadData = async () => {
       const storedUser = localStorage.getItem('user');
       const userObj = storedUser ? JSON.parse(storedUser) : null;
       
       if (!userObj) return;
 
       try {
-        const response = await api.get('/messages/unread-count');
-        setUnreadCount(response.data.unreadCount);
+        // Κλήση Α: Για τον αριθμό των αδιάβαστων μηνυμάτων
+        const msgResponse = await api.get('/messages/unread-count');
+        setUnreadCount(msgResponse.data.unreadCount);
+
+        // Κλήση Β: Για τις ειδοποιήσεις (Φέρνουμε όλες και φιλτράρουμε τις unread)
+        const notifResponse = await api.get('/notifications');
+        const unreadNotifs = notifResponse.data.filter(n => n.isRead === false || !n.isRead).length;
+        setUnreadNotificationsCount(unreadNotifs);
+
       } catch (error) {
-        console.error("Error fetching unread count", error);
+        console.error("Error fetching unread counts", error);
       }
     };
 
-    fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 30000);
+    fetchUnreadData();
+    // Μειώνουμε το χρόνο σε 10 δευτερόλεπτα για να ενημερώνεται πιο γρήγορα το καμπανάκι!
+    const interval = setInterval(fetchUnreadData, 10000);
     return () => clearInterval(interval);
   }, [location.pathname]);
+
   // Απόκρυψη στην αρχική σελίδα
   if (location.pathname === '/') {
     return null;
@@ -51,19 +64,18 @@ function Navbar() {
     navigate('/');
   };
 
-  // Βοηθητική συνάρτηση για δυναμικό στυλ στο ενεργό Link (Υπογράμμιση)
   const getActiveStyle = (path) => {
     const isActive = location.pathname === path;
     return {
       ...linkStyle,
       color: isActive ? COLORS.primary : COLORS.dark,
       borderBottom: isActive ? `3px solid ${COLORS.primary}` : '3px solid transparent',
-      paddingBottom: '5px', // Δημιουργεί χώρο ανάμεσα στο κείμενο και την υπογράμμιση
+      paddingBottom: '5px', 
     };
   };
 
   const profileDropdownItems = [
-    { title: "ΤΟ ΠΡΟΦΙΛ ΜΟΥ", path: "/profile", desc: "Δείτε και επεξεργαστείτε τα στοιχεία soaps", icon: "👤" },
+    { title: "ΤΟ ΠΡΟΦΙΛ ΜΟΥ", path: "/profile", desc: "Δείτε και επεξεργαστείτε τα στοιχεία σας", icon: "👤" },
     { title: "ΡΥΘΜΙΣΕΙΣ", path: "/settings", desc: "Διαχειριστείτε τον λογαριασμό σας", icon: "⚙️" },
   ];
 
@@ -72,14 +84,13 @@ function Navbar() {
 
       {/* ─── LOGO ─── */}
       <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
-        {/* Το νέο σου Logo Image */}
         <img 
           src="/logo.png" 
           alt="EventQ Logo" 
           style={{ 
-            width: '150px',       // Ρυθμίζεις το πλάτος ανάλογα με το πώς σου κάθεται στο μάτι
-            height: '150px',      // Ρυθμίζεις το ύψος
-            objectFit: 'contain' // Κρατάει τις αναλογίες της εικόνας χωρίς να την παραμορφώνει
+            width: '150px',       
+            height: '150px',      
+            objectFit: 'contain' 
           }} 
         />
       </Link>
@@ -87,7 +98,6 @@ function Navbar() {
       {/* ─── ΔΥΝΑΜΙΚΟ LINKS AREA ─── */} 
       <div style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
         
-        {/* Κοινό μενού για όλους εκτός Admin */}
         {role !== 'ADMIN' && (
           <>
             <Link to="/" style={getActiveStyle('/')}>ΑΡΧΙΚΗ</Link>
@@ -95,7 +105,6 @@ function Navbar() {
           </>
         )}
 
-        {/* Μενού για ADMIN */}
         {role === 'ADMIN' && (
           <>
             <Link to="/admin/users" style={getActiveStyle('/admin/users')}>ΔΙΑΧΕΙΡΙΣΗ ΧΡΗΣΤΩΝ</Link>
@@ -103,7 +112,6 @@ function Navbar() {
           </>
         )}
 
-        {/* Μενού για ORGANIZER */}
         {role === 'ORGANIZER' && (
           <>
             <div style={dividerStyle} />
@@ -111,7 +119,6 @@ function Navbar() {
           </>
         )}
 
-        {/* Το βλέπουν όλοι εκτός από τον Admin (που συνήθως δεν κάνει κρατήσεις) */}
         {user && role !== 'ADMIN' && (
           <>
             <div style={dividerStyle} />
@@ -121,7 +128,7 @@ function Navbar() {
 
         {user && role !== 'ADMIN' && (
           <>
-            {/* ΑΝΤΙΚΑΤΑΣΤΑΣΗ ΕΔΩ */}
+            {/* Μηνύματα */}
             <Link to="/messages" style={iconLinkStyle} title="Messages">
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 💬
@@ -131,7 +138,19 @@ function Navbar() {
               </div>
             </Link>
             
-            <Link to="/notifications" style={{ ...iconLinkStyle, color: location.pathname === '/notifications' ? COLORS.primary : COLORS.dark }} title="Notifications">🔔</Link>
+            {/* Ειδοποιήσεις με Δυναμικό Κόκκινο Κυκλάκι */}
+            <Link 
+              to="/notifications" 
+              style={{ ...iconLinkStyle, color: location.pathname === '/notifications' ? COLORS.primary : COLORS.dark }} 
+              title="Notifications"
+            >
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                🔔
+                {unreadNotificationsCount > 0 && (
+                  <span style={badgeStyle}>{unreadNotificationsCount}</span>
+                )}
+              </div>
+            </Link>
           </>
         )}
 
@@ -234,7 +253,7 @@ const badgeStyle = {
   position: 'absolute',
   top: '-8px',
   right: '-8px',
-  backgroundColor: '#ff4d4f', // Κόκκινο "alert"
+  backgroundColor: '#ff4d4f', 
   color: 'white',
   borderRadius: '50%',
   padding: '2px 6px',
