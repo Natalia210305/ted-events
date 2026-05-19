@@ -12,9 +12,7 @@ const fieldLabels = {
   address: 'ΔΙΕΥΘΥΝΣΗ',
   city: 'ΠΟΛΗ',
   country: 'ΧΩΡΑ',
-  afm: 'ΑΦΜ',
-  latitude: 'ΓΕΩΓΡΑΦΙΚΟ ΠΛΑΤΟΣ (LATITUDE)',
-  longitude: 'ΓΕΩΓΡΑΦΙΚΟ ΜΗΚΟΣ (LONGITUDE)'
+  afm: 'ΑΦΜ'
 };
 
 const inputStyle = {
