@@ -37,44 +37,62 @@ const getEventById = async (req, res) => {
 
 const createEvent = async (req, res) => {
   try {
-    const { title, description, eventType, venue, address, city, country, latitude, longitude, startDateTime, endDateTime, capacity, categories, ticketTypes } = req.body;
+    // 1. Console log για να δεις ΣΤΟ ΤΕΡΜΑΤΙΚΟ σου τι στέλνει το Frontend
+    console.log("=== REQ.BODY RECEIVED ===", req.body);
 
-    // Έλεγχος capacity vs ticket quantities
-    const totalTickets = (ticketTypes || []).reduce((sum, t) => sum + t.quantity, 0);
-    if (totalTickets > capacity) {
+    const { 
+      title, description, eventType, venue, address, city, country, 
+      latitude, longitude, startDateTime, endDateTime, capacity, categories
+    } = req.body;
+
+    // Δικλείδα ασφαλείας: Αν το frontend στέλνει 'tickets' αντί για 'ticketTypes', το πιάνουμε
+    const incomingTickets = req.body.ticketTypes || req.body.tickets || [];
+
+    // Έλεγχος capacity vs ticket quantities (μετατρέπουμε σε αριθμούς για σιγουριά)
+    const parsedCapacity = parseInt(capacity) || 0;
+    const totalTickets = incomingTickets.reduce((sum, t) => sum + (parseInt(t.quantity) || 0), 0);
+    
+    if (totalTickets > parsedCapacity) {
       return res.status(400).json({ error: 'Το άθροισμα εισιτηρίων υπερβαίνει τη χωρητικότητα' });
     }
 
     const event = await prisma.event.create({
       data: {
-        title, description, eventType,
-        venue, address, city, country: country || 'Greece',
-        // Μέσα στο prisma.event.create
-        latitude: parseFloat(latitude), 
-        longitude: parseFloat(longitude),
+        title, 
+        description, 
+        eventType,
+        venue, 
+        address, 
+        city, 
+        country: country || 'Greece',
+        latitude: latitude ? parseFloat(latitude) : null, 
+        longitude: longitude ? parseFloat(longitude) : null,
         startDateTime: new Date(startDateTime),
         endDateTime: new Date(endDateTime),
-        capacity,
+        capacity: parsedCapacity, 
         organizerId: req.user.id,
         categories: {
           create: (categories || []).map(name => ({ name }))
         },
         ticketTypes: {
-          create: (ticketTypes || []).map(t => ({
-            name: t.name,
-            price: parseFloat(t.price),
-            quantity: parseInt(t.quantity),
-            available: parseInt(t.quantity),
+          // Διαβάζουμε από το incomingTickets που έχει σίγουρα τα δεδομένα
+          create: incomingTickets.map(t => ({
+            name: t.name || t.type || 'General Admission', // δικλείδα για το όνομα
+            price: parseFloat(t.price) || 0,
+            quantity: parseInt(t.quantity) || 0,
+            available: parseInt(t.quantity) || 0,
           }))
         }
       },
       include: { categories: true, ticketTypes: true }
     });
 
+    console.log(`✅ Το event "${event.title}" δημιουργήθηκε με ${event.ticketTypes.length} τύπους εισιτηρίων.`);
     res.status(201).json(event);
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Σφάλμα server' });
+    console.error("❌ Σφάλμα κατά τη δημιουργία εκδήλωσης:", err);
+    res.status(500).json({ error: 'Σφάλμα server κατά τη δημιουργία' });
   }
 };
 
@@ -129,7 +147,32 @@ const updateEvent = async (req, res) => {
     });
 
     console.log(`✔ Το event "${updatedEvent.title}" ενημερώθηκε επιτυχώς στη βάση.`);
-
+    // Ενημέρωση ticket types αν στάλθηκαν
+    if (req.body.ticketTypes && req.body.ticketTypes.length > 0) {
+      // Διαγραφή παλιών
+      await prisma.ticketType.deleteMany({ where: { eventId: id } });
+      
+      // Δημιουργία νέων
+      await prisma.ticketType.createMany({
+        data: req.body.ticketTypes.map(t => ({
+          eventId: id,
+          name: t.name,
+          price: parseFloat(t.price),
+          quantity: parseInt(t.quantity),
+          available: parseInt(t.quantity),
+        }))
+      });
+    }
+    // Ενημέρωση κατηγοριών
+    if (req.body.categories && req.body.categories.length > 0) {
+      await prisma.eventCategory.deleteMany({ where: { eventId: id } });
+      await prisma.eventCategory.createMany({
+        data: req.body.categories.map(name => ({
+          eventId: id,
+          name: typeof name === 'string' ? name : name.name
+        }))
+      });
+    }
     // 5. Αν άλλαξε κάτι από τα παραπάνω ΚΑΙ υπάρχουν κρατήσεις, στέλνουμε ειδοποίηση
     if (changeMessages.length > 0 && oldEvent.bookings && oldEvent.bookings.length > 0) {
       
@@ -141,11 +184,6 @@ const updateEvent = async (req, res) => {
         type: 'EVENT_UPDATED',
         isRead: false
       }));
-
-      // Αποθήκευση στον πίνακα Notification
-      await prisma.notification.createMany({
-        data: notificationsData
-      });
 
       console.log(`✅ Δημιουργήθηκαν ${notificationsData.length} ειδοποιήσεις για αλλαγή στοιχείων.`);
     }
@@ -170,32 +208,54 @@ const deleteEvent = async (req, res) => {
 
     if (!event) return res.status(404).json({ error: 'Event not found' });
 
-    // ΒΗΜΑ 2: Ενημερώνουμε το status
-    await prisma.event.update({
+    // ΒΗΜΑ 2: Ενημερώνουμε το status σε CANCELLED
+    const updatedEvent = await prisma.event.update({
       where: { id: id },
       data: { status: 'CANCELLED' }
     });
 
-    // ΒΗΜΑ 3: Δημιουργούμε τις ειδοποιήσεις
-    // Τώρα το event.bookings ΔΕΝ είναι undefined επειδή βάλαμε το include παραπάνω!
+    // ΒΗΜΑ 3: Δημιουργούμε και ΑΠΟΘΗΚΕΥΟΥΜΕ τις ειδοποιήσεις στη βάση
     if (event.bookings && event.bookings.length > 0) {
       const notificationsData = event.bookings.map(booking => ({
-        userId: booking.attendeeId,
+        userId: booking.attendeeId, // σιγουρέψου ότι ο πίνακας Notification έχει στήλη userId
         message: `Η εκδήλωση "${event.title}" ακυρώθηκε.`,
-        type: 'EVENT_CANCELLED'
+        type: 'EVENT_CANCELLED',
+        isRead: false
       }));
 
+      // ΑΥΤΗ Η ΓΡΑΜΜΗ ΕΛΕΙΠΕ ΚΑΙ ΔΕΝ ΑΠΟΘΗΚΕΥΟΝΤΑΝ:
       await prisma.notification.createMany({
         data: notificationsData
       });
-      console.log("Ειδοποιήσεις στάλθηκαν σε:", notificationsData.length, "χρήστες");
+
+      console.log(`✅ Ειδοποιήσεις στάλθηκαν σε: ${notificationsData.length} χρήστες`);
     }
 
-    res.json({ message: 'Επιτυχής ακύρωση' });
+    // Επιστρέφουμε JSON που περιέχει το updatedEvent για να το διαβάσει το Frontend
+    res.json({ message: 'Η εκδήλωση ακυρώθηκε επιτυχώς.', updatedEvent });
 
   } catch (err) {
-    console.error(err);
+    console.error("❌ Σφάλμα κατά την ακύρωση:", err);
     res.status(500).json({ error: 'Server error' });
+  }
+};
+
+const publishEvent = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Ενημερώνουμε το status της εκδήλωσης σε PUBLISHED
+    const updatedEvent = await prisma.event.update({
+      where: { id: id },
+      data: { status: 'PUBLISHED' }
+    });
+
+    console.log(`✅ Η εκδήλωση "${updatedEvent.title}" δημοσιεύτηκε επιτυχώς!`);
+    return res.json({ message: 'Η εκδήλωση δημοσιεύτηκε επιτυχώς.', updatedEvent });
+
+  } catch (err) {
+    console.error("❌ Σφάλμα κατά τη δημοσίευση:", err);
+    return res.status(500).json({ error: 'Σφάλμα server κατά τη δημοσίευση.' });
   }
 };
 
@@ -318,7 +378,8 @@ module.exports = {
   getEventById, 
   createEvent, 
   updateEvent, 
-  deleteEvent, 
+  deleteEvent,
+  publishEvent, 
   getMyEvents, 
   createBooking,
   getMyBookings // ΠΡΟΣΘΕΣΕ ΑΥΤΟ ΕΔΩ!

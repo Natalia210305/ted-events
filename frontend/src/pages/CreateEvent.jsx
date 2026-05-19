@@ -77,35 +77,44 @@ export default function CreateEvent() {
   const removeTicket = (i) => setTicketTypes(ticketTypes.filter((_, idx) => idx !== i));
 
 const handleSubmit = async () => {
-  setError('');
-  setLoading(true);
-  try {
-    const categories = form.categories.split(',').map(c => c.trim()).filter(Boolean);
-    
-    const payload = {
-      ...form,
-      categories,
-    };
+    setError('');
+    setLoading(true);
+    try {
+      // 1. Έλεγχος αν υπάρχουν εισιτήρια
+      if (!ticketTypes || ticketTypes.length === 0 || !ticketTypes[0].name) {
+        setError('Παρακαλώ προσθέστε τουλάχιστον έναν έγκυρο τύπο εισιτηρίου.');
+        setLoading(false);
+        return;
+      }
 
-    if (isEditMode) {
-      // Στέλνουμε PUT στο backend
-      const response = await api.put(`/events/${editEvent.id}`, payload);
-      console.log("Απάντηση backend για το update:", response.data);
-      alert('Η εκδήλωση ενημερώθηκε επιτυχώς!');
-    } else {
-      await api.post('/events', payload);
-      alert('Η εκδήλωση δημιουργήθηκε επιτυχώς!');
+      const categoriesArray = form.categories.split(',').map(c => c.trim()).filter(Boolean);
+      
+      // 2. ΕΝΩΝΟΥΜΕ ΤΑ ΣΤΟΙΧΕΙΑ ΤΗΣ ΦΟΡΜΑΣ ΜΑΖΙ ΜΕ ΤΑ ΕΙΣΙΤΗΡΙΑ
+      const payload = {
+        ...form,
+        categories: categoriesArray,
+        ticketTypes: ticketTypes // <--- ΑΥΤΟ ΗΤΑΝ ΤΟ ΚΛΕΙΔΙ ΠΟΥ ΕΛΕΙΠΕ!
+      };
+
+      console.log("🚀 Αποστολή Payload στο Backend:", payload);
+
+      if (isEditMode) {
+        const response = await api.put(`/events/${editEvent.id}`, payload);
+        console.log("Απάντηση backend για το update:", response.data);
+        alert('Η εκδήλωση ενημερώθηκε επιτυχώς!');
+      } else {
+        await api.post('/events', payload);
+        alert('Η εκδήλωση δημιουργήθηκε επιτυχώς!');
+      }
+      
+      navigate('/my-events');
+    } catch (err) {
+      console.error("Σφάλμα στο Frontend:", err);
+      setError(err.response?.data?.error || 'Σφάλμα κατά την αποθήκευση');
+    } finally {
+      setLoading(false);
     }
-    
-    // Αφού πατηθεί το OK στο alert, σε γυρνάει πίσω στην λίστα σου
-    navigate('/my-events');
-  } catch (err) {
-    console.error("Σφάλμα στο Frontend:", err);
-    setError(err.response?.data?.error || 'Σφάλμα κατά την αποθήκευση');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const inputStyle = { width: '100%', padding: '10px', border: '1px solid #e4dfda', fontFamily: 'Montserrat, sans-serif', fontSize: '14px', boxSizing: 'border-box', backgroundColor: 'white' };
   const labelStyle = { fontSize: '11px', letterSpacing: '1px', color: '#888', display: 'block', marginBottom: '6px' };

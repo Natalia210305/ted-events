@@ -61,8 +61,7 @@ export default function EventsBrowse() {
           cats: (e.categories || []).map(c => c.name),  // fix: [{name}] → ['Τεχνολογία']
           start: e.startDateTime,                        // fix: startDateTime → start
           available: (e.ticketTypes || []).reduce((sum, t) => sum + t.available, 0), // συνολικές θέσεις
-          minPrice: Math.min(...(e.ticketTypes || [{ price: 0 }]).map(t => t.price)), // ελάχιστη τιμή
-        }));
+          minPrice: e.ticketTypes?.length > 0 ? Math.min(...e.ticketTypes.map(t => t.price)) : 0,}));
 
         
         // Προσαρμογή: Βεβαιώσου ότι το mapping των πεδίων ταιριάζει με τα ονόματα της PostgreSQL σου

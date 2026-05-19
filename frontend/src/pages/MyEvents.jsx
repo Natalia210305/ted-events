@@ -27,7 +27,7 @@ export default function MyEvents() {
 
   const handlePublish = async (id) => {
     try {
-      await api.patch(`/events/${id}`, { status: 'PUBLISHED' });
+    await api.patch(`/events/${id}/publish`);
       fetchEvents();
     } catch (err) {
       setError('Σφάλμα δημοσίευσης');
@@ -35,14 +35,15 @@ export default function MyEvents() {
   };
 
   const handleCancel = async (id) => {
-    if (!window.confirm('Είστε σίγουροι ότι θέλετε να ακυρώσετε την εκδήλωση;')) return;
-    try {
-      await api.patch(`/events/${id}`, { status: 'CANCELLED' });
-      fetchEvents();
-    } catch (err) {
-      setError('Σφάλμα ακύρωσης');
-    }
-  };
+  if (!window.confirm('Είστε σίγουροι ότι θέλετε να ακυρώσετε την εκδήλωση;')) return;
+  try {
+    // ΣΩΣΤΟ: Καλούμε τη μέθοδο delete σκέτη στο ID της εκδήλωσης
+    await api.delete(`/events/${id}`);
+    fetchEvents();
+  } catch (err) {
+    setError('Σφάλμα ακύρωσης');
+  }
+};
 
   const handleDelete = async (id) => {
     if (!window.confirm('Είστε σίγουροι ότι θέλετε να διαγράψετε την εκδήλωση;')) return;

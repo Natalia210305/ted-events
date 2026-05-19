@@ -1,34 +1,25 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
-const { 
-  getAllEvents, 
-  getEventById, 
-  createEvent, 
-  updateEvent, 
-  deleteEvent, 
-  getMyEvents,
-  createBooking,
-  getMyBookings 
-} = require('../controllers/eventController');
+const { getAllEvents, getEventById, createEvent, updateEvent, deleteEvent, publishEvent, getMyEvents, createBooking, getMyBookings } = require('../controllers/eventController');
 
-// 1. Γενικά routes
+// 1. Ρούτες Συλλογών (Σκέτο /) - ΠΑΝΤΑ ΠΡΩΤΑ
 router.get('/', getAllEvents);
+router.post('/', authenticate, authorize('ORGANIZER', 'ADMIN'), createEvent);
 
-// 2. Routes για τον Διοργανωτή (Events που δημιούργησε)
+// 2. Στατικά Routes για τον Διοργανωτή
 router.get('/my', authenticate, authorize('ORGANIZER', 'ADMIN'), getMyEvents);  
 
-// 3. ΙΣΤΟΡΙΚΟ ΚΡΑΤΗΣΕΩΝ (Πρέπει να είναι ΠΡΙΝ το /:id)
+// 3. Ιστορικό Κρατήσεων Χρήστη (Στατικό path, πριν από το :id)
 router.get('/bookings/my', authenticate, getMyBookings); 
 
-// 4. Δυναμικά routes με ID (Πάντα μετά από τα στατικά paths)
+// 4. Δυναμικά Routes με ID (Πάντα στο τέλος του αρχείου!)
 router.get('/:id', getEventById);
-router.post('/', authenticate, authorize('ORGANIZER', 'ADMIN'), createEvent);
-// Από router.patch σε router.put
 router.put('/:id', authenticate, authorize('ORGANIZER', 'ADMIN'), updateEvent);
-router.delete('/:id', authenticate, authorize('ADMIN'), deleteEvent);
-
-// 5. Κρατήσεις
+// Επιτρέπουμε και στον ORGANIZER να κάνει delete (ακύρωση)
+router.delete('/:id', authenticate, authorize('ORGANIZER', 'ADMIN'), deleteEvent);
+// 5. Ειδικές ενέργειες πάνω σε συγκεκριμένο Event (Δημοσίευση & Κρατήσεις)
+router.patch('/:id/publish', authenticate, authorize('ORGANIZER', 'ADMIN'), publishEvent);
 router.post('/:id/bookings', authenticate, createBooking);
 
 module.exports = router;
