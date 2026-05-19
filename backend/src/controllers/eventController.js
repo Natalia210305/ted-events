@@ -81,33 +81,61 @@ const createEvent = async (req, res) => {
 const updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("Προσπάθεια ακύρωσης για το Event ID:", id); // Βάλε αυτό το log για να το βλέπεις στο τερματικό
-    const { title, description, eventType, venue, address, city, country, latitude, longitude, startDateTime, endDateTime, capacity, status } = req.body;
+    const newData = req.body; // Τα νέα στοιχεία που έρχονται από τη φόρμα
 
-    // Αν ακυρώνεται, ενημέρωσε και τις κρατήσεις
-    if (status === 'CANCELLED') {
-      await prisma.booking.updateMany({
-        where: { eventId: id, status: 'CONFIRMED' },
-        data: { status: 'CANCELLED' }
-      });
-    }
-
-    const event = await prisma.event.update({
-      where: { id },
-      data: {
-        title, description, eventType,
-        venue, address, city, country,
-        latitude, longitude,
-        startDateTime: startDateTime ? new Date(startDateTime) : undefined,
-        endDateTime: endDateTime ? new Date(endDateTime) : undefined,
-        capacity, status
-      }
+    // 1. Βρίσκουμε την εκδήλωση με τις τρέχουσες (παλιές) τιμές ΚΑΙ τις κρατήσεις
+    const oldEvent = await prisma.event.findUnique({
+      where: { id: id },
+      include: { bookings: true }
     });
 
-    res.json(event);
+    if (!oldEvent) return res.status(404).json({ error: 'Η εκδήλωση δεν βρέθηκε' });
+
+    // 2. Ελέγχουμε τι ακριβώς άλλαξε για να φτιάξουμε το κατάλληλο μήνυμα
+    let changeMessages = [];
+
+    // Έλεγχος για αλλαγή ημερομηνίας/ώρας έναρξης
+    if (newData.startDateTime && new Date(newData.startDateTime).getTime() !== new Date(oldEvent.startDateTime).getTime()) {
+      changeMessages.push("την ημερομηνία/ώρα διεξαγωγής");
+    }
+
+    // Έλεγχος για αλλαγή τοποθεσίας/χώρου
+    if (newData.venue && newData.venue !== oldEvent.venue) {
+      changeMessages.push("τον χώρο διεξαγωγής ( venue )");
+    }
+
+    // 3. Κάνουμε το κανονικό Update στη βάση
+    const updatedEvent = await prisma.event.update({
+      where: { id: id },
+      data: newData
+    });
+
+    // 4. Αν άλλαξε κάτι από τα παραπάνω ΚΑΙ υπάρχουν κρατήσεις, στέλνουμε ειδοποίηση
+    if (changeMessages.length > 0 && oldEvent.bookings && oldEvent.bookings.length > 0) {
+      
+      // Φτιάχνουμε ένα όμορφο κείμενο, π.χ. "Ο διοργανωτής άλλαξε την ημερομηνία/ώρα διεξαγωγής στην εκδήλωση..."
+      const MessageText = `Ο διοργανωτής τροποποίησε ${changeMessages.join(' και ')} στην εκδήλωση "${updatedEvent.title}". Παρακαλώ ελέγξτε τις νέες πληροφορίες.`;
+
+      const notificationsData = oldEvent.bookings.map(booking => ({
+        userId: booking.attendeeId,
+        message: MessageText,
+        type: 'EVENT_UPDATED', // Νέος τύπος ειδοποίησης
+        isRead: false
+      }));
+
+      // Αποθήκευση στον πίνακα Notification
+      await prisma.notification.createMany({
+        data: notificationsData
+      });
+
+      console.log(`✅ Δημιουργήθηκαν ${notificationsData.length} ειδοποιήσεις για αλλαγή στοιχείων.`);
+    }
+
+    return res.json({ message: 'Η εκδήλωση ενημερώθηκε επιτυχώς.', updatedEvent });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Σφάλμα server' });
+    console.error("❌ Σφάλμα κατά την ενημέρωση:", err);
+    return res.status(500).json({ error: 'Σφάλμα server' });
   }
 };
 

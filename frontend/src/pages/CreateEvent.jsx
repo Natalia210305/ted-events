@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 const CITIES = ['Αθήνα','Θεσσαλονίκη','Πάτρα','Ηράκλειο','Λάρισα','Βόλος','Ιωάννινα','Χανιά','Ρόδος','Καβάλα','Σέρρες','Αλεξανδρούπολη','Τρίκαλα','Καλαμάτα','Χαλκίδα','Λαμία','Κομοτηνή','Κέρκυρα','Μυτιλήνη','Κοζάνη','Αγρίνιο','Βέροια','Δράμα','Ξάνθη'];
@@ -8,20 +8,60 @@ const EVENT_TYPES = ['Συναυλία','Θεατρική Παράσταση','�
 
 export default function CreateEvent() {
   const navigate = useNavigate();
+  const location = useLocation(); 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const editEvent = location.state?.editEvent;
+  const isEditMode = !!editEvent;
+
+  // 1. ΣΩΣΤΗ ΑΡΧΙΚΟΠΟΙΗΣΗ: Γεμίζουμε τη φόρμα ΑΝ έχουμε editEvent
   const [form, setForm] = useState({
-    title: '', description: '', eventType: '',
-    venue: '', address: '', city: '', country: 'Greece',
-    latitude: '', longitude: '',
-    startDateTime: '', endDateTime: '',
-    capacity: '', categories: '',
+    title: editEvent?.title || '',
+    description: editEvent?.description || editEvent?.desc || '',
+    eventType: editEvent?.eventType || '',
+    venue: editEvent?.venue || '',
+    address: editEvent?.address || '',
+    city: editEvent?.city || '',
+    country: editEvent?.country || 'Greece',
+    latitude: editEvent?.geoLocation?.latitude ?? editEvent?.latitude ?? '',
+    longitude: editEvent?.geoLocation?.longitude ?? editEvent?.longitude ?? '',
+    startDateTime: editEvent?.startDateTime ? editEvent.startDateTime.substring(0, 16) : '',
+    endDateTime: editEvent?.endDateTime ? editEvent.endDateTime.substring(0, 16) : '',
+    capacity: editEvent?.capacity || '',
+    categories: editEvent?.categories ? editEvent.categories.map(c => c.name || c).join(', ') : editEvent?.cats ? editEvent.cats.join(', ') : '',
   });
 
-  const [ticketTypes, setTicketTypes] = useState([
-    { name: '', price: '', quantity: '' }
-  ]);
+  // 2. ΣΩΣΤΗ ΑΡΧΙΚΟΠΟΙΗΣΗ ΕΙΣΙΤΗΡΙΩΝ
+  const [ticketTypes, setTicketTypes] = useState(
+    editEvent?.ticketTypes && editEvent.ticketTypes.length > 0
+      ? editEvent.ticketTypes.map(t => ({ name: t.name, price: t.price.toString(), quantity: t.quantity.toString() }))
+      : [{ name: '', price: '', quantity: '' }]
+  );
+
+  // 3. Συγχρονισμός σε περίπτωση που αλλάξει το state
+  useEffect(() => {
+    if (editEvent) {
+      setForm({
+        title: editEvent.title,
+        description: editEvent.description || editEvent.desc || '',
+        eventType: editEvent.eventType,
+        venue: editEvent.venue,
+        address: editEvent.address,
+        city: editEvent.city,
+        country: editEvent.country || 'Greece',
+        latitude: editEvent.geoLocation?.latitude ?? editEvent.latitude ?? '',
+        longitude: editEvent.geoLocation?.longitude ?? editEvent.longitude ?? '',
+        startDateTime: editEvent.startDateTime ? editEvent.startDateTime.substring(0, 16) : '',
+        endDateTime: editEvent.endDateTime ? editEvent.endDateTime.substring(0, 16) : '',
+        capacity: editEvent.capacity,
+        categories: editEvent.categories ? editEvent.categories.map(c => c.name || c).join(', ') : editEvent.cats ? editEvent.cats.join(', ') : '',
+      });
+      if (editEvent.ticketTypes && editEvent.ticketTypes.length > 0) {
+        setTicketTypes(editEvent.ticketTypes.map(t => ({ name: t.name, price: t.price.toString(), quantity: t.quantity.toString() })));
+      }
+    }
+  }, [editEvent]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -41,19 +81,37 @@ export default function CreateEvent() {
     setLoading(true);
     try {
       const categories = form.categories.split(',').map(c => c.trim()).filter(Boolean);
-      await api.post('/events', {
+      
+      // Διαχείριση των προαιρετικών συντεταγμένων για να μην κρασάρει η Prisma
+      const lat = form.latitude !== '' ? parseFloat(form.latitude) : null;
+      const lng = form.longitude !== '' ? parseFloat(form.longitude) : null;
+
+      const payload = {
         ...form,
+        latitude: lat,
+        longitude: lng,
         capacity: parseInt(form.capacity),
         categories,
         ticketTypes: ticketTypes.map(t => ({
           name: t.name,
-          price: parseFloat(t.price),
-          quantity: parseInt(t.quantity),
+          price: parseFloat(t.price) || 0,
+          quantity: parseInt(t.quantity) || 0,
         }))
-      });
+      };
+
+      if (isEditMode) {
+        // Αλλαγή σε PUT για την επεξεργασία
+        await api.put(`/events/${editEvent.id}`, payload);
+        alert('Η εκδήλωση ενημερώθηκε επιτυχώς!');
+      } else {
+        // Κανονικό POST για νέα εκδήλωση
+        await api.post('/events', payload);
+        alert('Η εκδήλωση δημιουργήθηκε επιτυχώς!');
+      }
+      
       navigate('/my-events');
     } catch (err) {
-      setError(err.response?.data?.error || 'Σφάλμα κατά τη δημιουργία');
+      setError(err.response?.data?.error || 'Σφάλμα κατά την αποθήκευση');
     } finally {
       setLoading(false);
     }
@@ -63,8 +121,13 @@ export default function CreateEvent() {
   const labelStyle = { fontSize: '11px', letterSpacing: '1px', color: '#888', display: 'block', marginBottom: '6px' };
 
   return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f5f0eb', fontFamily: 'Montserrat, sans-serif', padding: '60px 20px', overflowY: 'auto' }}>      <div style={{ maxWidth: '700px', margin: '0 auto' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: '700', letterSpacing: '2px', marginBottom: '40px' }}>ΔΗΜΙΟΥΡΓΙΑ ΕΚΔΗΛΩΣΗΣ</h1>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f5f0eb', fontFamily: 'Montserrat, sans-serif', padding: '60px 20px', overflowY: 'auto' }}> 
+      <div style={{ maxWidth: '700px', margin: '0 auto' }}>
+        
+        {/* ΔΥΝΑΜΙΚΟΣ ΤΙΤΛΟΣ */}
+        <h1 style={{ fontSize: '1.5rem', fontWeight: '700', letterSpacing: '2px', marginBottom: '40px' }}>
+          {isEditMode ? 'ΕΠΕΞΕΡΓΑΣΙΑ ΕΚΔΗΛΩΣΗΣ' : 'ΔΗΜΙΟΥΡΓΙΑ ΕΚΔΗΛΩΣΗΣ'}
+        </h1>
 
         {error && <p style={{ color: 'red', marginBottom: '16px' }}>{error}</p>}
 
@@ -165,8 +228,9 @@ export default function CreateEvent() {
         </div>
 
         <div style={{ display: 'flex', gap: '12px' }}>
+          {/* ΔΥΝΑΜΙΚΟ ΚΕΙΜΕΝΟ ΚΟΥΜΠΙΟΥ */}
           <button onClick={handleSubmit} disabled={loading} style={{ padding: '14px 32px', backgroundColor: '#d2b893', border: 'none', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', fontWeight: '700', letterSpacing: '1px', fontSize: '14px' }}>
-            {loading ? 'ΑΠΟΘΗΚΕΥΣΗ...' : 'ΔΗΜΙΟΥΡΓΙΑ ΕΚΔΗΛΩΣΗΣ'}
+            {loading ? 'ΑΠΟΘΗΚΕΥΣΗ...' : isEditMode ? 'ΑΠΟΘΗΚΕΥΣΗ ΑΛΛΑΓΩΝ' : 'ΔΗΜΙΟΥΡΓΙΑ ΕΚΔΗΛΩΣΗΣ'}
           </button>
           <button onClick={() => navigate(-1)} style={{ padding: '14px 32px', backgroundColor: 'transparent', border: '1px solid #ccc', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', fontSize: '14px' }}>
             ΑΚΥΡΟ

@@ -101,6 +101,24 @@ export default function MyEvents() {
                 <button onClick={() => navigate(`/events/${event.id}`)} style={{ padding: '8px 16px', backgroundColor: 'transparent', border: '1px solid #d2b893', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', fontSize: '0.8rem' }}>
                   ΠΡΟΒΟΛΗ
                 </button>
+                {/* ── ΤΟ ΝΕΟ ΚΟΥΜΠΙ ΕΠΕΞΕΡΓΑΣΙΑΣ ── */}
+                {event.status !== 'CANCELLED' && (
+                  <button 
+                    onClick={() => navigate('/create-event', { state: { editEvent: event } })} 
+                    style={{ 
+                      padding: '8px 16px', 
+                      backgroundColor: '#d2b893', // Μπεζ/Χρυσό για να ταιριάζει με το brand σου
+                      color: '#2c2c2c', 
+                      border: 'none', 
+                      fontWeight: '600',
+                      cursor: 'pointer', 
+                      fontFamily: 'Montserrat, sans-serif', 
+                      fontSize: '0.8rem' 
+                    }}
+                  >
+                    ΕΠΕΞΕΡΓΑΣΙΑ
+                  </button>
+                )}
                 {(event.status === 'DRAFT' && event.bookings?.length === 0) && (
                   <button onClick={() => handleDelete(event.id)} style={{ padding: '8px 16px', backgroundColor: 'transparent', border: '1px solid #e53935', color: '#e53935', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', fontSize: '0.8rem' }}>
                     ΔΙΑΓΡΑΦΗ
