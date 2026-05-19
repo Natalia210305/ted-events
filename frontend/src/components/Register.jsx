@@ -17,7 +17,7 @@ const fieldLabels = {
 
 const inputStyle = {
   width: '100%', padding: '10px',
-  border: '1px solid #d2b893', outline: 'none',
+  border: '1px solid #d2b893', borderRadius: '3px', outline: 'none',
   fontFamily: 'Poppins, sans-serif',
   boxSizing: 'border-box'
 };
@@ -76,7 +76,7 @@ export default function RegisterModal({ onClose }) {
     minWidth: '340px',
     maxHeight: '85vh',
     overflowY: 'auto',
-    borderRadius: '1px',
+    borderRadius: '8px',
     fontFamily: 'Poppins, sans-serif'
   };
 
@@ -152,7 +152,7 @@ export default function RegisterModal({ onClose }) {
                   onChange={handleChange}
                   style={{
                     width: '100%', padding: '10px',
-                    border: '1px solid #d2b893', outline: 'none',
+                    border: '1px solid #d2b893', borderRadius: '3px', outline: 'none',
                     fontFamily: 'Poppins, sans-serif',
                     boxSizing: 'border-box',
                     backgroundColor: 'white',
@@ -165,7 +165,7 @@ export default function RegisterModal({ onClose }) {
               </div>
               <button
                 type="submit"
-                style={{ width: '100%', padding: '12px', backgroundColor: '#d2b893', color: 'black', border: 'none', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', letterSpacing: '2px', fontWeight: '600', fontSize: '14px' }}
+                style={{ width: '100%', padding: '12px', backgroundColor: '#d2b893', color: 'black', border: 'none', borderRadius: '3px', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', letterSpacing: '2px', fontWeight: '600', fontSize: '14px' }}
               >
                 ΕΓΓΡΑΦΗ
               </button>
