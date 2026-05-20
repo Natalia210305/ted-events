@@ -75,7 +75,7 @@ function Navbar() {
     { title: "ΡΥΘΜΙΣΕΙΣ", path: "/settings", desc: "Διαχειριστείτε τον λογαριασμό σας", icon: "⚙️" },
   ];
 
-return (
+  return (
     <nav style={navStyle}>
       
       {/* ─── 1. ΑΡΙΣΤΕΡΑ: LOGO ─── */}
@@ -99,16 +99,24 @@ return (
         padding: '0 20px'
       }}>
         
-        {/* Σελίδες για απλούς Χρήστες / Διοργανωτές */}
+        {/* Κουμπί Αρχικής - Εμφανίζεται μόνο όταν ο χρήστης δεν είναι Admin */}
         {role !== 'ADMIN' && (
-          <Link to="/events" style={getActiveStyle('/events')}>ΠΕΡΙΗΓΗΣΗ ΣΕ ΕΚΔΗΛΩΣΕΙΣ</Link>
+          <Link to="/" style={getActiveStyle('/')}>ΑΡΧΙΚΗ</Link>
+        )}
+
+        {/* Σελίδες για απλούς Χρήστες / Διοργανωτές / Επισκέπτες */}
+        {role !== 'ADMIN' && (
+          <>
+            <div style={dividerStyle} /> {/* Η κάθετη γραμμή ανάμεσα σε Αρχική και Περιήγηση */}
+            <Link to="/events" style={getActiveStyle('/events')}>ΠΕΡΙΗΓΗΣΗ ΣΕ ΕΚΔΗΛΩΣΕΙΣ</Link>
+          </>
         )}
 
         {/* Σελίδες αποκλειστικά για τον ADMIN */}
         {role === 'ADMIN' && (
           <>
             <Link to="/admin/users" style={getActiveStyle('/admin/users')}>👥 ΔΙΑΧΕΙΡΙΣΗ ΧΡΗΣΤΩΝ</Link>
-            <div style={dividerStyle} /> {/* <-- Η ΚΑΘΕΤΗ ΓΡΑΜΜΗ ΜΠΗΚΕ ΕΔΩ */}
+            <div style={dividerStyle} />
             <Link to="/admin/export" style={getActiveStyle('/admin/export')}>📦 ΕΞΑΓΩΓΗ ΕΚΔΗΛΩΣΕΩΝ</Link>
           </>
         )}
@@ -116,6 +124,7 @@ return (
         {/* Επιλογές Διοργανωτή */}
         {role === 'ORGANIZER' && (
           <>
+            <div style={dividerStyle} />
             <Link to="/my-events" style={getActiveStyle('/my-events')}>ΟΙ ΕΚΔΗΛΩΣΕΙΣ ΜΟΥ</Link>
           </>
         )}
@@ -123,6 +132,7 @@ return (
         {/* Ιστορικό Κρατήσεων */}
         {user && role !== 'ADMIN' && (
           <>
+            <div style={dividerStyle} />
             <Link to="/my-bookings" style={getActiveStyle('/my-bookings')}>ΙΣΤΟΡΙΚΟ</Link>
           </>
         )}
@@ -199,7 +209,7 @@ return (
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
-              fontSize: '0.95rem', // Μεγαλώνουμε λίγο το μέγεθος για να φαίνεται ωραίο το emoji 👤
+              fontSize: '0.95rem', 
               whiteSpace: 'nowrap'
             }}>
               <span style={{ fontSize: '1rem' }}>👤</span> ΠΡΟΦΙΛ
@@ -255,7 +265,7 @@ const navStyle = {
   display: 'flex', 
   alignItems: 'center', 
   justifyContent: 'space-between',
-  padding: '0 24px', // <-- ΑΛΛΑΓΗ ΕΔΩ: Μειώνουμε το padding για να απλωθεί στις άκρες
+  padding: '0 24px', 
   height: '90px', 
   background: COLORS.white, 
   boxShadow: '0 4px 25px rgba(0,0,0,0.03)', 
@@ -318,7 +328,7 @@ const dropdownCard = {
   width: '320px',
   backgroundColor: COLORS.white,
   borderRadius: '16px',
-  boxShadow: '0 20px 40px rgba(0,0,0,0.08)', // Soft εφέ βάθους
+  boxShadow: '0 20px 40px rgba(0,0,0,0.08)', 
   padding: '12px',
   display: 'flex',
   flexDirection: 'column',
