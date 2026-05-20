@@ -25,25 +25,25 @@ export default function Home() {
             backgroundColor: 'rgba(249, 247, 245, 0.9)',
             padding: '40px',
             textAlign: 'center',
-            borderRadius: '1px',
+            borderRadius: '5px',
             minWidth: '350px'
         }}>
-            <h1 style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '1.8rem', fontWeight: '700', marginBottom: '30px', color: '#2c2c2c' }}>
+            <h1 style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.8rem', fontWeight: '700', marginBottom: '30px', color: '#2c2c2c' }}>
             Οργάνωσε-Ανακάλυψε Εκδηλώσεις
             </h1>
-            <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '1rem', color: '#555', marginBottom: '25px', marginTop: '-20px', lineHeight: '1.6' }}>
+            <p style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1rem', color: '#555', marginBottom: '25px', marginTop: '-20px', lineHeight: '1.6' }}>
             Η πλατφόρμα σου για να βρίσκεις μοναδικές εκδηλώσεις ή να δημιουργείς τις δικές σου, εύκολα και γρήγορα.
             </p>
             <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
             <button
                 onClick={() => setShowLogin(true)}  
-                style={{ padding: '12px 40px', fontSize: '14px', cursor: 'pointer', backgroundColor: '#d2b893', color: 'black', border: 'none', borderRadius: '1px', fontFamily: 'Montserrat, sans-serif', letterSpacing: '2px', fontWeight: '600' }}
+                style={{ padding: '12px 40px', fontSize: '14px', cursor: 'pointer', backgroundColor: '#d2b893', color: 'black', border: 'none', borderRadius: '3px', fontFamily: 'Poppins, sans-serif', letterSpacing: '2px', fontWeight: '600' }}
             >
                 ΣΥΝΔΕΣΗ
             </button>
             <button
                 onClick={() => setShowRegister(true)}
-                style={{ padding: '12px 40px', fontSize: '14px', cursor: 'pointer', backgroundColor: '#d2b893', color: 'black', border: 'none', borderRadius: '1px', fontFamily: 'Montserrat, sans-serif', letterSpacing: '2px', fontWeight: '600' }}
+                style={{ padding: '12px 40px', fontSize: '14px', cursor: 'pointer', backgroundColor: '#d2b893', color: 'black', border: 'none', borderRadius: '3px', fontFamily: 'Poppins, sans-serif', letterSpacing: '2px', fontWeight: '600' }}
             >
                 ΕΓΓΡΑΦΗ
             </button>
@@ -53,7 +53,7 @@ export default function Home() {
                     localStorage.removeItem('user');
                     navigate('/events'); 
                 }}                
-                style={{ padding: '12px 40px', fontSize: '14px', cursor: 'pointer', backgroundColor: 'transparent', color: 'black', border: '1px solid #d2b893', borderRadius: '1px', fontFamily: 'Montserrat, sans-serif', letterSpacing: '2px', fontWeight: '600' }}
+                style={{ padding: '12px 40px', fontSize: '14px', cursor: 'pointer', backgroundColor: 'transparent', color: 'black', border: '1px solid #d2b893', borderRadius: '3px', fontFamily: 'Poppins, sans-serif', letterSpacing: '2px', fontWeight: '600' }}
             >
                 ΠΕΡΙΗΓΗΣΗ
             </button>

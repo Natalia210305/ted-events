@@ -445,20 +445,20 @@ const styles = {
   page: {
     backgroundColor: '#faf9f8', // Ίδιο απαλό φόντο με το Browse
     minHeight: '100vh',
-    fontFamily: 'Montserrat, sans-serif',
+    fontFamily: 'Poppins, sans-serif',
     color: COLORS.dark,
     overflowY: 'auto',
   },
   statusPage: {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     minHeight: '100vh', backgroundColor: '#faf9f8',
-    fontFamily: 'Montserrat, sans-serif',
+    fontFamily: 'Poppins, sans-serif',
   },
   topBar: { maxWidth: 900, margin: '0 auto', padding: '24px 24px 0' },
   backBtn: {
     background: 'none', border: 'none', cursor: 'pointer',
     fontSize: 13, fontWeight: 700, letterSpacing: 1,
-    color: COLORS.textMuted, fontFamily: 'Montserrat, sans-serif', padding: 0,
+    color: COLORS.textMuted, fontFamily: 'Poppins, sans-serif', padding: 0,
   },
   header: {
     backgroundColor: COLORS.white,
@@ -506,7 +506,7 @@ const styles = {
   progressFill: { height: '100%', borderRadius: 2, transition: 'width .4s' },
   bookBtn: {
     width: '100%', padding: '11px 0', border: 'none', borderRadius: 1,
-    fontFamily: 'Montserrat, sans-serif', fontSize: 12, fontWeight: 700,
+    fontFamily: 'Poppins, sans-serif', fontSize: 12, fontWeight: 700,
     letterSpacing: 1, cursor: 'pointer', transition: 'background-color .15s',
   },
   soldOut: { display: 'block', textAlign: 'center', color: COLORS.textMuted, fontSize: 13 },
@@ -530,7 +530,7 @@ const styles = {
   modal: {
     backgroundColor: COLORS.white, border: `1px solid ${COLORS.border}`,
     borderRadius: 1, padding: 32, width: '100%', maxWidth: 440,
-    fontFamily: 'Montserrat, sans-serif',
+    fontFamily: 'Poppins, sans-serif',
   },
   modalTitle: { fontSize: 18, fontWeight: 700, marginBottom: 4, color: COLORS.dark },
   modalEvent: { color: COLORS.textMuted, fontSize: 13, marginBottom: 24 },
@@ -561,12 +561,12 @@ const styles = {
     flex: 1, padding: '12px 0', borderRadius: 1,
     backgroundColor: COLORS.bgLight, border: `1px solid ${COLORS.border}`,
     color: COLORS.textMuted, cursor: 'pointer',
-    fontFamily: 'Montserrat, sans-serif', fontSize: 12, fontWeight: 700,
+    fontFamily: 'Poppins, sans-serif', fontSize: 12, fontWeight: 700,
   },
   confirmBtn: {
     flex: 2, padding: '12px 0', borderRadius: 1,
     backgroundColor: COLORS.primary, border: 'none',
     color: COLORS.dark, cursor: 'pointer',
-    fontFamily: 'Montserrat, sans-serif', fontSize: 12, fontWeight: 700, letterSpacing: 1,
+    fontFamily: 'Poppins, sans-serif', fontSize: 12, fontWeight: 700, letterSpacing: 1,
   },
 }

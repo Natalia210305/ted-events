@@ -52,8 +52,8 @@ export default function LoginModal({ onClose }) {
         padding: '40px',
         zIndex: 101,
         minWidth: '340px',
-        borderRadius: '1px',
-        fontFamily: 'Montserrat, sans-serif'
+        borderRadius: '8px',
+        fontFamily: 'Poppins, sans-serif'
       }}>
         {/* Κουμπί κλεισίματος */}
         <button
@@ -86,7 +86,7 @@ export default function LoginModal({ onClose }) {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              style={{ width: '100%', padding: '10px', border: '1px solid #d2b893', outline: 'none', fontFamily: 'Montserrat, sans-serif', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '10px', border: '1px solid #d2b893', borderRadius: '3px', outline: 'none', fontFamily: 'Poppins, sans-serif', boxSizing: 'border-box' }}
             />
           </div>
           <div style={{ marginBottom: '24px' }}>
@@ -97,7 +97,7 @@ export default function LoginModal({ onClose }) {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{ width: '100%', padding: '10px', border: '1px solid #d2b893', outline: 'none', fontFamily: 'Montserrat, sans-serif', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '10px', border: '1px solid #d2b893', borderRadius: '3px', outline: 'none', fontFamily: 'Poppins, sans-serif', boxSizing: 'border-box' }}
             />
           </div>
           <button
@@ -105,8 +105,8 @@ export default function LoginModal({ onClose }) {
             style={{
               width: '100%', padding: '12px',
               backgroundColor: '#d2b893', color: 'black',
-              border: 'none', cursor: 'pointer',
-              fontFamily: 'Montserrat, sans-serif',
+              border: 'none', borderRadius: '3px', cursor: 'pointer',
+              fontFamily: 'Poppins, sans-serif',
               letterSpacing: '2px', fontWeight: '600', fontSize: '14px'
             }}
           >

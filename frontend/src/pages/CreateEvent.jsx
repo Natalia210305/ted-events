@@ -116,11 +116,11 @@ const handleSubmit = async () => {
     }
   };
 
-  const inputStyle = { width: '100%', padding: '10px', border: '1px solid #e4dfda', fontFamily: 'Montserrat, sans-serif', fontSize: '14px', boxSizing: 'border-box', backgroundColor: 'white' };
+  const inputStyle = { width: '100%', padding: '10px', border: '1px solid #e4dfda', fontFamily: 'Poppins, sans-serif', fontSize: '14px', boxSizing: 'border-box', backgroundColor: 'white' };
   const labelStyle = { fontSize: '11px', letterSpacing: '1px', color: '#888', display: 'block', marginBottom: '6px' };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f5f0eb', fontFamily: 'Montserrat, sans-serif', padding: '60px 20px', overflowY: 'auto' }}> 
+    <div style={{ minHeight: '100vh', backgroundColor: '#f5f0eb', fontFamily: 'Poppins, sans-serif', padding: '60px 20px', overflowY: 'auto' }}> 
       <div style={{ maxWidth: '700px', margin: '0 auto' }}>
         
         {/* ΔΥΝΑΜΙΚΟΣ ΤΙΤΛΟΣ */}
@@ -221,17 +221,17 @@ const handleSubmit = async () => {
               <button onClick={() => removeTicket(i)} style={{ padding: '10px', backgroundColor: '#e53935', color: 'white', border: 'none', cursor: 'pointer' }}>✕</button>
             </div>
           ))}
-          <button onClick={addTicket} style={{ padding: '10px 20px', backgroundColor: 'transparent', border: '1px solid #d2b893', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', fontSize: '13px' }}>
+          <button onClick={addTicket} style={{ padding: '10px 20px', backgroundColor: 'transparent', border: '1px solid #d2b893', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontSize: '13px' }}>
             + ΠΡΟΣΘΗΚΗ ΤΥΠΟΥ ΕΙΣΙΤΗΡΙΟΥ
           </button>
         </div>
 
         <div style={{ display: 'flex', gap: '12px' }}>
           {/* ΔΥΝΑΜΙΚΟ ΚΕΙΜΕΝΟ ΚΟΥΜΠΙΟΥ */}
-          <button onClick={handleSubmit} disabled={loading} style={{ padding: '14px 32px', backgroundColor: '#d2b893', border: 'none', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', fontWeight: '700', letterSpacing: '1px', fontSize: '14px' }}>
+          <button onClick={handleSubmit} disabled={loading} style={{ padding: '14px 32px', backgroundColor: '#d2b893', border: 'none', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontWeight: '700', letterSpacing: '1px', fontSize: '14px' }}>
             {loading ? 'ΑΠΟΘΗΚΕΥΣΗ...' : isEditMode ? 'ΑΠΟΘΗΚΕΥΣΗ ΑΛΛΑΓΩΝ' : 'ΔΗΜΙΟΥΡΓΙΑ ΕΚΔΗΛΩΣΗΣ'}
           </button>
-          <button onClick={() => navigate(-1)} style={{ padding: '14px 32px', backgroundColor: 'transparent', border: '1px solid #ccc', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', fontSize: '14px' }}>
+          <button onClick={() => navigate(-1)} style={{ padding: '14px 32px', backgroundColor: 'transparent', border: '1px solid #ccc', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontSize: '14px' }}>
             ΑΚΥΡΟ
           </button>
         </div>

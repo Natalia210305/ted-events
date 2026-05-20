@@ -189,7 +189,7 @@ const handleBookEvent = (e, id) => {
   // Κατάσταση Loading ή Σφάλματος
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#faf9f8', fontFamily: 'Montserrat, sans-serif' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#faf9f8', fontFamily: 'Poppins, sans-serif' }}>
         <p style={{ fontSize: '18px', color: COLORS.dark, fontWeight: '600' }}>Φόρτωση εκδηλώσεων...</p>
       </div>
     );
@@ -197,14 +197,14 @@ const handleBookEvent = (e, id) => {
 
   if (errorMessage) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#faf9f8', fontFamily: 'Montserrat, sans-serif', padding: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#faf9f8', fontFamily: 'Poppins, sans-serif', padding: '20px' }}>
         <p style={{ fontSize: '16px', color: COLORS.cancelledText, fontWeight: '600', textAlign: 'center' }}>{errorMessage}</p>
       </div>
     );
   }
 
   return (
-    <div style={{ backgroundColor: '#faf9f8', minHeight: '100vh', padding: '40px 20px', fontFamily: 'Montserrat, sans-serif' }}>
+    <div style={{ backgroundColor: '#faf9f8', minHeight: '100vh', padding: '40px 20px', fontFamily: 'Poppins, sans-serif' }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
         
         {/* ─── TOPBAR: ΤΙΤΛΟΣ & PREMIUM ΑΝΑΖΗΤΗΣΗ ─── */}

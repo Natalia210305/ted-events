@@ -17,8 +17,8 @@ const fieldLabels = {
 
 const inputStyle = {
   width: '100%', padding: '10px',
-  border: '1px solid #d2b893', outline: 'none',
-  fontFamily: 'Montserrat, sans-serif',
+  border: '1px solid #d2b893', borderRadius: '3px', outline: 'none',
+  fontFamily: 'Poppins, sans-serif',
   boxSizing: 'border-box'
 };
 
@@ -76,8 +76,8 @@ export default function RegisterModal({ onClose }) {
     minWidth: '340px',
     maxHeight: '85vh',
     overflowY: 'auto',
-    borderRadius: '1px',
-    fontFamily: 'Montserrat, sans-serif'
+    borderRadius: '8px',
+    fontFamily: 'Poppins, sans-serif'
   };
 
   return (
@@ -101,7 +101,7 @@ export default function RegisterModal({ onClose }) {
             </p>
             <button
               onClick={onClose}
-              style={{ padding: '12px 40px', backgroundColor: '#d2b893', color: 'black', border: 'none', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', letterSpacing: '2px', fontWeight: '600' }}
+              style={{ padding: '12px 40px', backgroundColor: '#d2b893', color: 'black', border: 'none', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', letterSpacing: '2px', fontWeight: '600' }}
             >
               ΚΛΕΙΣΙΜΟ
             </button>
@@ -152,8 +152,8 @@ export default function RegisterModal({ onClose }) {
                   onChange={handleChange}
                   style={{
                     width: '100%', padding: '10px',
-                    border: '1px solid #d2b893', outline: 'none',
-                    fontFamily: 'Montserrat, sans-serif',
+                    border: '1px solid #d2b893', borderRadius: '3px', outline: 'none',
+                    fontFamily: 'Poppins, sans-serif',
                     boxSizing: 'border-box',
                     backgroundColor: 'white',
                     cursor: 'pointer'
@@ -165,7 +165,7 @@ export default function RegisterModal({ onClose }) {
               </div>
               <button
                 type="submit"
-                style={{ width: '100%', padding: '12px', backgroundColor: '#d2b893', color: 'black', border: 'none', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', letterSpacing: '2px', fontWeight: '600', fontSize: '14px' }}
+                style={{ width: '100%', padding: '12px', backgroundColor: '#d2b893', color: 'black', border: 'none', borderRadius: '3px', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', letterSpacing: '2px', fontWeight: '600', fontSize: '14px' }}
               >
                 ΕΓΓΡΑΦΗ
               </button>
