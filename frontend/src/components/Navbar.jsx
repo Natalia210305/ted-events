@@ -64,21 +64,15 @@ function Navbar() {
     const isActive = location.pathname === path;
     return {
       ...linkStyle,
-<<<<<<< HEAD
       color: isActive ? COLORS.primary : COLORS.dark,
       borderBottom: isActive ? `3px solid ${COLORS.primary}` : '3px solid transparent',
       paddingBottom: '8px', 
-=======
-      color: isActive ? COLORS.darkbrown : COLORS.dark,
-      borderBottom: isActive ? `3px solid ${COLORS.darkbrown}` : '3px solid transparent',
-      paddingBottom: '5px', 
->>>>>>> d76a6b63c72dc91e9e392608e9d0c13eda863a62
     };
   };
 
   const profileDropdownItems = [
-    { title: "ΤΟ ΠΡΟΦΙΛ ΜΟΥ", path: "/profile", desc: "Δείτε και επεξεργαστείτε τα στοιχεία σας", icon: "/user.png" },
-    { title: "ΡΥΘΜΙΣΕΙΣ", path: "/settings", desc: "Διαχειριστείτε τον λογαριασμό σας", icon: "/settings.png" },
+    { title: "ΤΟ ΠΡΟΦΙΛ ΜΟΥ", path: "/profile", desc: "Δείτε και επεξεργαστείτε τα στοιχεία σας", icon: "👤" },
+    { title: "ΡΥΘΜΙΣΕΙΣ", path: "/settings", desc: "Διαχειριστείτε τον λογαριασμό σας", icon: "⚙️" },
   ];
 
 return (
@@ -95,7 +89,6 @@ return (
         </Link>
       </div>
 
-<<<<<<< HEAD
       {/* ─── 2. ΚΕΝΤΡΟ: LINKS AREA (Καθαρό μενού) ─── */} 
       <div style={{ 
         display: 'flex', 
@@ -105,23 +98,6 @@ return (
         gap: '40px',
         padding: '0 20px'
       }}>
-=======
-      {/* ─── LOGO ─── */}
-      <Link to="/" style={{ marginRight: '0px', display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
-        <img 
-          src="/logo.png" 
-          alt="EventQ Logo" 
-          style={{ 
-            width: '160px',       
-            height: '160px',      
-            objectFit: 'contain' 
-          }} 
-        />
-      </Link>
-
-      {/* ─── ΔΥΝΑΜΙΚΟ LINKS AREA ─── */} 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
->>>>>>> d76a6b63c72dc91e9e392608e9d0c13eda863a62
         
         {/* Σελίδες για απλούς Χρήστες / Διοργανωτές */}
         {role !== 'ADMIN' && (
@@ -155,7 +131,6 @@ return (
         {user && role !== 'ADMIN' && (
           <>
             <Link to="/messages" style={iconLinkStyle} title="Messages">
-<<<<<<< HEAD
               <div style={{ 
                 position: 'relative', 
                 display: 'inline-flex', 
@@ -165,13 +140,6 @@ return (
               }}>
                 💬
                 {unreadCount > 0 && <span style={badgeStyle}>{unreadCount}</span>}
-=======
-              <div style={{ position: 'relative', display: 'inline-block' }}>
-                <img src="/email.png" alt="" style={{ width: '23px', height: '21px' }} />
-                {unreadCount > 0 && (
-                  <span style={badgeStyle}>{unreadCount}</span>
-                )}
->>>>>>> d76a6b63c72dc91e9e392608e9d0c13eda863a62
               </div>
             </Link>
             
@@ -180,7 +148,6 @@ return (
               style={{ ...iconLinkStyle, color: location.pathname === '/notifications' ? COLORS.primary : COLORS.dark }} 
               title="Notifications"
             >
-<<<<<<< HEAD
               <div style={{ 
                 position: 'relative', 
                 display: 'inline-flex', 
@@ -189,13 +156,6 @@ return (
               }}>
                 🔔
                 {unreadNotificationsCount > 0 && <span style={badgeStyle}>{unreadNotificationsCount}</span>}
-=======
-              <div style={{ position: 'relative', display: 'inline-block' }}>
-                <img src="/notification.png" alt="" style={{ width: '22px', height: '22px' }} />
-                {unreadNotificationsCount > 0 && (
-                  <span style={badgeStyle}>{unreadNotificationsCount}</span>
-                )}
->>>>>>> d76a6b63c72dc91e9e392608e9d0c13eda863a62
               </div>
             </Link>
           </>
@@ -257,23 +217,7 @@ return (
                       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.bgLight}
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
-<<<<<<< HEAD
                       <div style={iconBox}>{item.icon}</div>
-=======
-                      {/* ─── ΜΟΝΟ ΤΟ ICON ΧΩΡΙΣ ΤΟ ICONBOX ─── */}
-                      {typeof item.icon === 'string' && item.icon.startsWith('/') ? (
-                        <img 
-                          src={item.icon} 
-                          alt="" 
-                          style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} 
-                        />
-                      ) : (
-                        <span style={{ fontSize: '1.4rem', width: '24px', textAlign: 'center', flexShrink: 0 }}>
-                          {item.icon}
-                        </span>
-                      )}
-                      
->>>>>>> d76a6b63c72dc91e9e392608e9d0c13eda863a62
                       <div>
                         <div style={{ ...itemTitle, color: COLORS.dark }}>{item.title}</div>
                         <div style={itemDesc}>{item.desc}</div>
@@ -289,17 +233,9 @@ return (
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fff5f5'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-<<<<<<< HEAD
                     <div style={{ ...iconBox, backgroundColor: '#ffebee', color: '#cb2d3e' }}>🚪</div>
                     <div>
                       <div style={{ ...itemTitle, color: '#cb2d3e' }}>ΑΠΟΣΥΝΔΕΣΗ</div>
-=======
-                    <div>
-                      <img src="/power.png" alt="" style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0  }} />
-                    </div>
-                    <div>
-                      <div style={{ ...itemTitle, color: '#da5e5e' }}>ΑΠΟΣΥΝΔΕΣΗ</div>
->>>>>>> d76a6b63c72dc91e9e392608e9d0c13eda863a62
                       <div style={itemDesc}>Έξοδος από την εφαρμογή</div>
                     </div>
                   </div>
@@ -331,16 +267,10 @@ const navStyle = {
 
 const linkStyle = {
   textDecoration: 'none',
-<<<<<<< HEAD
   fontSize: '0.95rem',
   fontWeight: '700',
   letterSpacing: '1px',
   transition: 'all 0.2s ease',
-=======
-  fontSize: '1.04rem',
-  fontWeight: '600',
-  transition: 'color 0.2s, border-color 0.2s',
->>>>>>> d76a6b63c72dc91e9e392608e9d0c13eda863a62
   cursor: 'pointer'
 };
 
@@ -439,11 +369,7 @@ const dropdownDivider = {
 };
 
 const createButtonStyle = {
-<<<<<<< HEAD
   padding: '10px 22px',
-=======
-  padding: '9px 20px',
->>>>>>> d76a6b63c72dc91e9e392608e9d0c13eda863a62
   borderRadius: '50px',
   border: 'none',
   background: COLORS.primary,
@@ -452,15 +378,9 @@ const createButtonStyle = {
   fontWeight: '700',
   letterSpacing: '0.5px',
   cursor: 'pointer',
-<<<<<<< HEAD
   boxShadow: `0 4px 15px rgba(210, 184, 147, 0.2)`,
   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   fontFamily: 'Montserrat, sans-serif',
-=======
-  boxShadow: `0 4px 15px rgba(210, 184, 147, 0.25)`,
-  transition: '0.3s',
-  fontFamily: 'Poppins, sans-serif',
->>>>>>> d76a6b63c72dc91e9e392608e9d0c13eda863a62
 };
 
 export default Navbar;
