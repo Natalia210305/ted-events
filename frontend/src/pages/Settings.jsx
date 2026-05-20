@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import api from '../services/api'; // Εισαγωγή του έτοιμου axios instance
+import React, { useState, useEffect } from 'react';
+import api from '../services/api';
 
 const COLORS = {
   primary: '#d2b893',      
@@ -21,28 +21,49 @@ export default function Settings() {
     confirmPassword: ''
   });
   
-  const [notifications, setNotifications] = useState({
-    emailNotif: true,
-    pushNotif: false,
+  // Φορτώνουμε τις ειδοποιήσεις από το localStorage για να μην χάνονται στο Refresh
+  const [notifications, setNotifications] = useState(() => {
+    const saved = localStorage.getItem('user_email_notif');
+    return saved !== null ? JSON.parse(saved) : true;
   });
 
-  const [language, setLanguage] = useState('el');
-  const [message, setMessage] = useState({ text: '', type: '' }); // Για επιτυχία ή σφάλμα
+  // Φορτώνουμε τη γλώσσα από το localStorage
+  const [language, setLanguage] = useState(() => {
+    return localStorage.getItem('user_lang') || 'el';
+  });
+
+  const [message, setMessage] = useState({ text: '', type: '' });
   const [loading, setLoading] = useState(false);
+
+  // Κάθε φορά που αλλάζει η ειδοποίηση, αποθηκεύεται αυτόματα
+  const handleToggleNotif = () => {
+    const newValue = !notifications;
+    setNotifications(newValue);
+    localStorage.setItem('user_email_notif', JSON.stringify(newValue));
+    
+    // Feedback στον χρήστη
+    setMessage({ text: 'Οι προτιμήσεις ειδοποιήσεων ενημερώθηκαν!', type: 'success' });
+    setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+  };
+
+  // Κάθε φορά που αλλάζει η γλώσσα, αποθηκεύεται αυτόματα
+  const handleLanguageChange = (e) => {
+    const newLang = e.target.value;
+    setLanguage(newLang);
+    localStorage.setItem('user_lang', newLang);
+    
+    setMessage({ text: 'Η γλώσσα της πλατφόρμας άλλαξε!', type: 'success' });
+    setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+  };
 
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
-    setPasswordData(prev => ({ ...prev, [name]: value })); // <-- ΔΙΟΡΘΩΘΗΚΕ: Αλλάζει σωστά το κάθε πεδίο
-  };
-
-  const handleToggleNotif = (key) => {
-    setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
+    setPasswordData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmitPassword = async (e) => {
     e.preventDefault();
     
-    // 1. Γρήγορος έλεγχος αν ταιριάζουν οι κωδικοί
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setMessage({ text: 'Ο νέος κωδικός και η επιβεβαίωση δεν ταιριάζουν!', type: 'error' });
       return;
@@ -57,17 +78,16 @@ export default function Settings() {
     setMessage({ text: '', type: '' });
 
     try {
-      // Στέλνουμε το αίτημα στο backend route που θα φτιάξουμε στο Βήμα 2
       const response = await api.put('/users/change-password', {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword
       });
 
-      setMessage({ text: response.data.message || 'Ο κωδικός πρόσβασης ενημερώθηκε επιτυχώς!', type: 'success' });
+      setMessage({ text: response.data.message || 'Ο κωδικός πρόσβασης ενημερώθηκε επιτυχώς στη βάση!', type: 'success' });
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error) {
       console.error(error);
-      const errorMsg = error.response?.data?.error || 'Προέκυψε σφάλμα κατά την αλλαγή του κωδικού.';
+      const errorMsg = error.response?.data?.error || 'Λανθασμένος τρέχων κωδικός ή σφάλμα server.';
       setMessage({ text: errorMsg, type: 'error' });
     } finally {
       setLoading(false);
@@ -82,7 +102,7 @@ export default function Settings() {
         <div style={{ marginBottom: '35px' }}>
           <h1 style={{ fontSize: '2.2rem', fontWeight: '800', color: COLORS.dark, letterSpacing: '1px', margin: 0 }}>ΡΥΘΜΙΣΕΙΣ</h1>
           <div style={{ width: '50px', height: '4px', backgroundColor: COLORS.primary, marginTop: '8px' }} />
-          <p style={{ color: COLORS.textMuted, fontSize: '14px', marginTop: '10px' }}>Διαχειριστείτε την ασφάλεια και τις προτιμήσεις του λογαριασμού σας.</p>
+          <p style={{ color: COLORS.textMuted, fontSize: '14px', marginTop: '10px' }}>Διαχειριστείτε την ασφάλεια και τις προτιμήσεις του λογαριασμού σας μόνιμα.</p>
         </div>
 
         {/* ΜΗΝΥΜΑΤΑ FEEDBACK */}
@@ -163,12 +183,12 @@ export default function Settings() {
             </h2>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={toggleRowStyle} onClick={() => handleToggleNotif('emailNotif')}>
+              <div style={toggleRowStyle} onClick={handleToggleNotif}>
                 <div>
                   <div style={{ fontSize: '14px', fontWeight: '700', color: COLORS.dark }}>Ειδοποιήσεις μέσω Email</div>
                   <div style={{ fontSize: '12px', color: COLORS.textMuted }}>Λαμβάνετε ενημερώσεις για αλλαγές στις κρατήσεις ή ακυρώσεις εκδηλώσεων.</div>
                 </div>
-                <input type="checkbox" checked={notifications.emailNotif} readOnly style={{ cursor: 'pointer', accentColor: COLORS.primary, width: '18px', height: '18px' }} />
+                <input type="checkbox" checked={notifications} readOnly style={{ cursor: 'pointer', accentColor: COLORS.primary, width: '18px', height: '18px' }} />
               </div>
             </div>
           </div>

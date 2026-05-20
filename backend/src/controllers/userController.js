@@ -1,4 +1,5 @@
 const prisma = require('../db');
+const bcrypt = require('bcrypt'); // <-- ΠΡΟΣΘΗΚΗ: Απαραίτητο για το hashing των κωδικών
 
 // Λίστα όλων των χρηστών (μόνο Admin)
 const getAllUsers = async (req, res) => {
@@ -23,6 +24,7 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+// Ενημέρωση Στοιχείων Προφίλ
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user.id; 
@@ -92,6 +94,7 @@ const approveUser = async (req, res) => {
   }
 };
 
+// Απόρριψη χρήστη (μόνο Admin)
 const rejectUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -131,7 +134,7 @@ const getUserById = async (req, res) => {
         address: true,
         city: true,
         country: true,
-        afm: true,      // <--- ΒΕΒΑΙΩΣΟΥ ΟΤΙ ΥΠΑΡΧΕΙ ΑΥΤΟ!
+        afm: true,
         role: true,
         status: true,
         createdAt: true,
@@ -145,4 +148,43 @@ const getUserById = async (req, res) => {
   }
 };
 
-module.exports = { getAllUsers, approveUser, rejectUser, getUserById, updateProfile };
+// 🔒 ΝΕΑ ΣΥΝΑΡΤΗΣΗ: Αλλαγή Κωδικού με Έλεγχο και Αποθήκευση στην PostgreSQL
+const changePassword = async (req, res) => {
+  try {
+    const userId = req.user.id; // Έρχεται αυτόματα από το auth middleware σου
+    const { currentPassword, newPassword } = req.body;
+
+    // 1. Τραβάμε τον τρέχοντα χρήστη από τη βάση για να πάρουμε τον κρυπτογραφημένο κωδικό του
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Ο χρήστης δεν βρέθηκε.' });
+    }
+
+    // 2. Έλεγχος αν ο τρέχων κωδικός που έδωσε ταιριάζει με αυτόν της βάσης
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: 'Ο τρέχων κωδικός πρόσβασης είναι λανθασμένος!' });
+    }
+
+    // 3. Παραγωγή νέου salt και κρυπτογράφηση του καινούργιου κωδικού
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // 4. Αποθήκευση του νέου κωδικού στην PostgreSQL μέσω Prisma
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword }
+    });
+
+    return res.json({ message: 'Ο κωδικός πρόσβασης ενημερώθηκε επιτυχώς στη βάση!' });
+  } catch (err) {
+    console.error("❌ Σφάλμα κατά την αλλαγή κωδικού:", err);
+    return res.status(500).json({ error: 'Σφάλμα κατά την αλλαγή του κωδικού πρόσβασης στο backend.' });
+  }
+};
+
+// Κάνουμε export και τη νέα συνάρτηση μαζί με τις υπόλοιπες
+module.exports = { getAllUsers, approveUser, rejectUser, getUserById, updateProfile, changePassword };
