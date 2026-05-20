@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const { getAllEvents, getEventById, createEvent, updateEvent, deleteEvent, publishEvent, getMyEvents, createBooking, getMyBookings } = require('../controllers/eventController');
+const { exportEventsXML, exportEventsJSON } = require('../controllers/eventController');
 
 // 1. Ρούτες Συλλογών (Σκέτο /) - ΠΑΝΤΑ ΠΡΩΤΑ
 router.get('/', getAllEvents);
@@ -21,5 +22,7 @@ router.delete('/:id', authenticate, authorize('ORGANIZER', 'ADMIN'), deleteEvent
 // 5. Ειδικές ενέργειες πάνω σε συγκεκριμένο Event (Δημοσίευση & Κρατήσεις)
 router.patch('/:id/publish', authenticate, authorize('ORGANIZER', 'ADMIN'), publishEvent);
 router.post('/:id/bookings', authenticate, createBooking);
+router.get('/export/xml', authenticate, authorize('ADMIN'), exportEventsXML);
+router.get('/export/json', authenticate, authorize('ADMIN'), exportEventsJSON);
 
 module.exports = router;

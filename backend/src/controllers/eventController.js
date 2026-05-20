@@ -373,6 +373,75 @@ const getMyBookings = async (req, res) => {
   }
 };
 
+const exportEventsXML = async (req, res) => {
+  try {
+    const events = await prisma.event.findMany({
+      include: { categories: true, ticketTypes: true, bookings: true }
+    });
+
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<Events>\n';
+    for (const e of events) {
+      xml += `  <Event EventID="${e.id}">\n`;
+      xml += `    <Title>${e.title}</Title>\n`;
+      for (const c of e.categories) xml += `    <Category>${c.name}</Category>\n`;
+      xml += `    <EventType>${e.eventType}</EventType>\n`;
+      xml += `    <Venue>${e.venue}</Venue>\n`;
+      xml += `    <Address>${e.address}</Address>\n`;
+      xml += `    <City>${e.city}</City>\n`;
+      xml += `    <Country>${e.country}</Country>\n`;
+      if (e.latitude && e.longitude) xml += `    <GeoLocation Latitude="${e.latitude}" Longitude="${e.longitude}"/>\n`;
+      xml += `    <StartDateTime>${e.startDateTime.toISOString()}</StartDateTime>\n`;
+      xml += `    <EndDateTime>${e.endDateTime.toISOString()}</EndDateTime>\n`;
+      xml += `    <Capacity>${e.capacity}</Capacity>\n`;
+      xml += `    <TicketTypes>\n`;
+      for (const t of e.ticketTypes) {
+        xml += `      <TicketType TicketTypeID="${t.id}">\n`;
+        xml += `        <Name>${t.name}</Name>\n`;
+        xml += `        <Price>${t.price}</Price>\n`;
+        xml += `        <Quantity>${t.quantity}</Quantity>\n`;
+        xml += `        <Available>${t.available}</Available>\n`;
+        xml += `      </TicketType>\n`;
+      }
+      xml += `    </TicketTypes>\n`;
+      xml += `    <Bookings>\n`;
+      for (const b of e.bookings) {
+        xml += `      <Booking BookingID="${b.id}">\n`;
+        xml += `        <Attendee UserID="${b.attendeeId}"/>\n`;
+        xml += `        <Time>${b.time.toISOString()}</Time>\n`;
+        xml += `        <TicketTypeRef>${b.ticketTypeId}</TicketTypeRef>\n`;
+        xml += `        <NumberOfTickets>${b.numberOfTickets}</NumberOfTickets>\n`;
+        xml += `        <TotalCost>${b.totalCost}</TotalCost>\n`;
+        xml += `        <BookingStatus>${b.status}</BookingStatus>\n`;
+        xml += `      </Booking>\n`;
+      }
+      xml += `    </Bookings>\n`;
+      xml += `    <Organizer UserID="${e.organizerId}"/>\n`;
+      xml += `    <Status>${e.status}</Status>\n`;
+      xml += `    <Description>${e.description}</Description>\n`;
+      xml += `  </Event>\n`;
+    }
+    xml += '</Events>';
+
+    res.setHeader('Content-Type', 'application/xml');
+    res.setHeader('Content-Disposition', 'attachment; filename="events.xml"');
+    res.send(xml);
+  } catch (err) {
+    res.status(500).json({ error: 'Σφάλμα export' });
+  }
+};
+
+const exportEventsJSON = async (req, res) => {
+  try {
+    const events = await prisma.event.findMany({
+      include: { categories: true, ticketTypes: true, bookings: true }
+    });
+    res.setHeader('Content-Disposition', 'attachment; filename="events.json"');
+    res.json(events);
+  } catch (err) {
+    res.status(500).json({ error: 'Σφάλμα export' });
+  }
+};
+
 module.exports = { 
   getAllEvents, 
   getEventById, 
@@ -382,5 +451,7 @@ module.exports = {
   publishEvent, 
   getMyEvents, 
   createBooking,
-  getMyBookings // ΠΡΟΣΘΕΣΕ ΑΥΤΟ ΕΔΩ!
+  getMyBookings, // ΠΡΟΣΘΕΣΕ ΑΥΤΟ ΕΔΩ!
+  exportEventsXML,
+  exportEventsJSON
 };

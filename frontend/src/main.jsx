@@ -14,6 +14,7 @@ import Navbar from './components/Navbar'
 import MyBookings from './pages/MyBookings'
 import Notifications from './pages/Notifications';
 import Profile from './pages/Profile';
+import AdminExport from './pages/AdminExport'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -33,6 +34,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/history" element={<MyBookings />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/admin/export" element={<AdminExport />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>
