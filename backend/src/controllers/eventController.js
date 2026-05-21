@@ -1,4 +1,5 @@
 const prisma = require('../db');
+const { getRecommendationsForUser } = require('../services/recommendationService');
 
 const getAllEvents = async (req, res) => {
   try {
@@ -37,7 +38,6 @@ const getEventById = async (req, res) => {
 
 const createEvent = async (req, res) => {
   try {
-    // 1. Console log για να δεις ΣΤΟ ΤΕΡΜΑΤΙΚΟ σου τι στέλνει το Frontend
     console.log("=== REQ.BODY RECEIVED ===", req.body);
 
     const { 
@@ -45,10 +45,8 @@ const createEvent = async (req, res) => {
       latitude, longitude, startDateTime, endDateTime, capacity, categories
     } = req.body;
 
-    // Δικλείδα ασφαλείας: Αν το frontend στέλνει 'tickets' αντί για 'ticketTypes', το πιάνουμε
     const incomingTickets = req.body.ticketTypes || req.body.tickets || [];
 
-    // Έλεγχος capacity vs ticket quantities (μετατρέπουμε σε αριθμούς για σιγουριά)
     const parsedCapacity = parseInt(capacity) || 0;
     const totalTickets = incomingTickets.reduce((sum, t) => sum + (parseInt(t.quantity) || 0), 0);
     
@@ -75,9 +73,8 @@ const createEvent = async (req, res) => {
           create: (categories || []).map(name => ({ name }))
         },
         ticketTypes: {
-          // Διαβάζουμε από το incomingTickets που έχει σίγουρα τα δεδομένα
           create: incomingTickets.map(t => ({
-            name: t.name || t.type || 'General Admission', // δικλείδα για το όνομα
+            name: t.name || t.type || 'General Admission',
             price: parseFloat(t.price) || 0,
             quantity: parseInt(t.quantity) || 0,
             available: parseInt(t.quantity) || 0,
@@ -100,13 +97,11 @@ const updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // 1. ΣΩΣΤΟ DESTRUCTURING: Παίρνουμε τα πεδία ξεχωριστά από το req.body
     const { 
       title, description, eventType, venue, address, city, country, 
-      latitude, longitude, startDateTime, endDateTime, capacity 
+      latitude, longitude, startDateTime, endDateTime, capacity
     } = req.body;
 
-    // 2. Βρίσκουμε την εκδήλωση με τις τρέχουσες (παλιές) τιμές ΚΑΙ τις κρατήσεις
     const oldEvent = await prisma.event.findUnique({
       where: { id: id },
       include: { bookings: true }
@@ -114,20 +109,16 @@ const updateEvent = async (req, res) => {
 
     if (!oldEvent) return res.status(404).json({ error: 'Η εκδήλωση δεν βρέθηκε' });
 
-    // 3. Ελέγχουμε τι ακριβώς άλλαξε για να φτιάξουμε το κατάλληλο μήνυμα
     let changeMessages = [];
 
-    // Έλεγχος για αλλαγή ημερομηνίας/ώρας έναρξης
     if (startDateTime && new Date(startDateTime).getTime() !== new Date(oldEvent.startDateTime).getTime()) {
       changeMessages.push("την ημερομηνία/ώρα διεξαγωγής");
     }
 
-    // Έλεγχος για αλλαγή τοποθεσίας/χώρου
     if (venue && venue !== oldEvent.venue) {
       changeMessages.push("τον χώρο διεξαγωγής (venue)");
     }
 
-    // 4. Εκτέλεση του Update στη βάση με σωστά Datatypes
     const updatedEvent = await prisma.event.update({
       where: { id: id },
       data: {
@@ -147,12 +138,9 @@ const updateEvent = async (req, res) => {
     });
 
     console.log(`✔ Το event "${updatedEvent.title}" ενημερώθηκε επιτυχώς στη βάση.`);
-    // Ενημέρωση ticket types αν στάλθηκαν
+
     if (req.body.ticketTypes && req.body.ticketTypes.length > 0) {
-      // Διαγραφή παλιών
       await prisma.ticketType.deleteMany({ where: { eventId: id } });
-      
-      // Δημιουργία νέων
       await prisma.ticketType.createMany({
         data: req.body.ticketTypes.map(t => ({
           eventId: id,
@@ -163,7 +151,7 @@ const updateEvent = async (req, res) => {
         }))
       });
     }
-    // Ενημέρωση κατηγοριών
+
     if (req.body.categories && req.body.categories.length > 0) {
       await prisma.eventCategory.deleteMany({ where: { eventId: id } });
       await prisma.eventCategory.createMany({
@@ -173,17 +161,21 @@ const updateEvent = async (req, res) => {
         }))
       });
     }
-    // 5. Αν άλλαξε κάτι από τα παραπάνω ΚΑΙ υπάρχουν κρατήσεις, στέλνουμε ειδοποίηση
+
+    // ΔΙΟΡΘΩΣΗ: Προσθήκη await prisma.notification.createMany για να αποθηκεύονται οι ειδοποιήσεις αλλαγής!
     if (changeMessages.length > 0 && oldEvent.bookings && oldEvent.bookings.length > 0) {
-      
       const MessageText = `Ο διοργανωτής τροποποίησε ${changeMessages.join(' και ')} στην εκδήλωση "${updatedEvent.title}". Παρακαλώ ελέγξτε τις νέες πληροφορίες.`;
 
       const notificationsData = oldEvent.bookings.map(booking => ({
-        userId: booking.attendeeId, // Αντιστοίχιση με το πεδίο userId του πίνακα Notification
+        userId: booking.attendeeId, 
         message: MessageText,
         type: 'EVENT_UPDATED',
         isRead: false
       }));
+
+      await prisma.notification.createMany({
+        data: notificationsData
+      });
 
       console.log(`✅ Δημιουργήθηκαν ${notificationsData.length} ειδοποιήσεις για αλλαγή στοιχείων.`);
     }
@@ -200,7 +192,6 @@ const deleteEvent = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // ΒΗΜΑ 1: Φέρνουμε το event ΜΑΖΙ με τις κρατήσεις (include)
     const event = await prisma.event.findUnique({
       where: { id: id },
       include: { bookings: true } 
@@ -208,22 +199,19 @@ const deleteEvent = async (req, res) => {
 
     if (!event) return res.status(404).json({ error: 'Event not found' });
 
-    // ΒΗΜΑ 2: Ενημερώνουμε το status σε CANCELLED
     const updatedEvent = await prisma.event.update({
       where: { id: id },
       data: { status: 'CANCELLED' }
     });
 
-    // ΒΗΜΑ 3: Δημιουργούμε και ΑΠΟΘΗΚΕΥΟΥΜΕ τις ειδοποιήσεις στη βάση
     if (event.bookings && event.bookings.length > 0) {
       const notificationsData = event.bookings.map(booking => ({
-        userId: booking.attendeeId, // σιγουρέψου ότι ο πίνακας Notification έχει στήλη userId
+        userId: booking.attendeeId, 
         message: `Η εκδήλωση "${event.title}" ακυρώθηκε.`,
         type: 'EVENT_CANCELLED',
         isRead: false
       }));
 
-      // ΑΥΤΗ Η ΓΡΑΜΜΗ ΕΛΕΙΠΕ ΚΑΙ ΔΕΝ ΑΠΟΘΗΚΕΥΟΝΤΑΝ:
       await prisma.notification.createMany({
         data: notificationsData
       });
@@ -231,7 +219,6 @@ const deleteEvent = async (req, res) => {
       console.log(`✅ Ειδοποιήσεις στάλθηκαν σε: ${notificationsData.length} χρήστες`);
     }
 
-    // Επιστρέφουμε JSON που περιέχει το updatedEvent για να το διαβάσει το Frontend
     res.json({ message: 'Η εκδήλωση ακυρώθηκε επιτυχώς.', updatedEvent });
 
   } catch (err) {
@@ -244,7 +231,6 @@ const publishEvent = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Ενημερώνουμε το status της εκδήλωσης σε PUBLISHED
     const updatedEvent = await prisma.event.update({
       where: { id: id },
       data: { status: 'PUBLISHED' }
@@ -259,7 +245,6 @@ const publishEvent = async (req, res) => {
   }
 };
 
-// Εκδηλώσεις διοργανωτή
 const getMyEvents = async (req, res) => {
   try {
     const events = await prisma.event.findMany({
@@ -276,6 +261,7 @@ const getMyEvents = async (req, res) => {
     res.status(500).json({ error: 'Σφάλμα server' });
   }
 };
+
 const createBooking = async (req, res) => {
   console.log("--- ΝΕΑ ΠΡΟΣΠΑΘΕΙΑ ΚΡΑΤΗΣΗΣ ---");
   try {
@@ -285,7 +271,6 @@ const createBooking = async (req, res) => {
 
     console.log(`Event ID: ${id}, TicketType ID: ${ticketTypeId}, User: ${userId}`);
 
-    // 1. Έλεγχος διαθεσιμότητας
     const ticketType = await prisma.ticketType.findUnique({
       where: { id: ticketTypeId }
     });
@@ -300,12 +285,10 @@ const createBooking = async (req, res) => {
       return res.status(400).json({ message: 'Δεν υπάρχουν αρκετά διαθέσιμα εισιτήρια.' });
     }
 
-    // 2. Εκτέλεση Transaction στο Supabase
     const result = await prisma.$transaction([
       prisma.booking.create({
         data: {
           event: { connect: { id: id } },
-          // ΑΛΛΑΓΗ ΕΔΩ: από user σε attendee
           attendee: { connect: { id: userId } }, 
           ticketType: { connect: { id: ticketTypeId } },
           numberOfTickets: parseInt(numberOfTickets),
@@ -335,9 +318,7 @@ const getMyBookings = async (req, res) => {
     const userId = req.user.id;
 
     const bookings = await prisma.booking.findMany({
-      where: {
-        attendeeId: userId 
-      },
+      where: { attendeeId: userId },
       include: {
         event: {
           select: {
@@ -362,7 +343,7 @@ const getMyBookings = async (req, res) => {
         }
       },
       orderBy: {
-        time: "desc" // Εδώ βάλαμε 'time' γιατί έτσι το είδαμε στη φωτό σου
+        time: "desc"
       }
     });
 
@@ -442,6 +423,36 @@ const exportEventsJSON = async (req, res) => {
   }
 };
 
+const getRecommendations = async (req, res) => {
+    try {
+        const userId = req.query.userId;
+        if (!userId) return res.status(400).json({ error: 'Required userId query param' });
+        
+        // 1. Διαβάζουμε με ασφάλεια τα Interactions (αν δεν υπάρχει ο πίνακας, επιστρέφει άδειο array)
+        let allInteractions = [];
+        try {
+            if (prisma.eventInterest) {
+                allInteractions = await prisma.eventInterest.findMany({});
+            }
+        } catch (e) {
+            console.log("ℹ Ο πίνακας eventInterest δεν βρέθηκε, συνεχίζουμε με Bookings.");
+        }
+
+        // 2. Διαβάζουμε κρατήσεις και εκδηλώσεις
+        const allAttendees = await prisma.booking.findMany({});
+        const allEvents = await prisma.event.findMany({ where: { status: 'PUBLISHED' } });
+
+        // 3. Εκτέλεση αλγορίθμου
+        const recommendations = await getRecommendationsForUser(userId, allInteractions, allAttendees, allEvents);
+        
+        res.json(recommendations);
+    } catch (error) {
+        console.error("❌ Κρίσιμο σφάλμα στον controller συστάσεων:", error);
+        res.status(500).json({ message: 'Σφάλμα κατά τον υπολογισμό συστάσεων' });
+    }
+};
+
+// Εξαγωγή όλων των συναρτήσεων
 module.exports = { 
   getAllEvents, 
   getEventById, 
@@ -451,7 +462,8 @@ module.exports = {
   publishEvent, 
   getMyEvents, 
   createBooking,
-  getMyBookings, // ΠΡΟΣΘΕΣΕ ΑΥΤΟ ΕΔΩ!
+  getMyBookings,
   exportEventsXML,
-  exportEventsJSON
+  exportEventsJSON,
+  getRecommendations // ΠΡΟΣΘΕΣΕ ΚΑΙ ΑΥΤΟ ΣΤΑ EXPORTS!
 };

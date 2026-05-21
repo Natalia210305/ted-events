@@ -3,26 +3,24 @@ const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const { getAllEvents, getEventById, createEvent, updateEvent, deleteEvent, publishEvent, getMyEvents, createBooking, getMyBookings } = require('../controllers/eventController');
 const { exportEventsXML, exportEventsJSON } = require('../controllers/eventController');
+const eventController = require('../controllers/eventController');
 
-// 1. Ρούτες Συλλογών (Σκέτο /) - ΠΑΝΤΑ ΠΡΩΤΑ
+// 1. Ρούτες Συλλογών (Σκέτο /)
 router.get('/', getAllEvents);
 router.post('/', authenticate, authorize('ORGANIZER', 'ADMIN'), createEvent);
 
-// 2. Στατικά Routes για τον Διοργανωτή
+// 2. Στατικά Routes (Χωρίς παραμέτρους :id) - ΟΛΑ ΕΔΩ ΜΑΖΙ
 router.get('/my', authenticate, authorize('ORGANIZER', 'ADMIN'), getMyEvents);  
-
-// 3. Ιστορικό Κρατήσεων Χρήστη (Στατικό path, πριν από το :id)
 router.get('/bookings/my', authenticate, getMyBookings); 
-
-// 4. Δυναμικά Routes με ID (Πάντα στο τέλος του αρχείου!)
-router.get('/:id', getEventById);
-router.put('/:id', authenticate, authorize('ORGANIZER', 'ADMIN'), updateEvent);
-// Επιτρέπουμε και στον ORGANIZER να κάνει delete (ακύρωση)
-router.delete('/:id', authenticate, authorize('ORGANIZER', 'ADMIN'), deleteEvent);
-// 5. Ειδικές ενέργειες πάνω σε συγκεκριμένο Event (Δημοσίευση & Κρατήσεις)
-router.patch('/:id/publish', authenticate, authorize('ORGANIZER', 'ADMIN'), publishEvent);
-router.post('/:id/bookings', authenticate, createBooking);
 router.get('/export/xml', authenticate, authorize('ADMIN'), exportEventsXML);
 router.get('/export/json', authenticate, authorize('ADMIN'), exportEventsJSON);
+router.get('/recommendations', eventController.getRecommendations); // <-- Μπήκε ψηλά, στα στατικά!
+
+// 3. Δυναμικά Routes με ID (Μπαίνουν ΠΑΝΤΑ τελευταία στο αρχείο!)
+router.get('/:id', getEventById);
+router.put('/:id', authenticate, authorize('ORGANIZER', 'ADMIN'), updateEvent);
+router.delete('/:id', authenticate, authorize('ORGANIZER', 'ADMIN'), deleteEvent);
+router.patch('/:id/publish', authenticate, authorize('ORGANIZER', 'ADMIN'), publishEvent);
+router.post('/:id/bookings', authenticate, createBooking);
 
 module.exports = router;

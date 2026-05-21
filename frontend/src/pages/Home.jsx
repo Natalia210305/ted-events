@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import heroImage from '../assets/hero3.png';
 import LoginModal from '../components/Login';
 import RegisterModal from '../components/Register';
+import api from '../services/api';
 
 const COLORS = {
   primary: '#d2b893',      // Το premium μπεζ σου
@@ -16,6 +17,10 @@ export default function Home() {
   const navigate = useNavigate();
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
+  const [recommendations, setRecommendations] = useState([]);
+  const [loadingRecs, setLoadingRecs] = useState(true);
+  const userString = localStorage.getItem('user');
+  const user = userString ? JSON.parse(userString) : null;
 
   // Hover Animations για τα κουμπιά
   const handleMouseOver = (e, type) => {
@@ -43,6 +48,22 @@ export default function Home() {
       e.currentTarget.style.borderColor = COLORS.primary;
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      // Χρησιμοποιούμε το api instance που βάζει αυτόματα τα σωστά headers και base URL
+      api.get(`/events/recommendations?userId=${user.id || user.user_id}`)
+        .then(res => {
+          // Στο axios τα δεδομένα έρχονται στο res.data
+          setRecommendations(res.data);
+          setLoadingRecs(false);
+        })
+        .catch(err => {
+          console.error("Error loading recommendations:", err);
+          setLoadingRecs(false);
+        });
+    }
+  }, []);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh', overflow: 'hidden' }}>
@@ -178,6 +199,76 @@ export default function Home() {
           </button>
 
         </div>
+        {user && (
+          <div style={{ padding: '60px 40px', backgroundColor: '#fdfbf7', maxWidth: '1200px', margin: '0 auto' }}>
+            <h2 style={{ color: COLORS.dark, fontFamily: 'Poppins, sans-serif', marginBottom: '10px', fontSize: '1.8rem' }}>
+              ✨ Προτεινόμενες Εκδηλώσεις για Εσάς
+            </h2>
+            <p style={{ color: '#777', fontSize: '0.9rem', marginBottom: '30px' }}>
+              Εξατομικευμένες προτάσεις βασισμένες στα ενδιαφέροντα και τις κρατήσεις σας (Biased Matrix Factorization).
+            </p>
+
+            {loadingRecs ? (
+              <p style={{ color: COLORS.textMuted }}>Υπολογισμός προτάσεων...</p>
+            ) : recommendations.length > 0 ? (
+              <div style={{ 
+                display: 'flex', 
+                gap: '20px', 
+                overflowX: 'auto', // Ενεργοποιεί το οριζόντιο σκρολάρισμα
+                padding: '15px 5px',
+                scrollSnapType: 'x mandatory', // Κάνει το scroll πιο ομαλό (snapping)
+                WebkitOverflowScrolling: 'touch' 
+              }}>
+                {recommendations.map(event => (
+                  <div key={event.id || event.event_id} style={{ 
+                    backgroundColor: COLORS.white, 
+                    border: `1px solid ${COLORS.border}`, 
+                    borderRadius: '15px', 
+                    padding: '24px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    minWidth: '280px', // Σταθερό ελάχιστο πλάτος για να μην μικραίνουν οι κάρτες
+                    scrollSnapAlign: 'start'
+                  }}>
+                    <div>
+                      <h3 style={{ color: COLORS.dark, margin: '0 0 10px 0', fontSize: '1.2rem' }}>
+                        {event.title || `Εκδήλωση #${event.id || event.event_id}`}
+                      </h3>
+                      <p style={{ color: '#666', fontSize: '0.9rem', margin: '0 0 8px 0' }}>
+                        📍 {event.venue || event.city || 'Τοποθεσία'}
+                      </p>
+                      <p style={{ color: '#888', fontSize: '0.85rem' }}>
+                        📅 {event.startDateTime ? new Date(event.startDateTime).toLocaleDateString('el-GR') : 'Σύντομα'}
+                      </p>
+                    </div>
+                    
+                    <button 
+                      onClick={() => navigate(`/events`)} // Ή στο συγκεκριμένο event αν έχεις λεπτομέρειες
+                      style={{
+                        marginTop: '20px',
+                        padding: '10px',
+                        backgroundColor: 'transparent',
+                        border: `1px solid ${COLORS.primary}`,
+                        color: 'black',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: '0.2s'
+                      }}
+                      onMouseOver={(e) => e.currentTarget.style.backgroundColor = COLORS.primary}
+                      onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      ΠΡΟΒΟΛΗ
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ color: COLORS.textMuted }}>Δεν υπάρχουν ακόμα αρκετά δεδομένα για εξατομικευμένες προτάσεις.</p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Modals */}
