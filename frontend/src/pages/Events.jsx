@@ -393,7 +393,7 @@ const handleBookEvent = (e, id) => {
                   key={event.id || event.EventID}
                   onClick={() => handleViewEvent(event.id || event.EventID)}
                   style={{
-                    backgroundColor: COLORS.white, border: `1px solid ${COLORS.border}`, borderRadius: '1px',
+                    backgroundColor: COLORS.white, border: `1px solid ${COLORS.border}`, borderRadius: '15px',
                     overflow: 'hidden', cursor: 'pointer', display: 'flex', flexDirection: 'column',
                     transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
                   }}
@@ -415,7 +415,7 @@ const handleBookEvent = (e, id) => {
                     />
                       <span style={{
                       position: 'absolute', top: '12px', right: '12px', fontSize: '11px', fontWeight: '700',
-                      padding: '4px 12px', borderRadius: '1px', letterSpacing: '1px',
+                      padding: '4px 12px', borderRadius: '15px', letterSpacing: '1px',
                       backgroundColor: isCancelled ? COLORS.cancelledBg : COLORS.publishedBg,
                       color: isCancelled ? COLORS.cancelledText : COLORS.publishedText
                     }}>
@@ -427,21 +427,35 @@ const handleBookEvent = (e, id) => {
                   <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
                       {eventCats.map(c => (
-                        <span key={c} style={{ fontSize: '11px', padding: '2px 8px', backgroundColor: COLORS.bgLight, color: COLORS.dark, border: `1px solid ${COLORS.border}`, fontWeight: '600' }}>
+                        <span key={c} style={{ fontSize: '12px', padding: '3px 8px', backgroundColor: COLORS.bgLight, color: COLORS.dark, border: `1px solid ${COLORS.border}`, borderRadius: '5px', fontWeight: '600' }}>
                           {c}
                         </span>
                       ))}
                     </div>
 
-                    <h3 style={{ fontSize: '16px', fontWeight: '700', color: COLORS.dark, marginBottom: '12px', lineHeight: '1.4' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: '700', color: COLORS.dark, marginBottom: '12px', lineHeight: '1.4' }}>
                       {event.title}
                     </h3>
 
-                    <div style={{ fontSize: '13px', color: COLORS.textMuted, display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '20px' }}>
-                      <div>📅 {formatDate(event.start || event.startDateTime)}</div>
-                      <div>📍 {event.venue}, {event.city}</div>
-                      <div>
-                        👥 {event.available === 0 ? (
+                    <div style={{ fontSize: '13.5px', color: COLORS.textMuted, display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', lineHeight: '1' }}> 
+                        <img 
+                          src= "calendar (1).png" 
+                          alt="" 
+                          style={{ width: '19px', height: '19px', objectFit: 'contain', flexShrink: 0}} 
+                      /> {formatDate(event.start || event.startDateTime)}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', lineHeight: '1' }} > 
+                        <img 
+                          src= "pin.png" 
+                          alt="" 
+                          style={{ width: '19px', height: '19px', objectFit: 'contain', flexShrink: 0}} 
+                      /> {event.venue}, {event.city}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', lineHeight: '1' }}>
+                        <img 
+                          src= "team.png" 
+                          alt="" 
+                          style={{ width: '19px', height: '19px', objectFit: 'contain', flexShrink: 0}} 
+                        /> {event.available === 0 ? (
                           <span style={{ color: COLORS.cancelledText, fontWeight: '700' }}>Εξαντλήθηκε</span>
                         ) : (
                           <span>{event.available} θέσεις διαθέσιμες</span>
@@ -462,7 +476,7 @@ const handleBookEvent = (e, id) => {
                         disabled={!isAvailable}
                         onClick={(e) => handleBookEvent(e, event.id || event.EventID)}
                         style={{
-                          padding: '10px 20px', fontSize: '12px', fontWeight: '700', letterSpacing: '1px', border: 'none', borderRadius: '1px',
+                          padding: '10px 20px', fontSize: '12px', fontWeight: '700', letterSpacing: '1px', border: 'none', borderRadius: '5px',
                           backgroundColor: isAvailable ? COLORS.primary : '#e0e0e0',
                           color: isAvailable ? 'black' : '#888888',
                           cursor: isAvailable ? 'pointer' : 'not-allowed',
