@@ -167,7 +167,7 @@ function Navbar() {
               borderBottom: ['/profile', '/settings'].includes(location.pathname) ? `3px solid ${COLORS.primary}` : '3px solid transparent',
               paddingBottom: '5px'
             }}>
-              ΠΡΟΦΙΛ <span style={{ fontSize: '0.8rem' }}>▼</span>
+              ΠΡΟΦΙΛ <span style={{ fontSize: '0.8rem' }}></span>
             </span>
 
             {isDropdownOpen && (

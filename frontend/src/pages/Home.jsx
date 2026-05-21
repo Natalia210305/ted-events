@@ -92,9 +92,19 @@ export default function Home() {
           borderRadius: '50px',
           display: 'inline-block',
           marginBottom: '15px',
-          fontFamily: 'Poppins, sans-serif'
+          fontFamily: 'Poppins, sans-serif',
         }}>
-          ✨ WELCOME TO EVENTBYUS
+          <img 
+          src="/star.png" 
+          alt="Party Icon" 
+          style={{ 
+            width: '16px',  // Ρύθμισε το μέγεθος
+            height: '16px', 
+            objectFit: 'contain', 
+            marginRight: '8px'
+          }} 
+        />
+          WELCOME TO EVENTBYUS
         </span>
 
         <h1 style={{ 
