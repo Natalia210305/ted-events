@@ -10,6 +10,13 @@ const COLORS = {
   textMuted: '#666'
 };
 
+const NOTIF_TRANSLATIONS = {
+  'event_cancelled': 'ΑΚΥΡΩΣΗ ΕΚΔΗΛΩΣΗΣ',
+  'event cancelled': 'ΑΚΥΡΩΣΗ ΕΚΔΗΛΩΣΗΣ', 
+  'event_updated': 'ΕΝΗΜΕΡΩΣΗ ΕΚΔΗΛΩΣΗΣ',
+  'event updated': 'ΕΝΗΜΕΡΩΣΗ ΕΚΔΗΛΩΣΗΣ'
+};
+
 function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +45,10 @@ function Notifications() {
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.title}>ΟΙ ΕΙΔΟΠΟΙΗΣΕΙΣ ΜΟΥ 🔔</h2>
+      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+        <h2 style={{ ...styles.title, marginBottom: 0 }}>ΟΙ ΕΙΔΟΠΟΙΗΣΕΙΣ ΜΟΥ</h2>
+        <div style={{ width: '110px', height: '4px', backgroundColor: COLORS.primary, marginTop: '10px', marginRight: 'auto', marginLeft: 'auto' }} /> 
+      </div>
       <div style={styles.list}>
         {notifications.length === 0 ? (
           <p style={styles.emptyMsg}>Δεν έχετε νέες ειδοποιήσεις.</p>
@@ -50,7 +60,9 @@ function Notifications() {
               backgroundColor: notif.isRead ? COLORS.white : '#fffdfa'
             }}>
               <div style={styles.cardHeader}>
-                <span style={styles.typeTag}>{notif.type.replace('_', ' ')}</span>
+                <span style={styles.typeTag}>
+                  {NOTIF_TRANSLATIONS[notif.type?.toLowerCase()] || notif.type?.replace('_', ' ')}
+                </span>
                 <span style={styles.date}>{new Date(notif.createdAt).toLocaleString('el-GR')}</span>
               </div>
               <p style={styles.message}>{notif.message}</p>
@@ -69,7 +81,7 @@ const styles = {
     minHeight: '100vh'
   },
   title: {
-    fontSize: '1.8rem',
+    fontSize: '1.9rem',
     fontWeight: '800',
     color: COLORS.dark,
     marginBottom: '30px',
