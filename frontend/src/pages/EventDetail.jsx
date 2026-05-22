@@ -1,12 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import api from '../services/api.js' // Έγινε η προσθήκη εδώ
+import api from '../services/api.js'
 
-// ── Leaflet (OpenStreetMap) via CDN ──────────────────────────────────────────
-// Βεβαιώσου ότι στο index.html έχεις:
-//   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-//   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+// ── Χρωματική Παλέτα ─────────────────────────────────────────────────────────
 const COLORS = {
   primary: '#d2b893',    // Το μπεζ/χρυσό
   dark: '#2c2c2c',       // Σκούρο γκρι/μαύρο
@@ -20,24 +16,30 @@ const COLORS = {
   publishedText: '#27500A',
 }
 
+// ── Συνάρτηση Δυναμικής Εικόνας ──────────────────────────────────────────
+const getEventImage = (type, title) => {
+  const searchStr = `${type || ''} ${title || ''}`.toLowerCase().trim();
+  if (searchStr.includes('συναυλία') || searchStr.includes('concert') || searchStr.includes('μουσική') || searchStr.includes('jazz') || searchStr.includes('live')) {
+    return '/event-images/concert.jpg';
+  }
+  if (searchStr.includes('φεστιβάλ') || searchStr.includes('festival') || searchStr.includes('wine') || searchStr.includes('γαστρονομία')) {
+    return '/event-images/festival.jpg';
+  }
+  if (searchStr.includes('θέατρο') || searchStr.includes('παράσταση') || searchStr.includes('theater') || searchStr.includes('cinema') || searchStr.includes('ταινία') || searchStr.includes('pulp')) {
+    return '/event-images/theater.jpg';
+  }
+  if (searchStr.includes('σεμινάριο') || searchStr.includes('workshop') || searchStr.includes('conference') || searchStr.includes('hackathon') || searchStr.includes('code') || searchStr.includes('τεχνολογία')) {
+    return '/event-images/seminar.jpg';
+  }
+  return '/event-images/default.jpg';
+};
+
 function formatDateTime(dt) {
   if (!dt) return '-'
   return new Date(dt).toLocaleString('el-GR', {
     day: '2-digit', month: 'long', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   })
-}
-
-function availabilityPct(available, quantity) {
-  if (!quantity) return 0
-  return Math.round((available / quantity) * 100)
-}
-
-function availabilityColor(available, quantity) {
-  const pct = available / quantity
-  if (pct > 0.3) return '#27500A'
-  if (pct > 0) return '#b45309'
-  return '#791F1F'
 }
 
 // ── Map Component ────────────────────────────────────────────────────────────
@@ -130,9 +132,17 @@ function BookingModal({ event, ticketType, onConfirm, onCancel, isBooking }) {
           <span style={styles.totalAmount}>€{total}</span>
         </div>
 
-        <p style={styles.modalWarning}>
-          ⚠️ Η κράτηση δεν μπορεί να αναιρεθεί μετά την οριστική υποβολή.
-        </p>
+        {/* Διορθωμένο modalWarning με div και flex */}
+        <div style={{ ...styles.modalWarning, display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <img 
+            src="/warning.png" 
+            alt="warning" 
+            style={{ width: '20px', height: '20px', objectFit: 'contain', flexShrink: 0 }} 
+          />
+          <span>
+            Η κράτηση δεν μπορεί να αναιρεθεί μετά την οριστική υποβολή.
+          </span>
+        </div>
 
         <div style={styles.modalButtons}>
           <button style={styles.cancelBtn} onClick={onCancel} disabled={isBooking}>Ακύρωση</button>
@@ -157,24 +167,25 @@ export default function EventDetail() {
   const [event, setEvent] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [showContactModal, setShowContactModal] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [bookingSuccess, setBookingSuccess] = useState(null)
   const [bookingError, setBookingError] = useState(null)
-  const handleContactOrganizer = () => {
-  // Στέλνουμε τον χρήστη στα μηνύματα και περνάμε στο state 
-  // το ID του διοργανωτή και το όνομα του Event
-  navigate('/messages', { 
-    state: { 
-      recipientId: event.organizerId, 
-      recipientName: `${event.organizer.firstName} ${event.organizer.lastName}`,
-      subject: event.title 
-    } 
-  });
-};
 
-  // 1. Fetch Event Details χρησιμοποιώντας το api service (Axios)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
+
+  const handleContactOrganizer = () => {
+    navigate('/messages', { 
+      state: { 
+        recipientId: event.organizerId, 
+        recipientName: `${event.organizer?.firstName || ''} ${event.organizer?.lastName || ''}`,
+        subject: event.title 
+      } 
+    });
+  };
+
   useEffect(() => {
     if (!id) return
     setLoading(true)
@@ -182,7 +193,6 @@ export default function EventDetail() {
 
     api.get(`/events/${id}`)
       .then(res => {
-        // Mapping των πεδίων της βάσης με την ίδια λογική του 2ου αρχείου
         const mappedEvent = {
           ...res.data,
           desc: res.data.description, 
@@ -201,46 +211,39 @@ export default function EventDetail() {
   }, [id])
 
   async function handleConfirmBooking(quantity, totalCost) {
-  setIsBooking(true);
-  setBookingError(null);
-  
-  try {
-    console.log("Στέλνω κράτηση...");
-    const response = await api.post(`/events/${id}/bookings`, {
-      ticketTypeId: selectedTicket.id,
-      numberOfTickets: quantity,
-      totalCost,
-    });
-
-    console.log("Απάντηση Backend:", response.data);
-
-    // Ενημέρωση State
-    setEvent(prev => {
-      const updatedTickets = prev.ticketTypes.map(t =>
-        t.id === selectedTicket.id ? { ...t, available: t.available - quantity } : t
-      );
-      return {
-        ...prev,
-        ticketTypes: updatedTickets,
-        available: updatedTickets.reduce((sum, t) => sum + t.available, 0)
-      };
-    });
-
-    // ΑΥΤΟ ΘΑ ΒΓΕΙ ΟΠΩΣΔΗΠΟΤΕ
-    window.alert("Η κράτηση ολοκληρώθηκε επιτυχώς!"); 
+    setIsBooking(true);
+    setBookingError(null);
     
-    setShowModal(false);
-    setBookingSuccess("Επιτυχής κράτηση!");
+    try {
+      await api.post(`/events/${id}/bookings`, {
+        ticketTypeId: selectedTicket.id,
+        numberOfTickets: quantity,
+        totalCost,
+      });
 
-  } catch (e) {
-    console.error("Σφάλμα κράτησης:", e);
-    const errorMsg = e.response?.data?.message || 'Αποτυχία κράτησης στο Supabase.';
-    window.alert("Σφάλμα: " + errorMsg); // Θα σου πει ακριβώς τι φταίει
-    setBookingError(errorMsg);
-  } finally {
-    setIsBooking(false);
+      setEvent(prev => {
+        const updatedTickets = prev.ticketTypes.map(t =>
+          t.id === selectedTicket.id ? { ...t, available: t.available - quantity } : t
+        );
+        return {
+          ...prev,
+          ticketTypes: updatedTickets,
+          available: updatedTickets.reduce((sum, t) => sum + t.available, 0)
+        };
+      });
+
+      window.alert("Η κράτηση ολοκληρώθηκε επιτυχώς!"); 
+      setShowModal(false);
+      setBookingSuccess("Επιτυχής κράτηση!");
+    } catch (e) {
+      console.error("Σφάλμα κράτησης:", e);
+      const errorMsg = e.response?.data?.message || 'Αποτυχία κράτησης στο Supabase.';
+      window.alert("Σφάλμα: " + errorMsg);
+      setBookingError(errorMsg);
+    } finally {
+      setIsBooking(false);
+    }
   }
-}
 
   if (loading) return (
     <div style={styles.statusPage}>
@@ -262,168 +265,184 @@ export default function EventDetail() {
   const lng = event.geoLocation?.longitude ?? event.longitude
   const eventCats = event.cats || event.categories || []
 
+  const displayPrice = event.ticketTypes && event.ticketTypes.length > 0 
+    ? parseFloat(event.ticketTypes[0].price) === 0 ? 'Δωρεάν' : `${parseFloat(event.ticketTypes[0].price)}€`
+    : '-';
+
+  const finalEventImage = event.photos && event.photos.length > 0 
+    ? event.photos[0] 
+    : getEventImage(event.eventType, event.title);
+
   return (
     <div style={styles.page}>
-
-      {/* ── Back button ── */}
       <div style={styles.topBar}>
         <button style={styles.backBtn} onClick={() => navigate('/events')}>
-          ← Πίσω στις εκδηλώσεις
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+            <img 
+              src="/back.png"  
+              alt="back to events" 
+              style={{ width: '19px', height: '19px', objectFit: 'contain', flexShrink: 0 }} 
+            /> 
+            ΠΙΣΩ ΣΤΙΣ ΕΚΔΗΛΩΣΕΙΣ
+          </div>
         </button>
       </div>
 
-      {/* ── Header ── */}
-      <div style={styles.header}>
-        <div style={styles.headerInner}>
-          <span style={{
-            ...styles.statusBadge,
-            backgroundColor: isCancelled ? COLORS.cancelledBg : COLORS.publishedBg,
-            color: isCancelled ? COLORS.cancelledText : COLORS.publishedText,
-          }}>
-            {isCancelled ? 'ΑΚΥΡΩΜΕΝΗ' : 'ΔΗΜΟΣΙΕΥΜΕΝΗ'}
-          </span>
-
-          <div style={styles.catRow}>
-            {eventCats.map((c, index) => (
-              <span key={index} style={styles.catBadge}>{c}</span>
-            ))}
+      {/* ── Κύριο Split Layout ── */}
+      <div style={styles.mainContainer}>
+        
+        {/* ΑΡΙΣΤΕΡΗ ΣΤΗΛΗ */}
+        <div style={styles.leftColumn}>
+          <div style={styles.imageContainer}>
+            <img src={finalEventImage} alt={event.title} style={styles.mainImage} />
           </div>
 
-          <h1 style={styles.title}>{event.title}</h1>
-          <p style={styles.meta}>
-            {event.eventType} · {event.venue}, {event.city}, {event.country}
-          </p>
-          {/* ΤΟ ΚΟΥΜΠΙ ΕΠΙΚΟΙΝΩΝΙΑΣ */}
-          <button 
-            onClick={handleContactOrganizer}
-            style={{
-              background: 'none',
-              border: `1px solid ${COLORS.primary}`,
-              color: COLORS.dark,
-              padding: '6px 12px',
-              fontSize: '12px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              borderRadius: '4px',
-              marginTop: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px'
-            }}
-          >
-  💬 Επικοινωνία με Διοργανωτή
-</button>
-          <p style={styles.dates}>
-            🗓 {formatDateTime(event.start || event.startDateTime)} — {formatDateTime(event.endDateTime)}
-          </p>
-        </div>
-      </div>
+          {bookingSuccess && <div style={styles.successBanner}>✅ {bookingSuccess}</div>}
+          {bookingError && <div style={styles.errorBanner}>❌ {bookingError}</div>}
 
-      {/* ── Body ── */}
-      <div style={styles.body}>
-
-        {bookingSuccess && (
-          <div style={styles.successBanner}>✅ {bookingSuccess}</div>
-        )}
-        {bookingError && (
-          <div style={styles.errorBanner}>❌ {bookingError}</div>
-        )}
-
-        <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Περιγραφη</h2>
-          <p style={styles.description}>{event.desc || event.description}</p>
-        </section>
-
-        <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Τοποθεσια</h2>
-          <p style={styles.address}>📍 {event.address}, {event.city}, {event.country}</p>
-          <EventMap latitude={lat} longitude={lng} venue={event.venue} />
-        </section>
-
-        <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Εισιτηρια</h2>
-          <p style={styles.capacity}>
-            Συνολική χωρητικότητα: <strong>{event.capacity}</strong> θέσεις
-          </p>
-          <div style={styles.ticketGrid}>
-            {(event.ticketTypes || []).map(t => {
-              const sold = isCancelled || t.available === 0
-              const pct = availabilityPct(t.available, t.quantity)
-              const color = availabilityColor(t.available, t.quantity)
-              const isSelected = selectedTicket?.id === t.id
-
-              return (
-                <div key={t.id} style={{
-                  ...styles.ticketCard,
-                  border: `1px solid ${isSelected ? COLORS.primary : COLORS.border}`,
-                  opacity: sold ? 0.6 : 1,
-                }}>
-                  <div style={styles.ticketName}>{t.name}</div>
-                  <div style={styles.ticketPrice}>
-                    {parseFloat(t.price) === 0 ? 'Δωρεάν' : `€${parseFloat(t.price).toFixed(2)}`}
-                  </div>
-                  <div style={styles.progressBg}>
-                    <div style={{ ...styles.progressFill, width: `${pct}%`, background: color }} />
-                  </div>
-                  <div style={{ color, fontSize: 12, marginBottom: 16 }}>
-                    {t.available} / {t.quantity} διαθέσιμα
-                  </div>
-                  {/* Έλεγχος αν η εκδήλωση είναι ενεργή και υπάρχουν εισιτήρια */}
-                  {isActive && !sold ? (
-                    /* ΕΣΩΤΕΡΙΚΟΣ ΕΛΕΓΧΟΣ: Είναι ο χρήστης συνδεδεμένος; */
-                    localStorage.getItem('token') ? (
-                      <button
-                        style={{
-                          ...styles.bookBtn,
-                          backgroundColor: isSelected ? COLORS.dark : COLORS.primary,
-                          color: isSelected ? COLORS.white : COLORS.dark,
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#c4aa82'}
-                        onMouseLeave={e => e.currentTarget.style.backgroundColor = isSelected ? COLORS.dark : COLORS.primary}
-                        onClick={() => {
-                          setSelectedTicket(t)
-                          setBookingSuccess(null)
-                          setBookingError(null)
-                          setShowModal(true)
-                        }}
-                      >
-                        ΚΡΑΤΗΣΗ
-                      </button>
-                    ) : (
-                      /* ΑΝ ΔΕΝ ΕΙΝΑΙ ΣΥΝΔΕΔΕΜΕΝΟΣ: Δείξε μήνυμα προτροπής */
-                      <div style={{ textAlign: 'center', marginTop: 10 }}>
-                        <p style={{ fontSize: 11, color: '#b45309', fontWeight: 600, marginBottom: 8 }}>
-                          Συνδεθείτε για κράτηση
-                        </p>
-                        <button 
-                          style={{ ...styles.bookBtn, backgroundColor: '#eee', color: '#777', fontSize: 10 }}
-                          onClick={() => navigate('/login')}
-                        >
-                          ΕΙΣΟΔΟΣ
-                        </button>
-                      </div>
-                    )
-                  ) : (
-                    <span style={styles.soldOut}>
-                      {isCancelled ? 'Ακυρώθηκε' : 'Εξαντλήθηκαν'}
-                    </span>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </section>
-
-        {event.photos && event.photos.length > 0 && (
           <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Φωτογραφίες</h2>
-            <div style={styles.photoGrid}>
-              {event.photos.map((p, i) => (
-                <img key={i} src={p} alt={`photo-${i}`} style={styles.photo} />
-              ))}
+            <h2 style={styles.sectionTitle}>Περιγραφη</h2>
+            <p style={styles.description}>{event.desc || event.description}</p>
+          </section>
+
+          {/* Διορθωμένο Section Τοποθεσίας με το εικονίδιο pin */}
+          <section style={styles.section}>
+            <h2 style={styles.sectionTitle}>Τοποθεσια</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <img 
+                src="/pin.png" 
+                alt="location pin" 
+                style={{ width: '19px', height: '19px', objectFit: 'contain', flexShrink: 0 }} 
+              />
+              <span style={{ color: COLORS.textMuted, fontSize: '13.5px' }}>
+                {event.address || event.venue}, {event.city}, {event.country}
+              </span>
+            </div>
+            <EventMap latitude={lat} longitude={lng} venue={event.venue} />
+          </section>
+
+          <section style={styles.section}>
+            <h2 style={styles.sectionTitle}>Εισιτηρια</h2>
+            <p style={styles.capacity}>
+              Συνολική χωρητικότητα: <strong>{event.capacity}</strong> θέσεις
+            </p>
+            <div style={styles.ticketGrid}>
+              {(event.ticketTypes || []).map(t => {
+                const sold = isCancelled || t.available === 0
+                const pct = Math.round((t.available / t.quantity) * 100)
+                const color = t.available / t.quantity > 0.3 ? '#27500A' : t.available > 0 ? '#b45309' : '#791F1F'
+                const isSelected = selectedTicket?.id === t.id
+
+                return (
+                  <div key={t.id} style={{
+                    ...styles.ticketCard,
+                    border: `1px solid ${isSelected ? COLORS.primary : COLORS.border}`,
+                    opacity: sold ? 0.6 : 1,
+                  }}>
+                    <div style={styles.ticketName}>{t.name}</div>
+                    <div style={styles.ticketPrice}>
+                      {parseFloat(t.price) === 0 ? 'Δωρεάν' : `€${parseFloat(t.price).toFixed(2)}`}
+                    </div>
+                    <div style={styles.progressBg}>
+                      <div style={{ ...styles.progressFill, width: `${pct}%`, background: color }} />
+                    </div>
+                    <div style={{ color, fontSize: 12, marginBottom: 16 }}>
+                      {t.available} / {t.quantity} διαθέσιμα
+                    </div>
+                    
+                    {isActive && !sold ? (
+                      localStorage.getItem('token') ? (
+                        <button
+                          style={{
+                            ...styles.bookBtn,
+                            backgroundColor: isSelected ? COLORS.dark : COLORS.primary,
+                            color: isSelected ? COLORS.white : COLORS.dark,
+                          }}
+                          onClick={() => {
+                            setSelectedTicket(t)
+                            setBookingSuccess(null)
+                            setBookingError(null)
+                            setShowModal(true)
+                          }}
+                        >
+                          ΚΡΑΤΗΣΗ
+                        </button>
+                      ) : (
+                        <div style={{ textAlign: 'center', marginTop: 10 }}>
+                          <p style={{ fontSize: 11, color: '#b45309', fontWeight: 600, marginBottom: 8 }}>
+                            Συνδεθείτε για κράτηση
+                          </p>
+                          <button 
+                            style={{ ...styles.bookBtn, backgroundColor: '#eee', color: '#777', fontSize: 10 }}
+                            onClick={() => navigate('/login')}
+                          >
+                            ΕΙΣΟΔΟΣ
+                          </button>
+                        </div>
+                      )
+                    ) : (
+                      <span style={styles.soldOut}>
+                        {isCancelled ? 'Ακυρώθηκε' : 'Εξαντλήθηκαν'}
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </section>
-        )}
+        </div>
+
+        {/* ΔΕΞΙΑ ΣΤΗΛΗ (SIDEBAR) */}
+        <div style={styles.rightColumn}>
+          <div style={styles.stickySidebar}>
+            
+            <div>
+              <div style={styles.statusAndCats}>
+                <span style={{
+                  ...styles.statusBadge,
+                  backgroundColor: isCancelled ? COLORS.cancelledBg : COLORS.publishedBg,
+                  color: isCancelled ? COLORS.cancelledText : COLORS.publishedText,
+                }}>
+                  {isCancelled ? 'ΑΚΥΡΩΜΕΝΗ' : 'ΔΗΜΟΣΙΕΥΜΕΝΗ'}
+                </span>
+                <div style={styles.catRow}>
+                  {eventCats.map((c, index) => (
+                    <span key={index} style={styles.catBadge}>{c}</span>
+                  ))}
+                </div>
+              </div>
+
+              <h1 style={styles.Title}>
+                {(event.title || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()}
+              </h1>
+              
+              <div style={styles.PriceBadge}>TIMH ΑΠΟ</div>
+              <div style={styles.PriceValue}>{displayPrice}</div>
+            </div>
+            
+            {/* ΔΙΟΡΘΩΘΗΚΕ: Εδώ έγινε <div> αντί για <p> για να μην πετάει σφάλμα HTML */}
+            <div style={styles.DescriptionMeta}>
+              {event.eventType} · {event.venue}<br />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+                <img 
+                  src="/calendar (1).png"  
+                  alt="calendar" 
+                  style={{ width: '18px', height: '18px', objectFit: 'contain', flexShrink: 0 }} 
+                /> 
+                {formatDateTime(event.start || event.startDateTime)}
+              </div>
+            </div>
+
+            <button 
+              onClick={handleContactOrganizer}
+              style={styles.ContactBtn}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#c4aa82'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = COLORS.primary}
+            >
+              ΕΠΙΚΟΙΝΩΝΙΑ ΜΕ ΔΙΟΡΓΑΝΩΤΗ
+            </button>
+          </div>
+        </div>
 
       </div>
 
@@ -431,107 +450,105 @@ export default function EventDetail() {
         <BookingModal
           event={event}
           ticketType={selectedTicket}
-          onConfirm={handleConfirmBooking}
+          onConfirm={handleConfirmBooking} 
           onCancel={() => setShowModal(false)}
-          isBooking={isBooking} // Εδώ θα προσθέσεις το νέο prop για το loading
+          isBooking={isBooking}
         />
       )}
     </div>
   )
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
+// ── Στυλ ──────────────────────────────────────────────────────────────────────
 const styles = {
-  page: {
-    backgroundColor: '#faf9f8', // Ίδιο απαλό φόντο με το Browse
-    minHeight: '100vh',
-    fontFamily: 'Poppins, sans-serif',
-    color: COLORS.dark,
-    overflowY: 'auto',
+  page: { backgroundColor: '#faf9f8', minHeight: '100vh', fontFamily: 'Poppins, sans-serif', color: COLORS.dark },
+  statusPage: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#faf9f8', fontFamily: 'Poppins, sans-serif' },
+  topBar: { maxWidth: 1200, margin: '0 auto', padding: '24px 24px 0' },
+  backBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, letterSpacing: 1, color: COLORS.textMuted, fontFamily: 'Poppins, sans-serif', padding: 0 },
+  mainContainer: { display: 'flex', maxWidth: 1200, margin: '0 auto', padding: '24px', gap: '40px', flexWrap: 'wrap', alignItems: 'flex-start' },
+  leftColumn: { flex: '1 1 650px', minWidth: '300px' },
+  rightColumn: { flex: '0 0 380px', minWidth: '300px' },
+  imageContainer: { 
+    width: '100%', 
+    height: '395px', 
+    backgroundColor: '#e6e6e6', 
+    borderRadius: '4px', 
+    marginBottom: '32px', 
+    overflow: 'hidden' 
   },
-  statusPage: {
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    minHeight: '100vh', backgroundColor: '#faf9f8',
-    fontFamily: 'Poppins, sans-serif',
+  mainImage: { width: '100%', height: '100%', objectFit: 'cover' },
+  stickySidebar: { 
+    position: 'sticky', 
+    top: '40px', 
+    backgroundColor: COLORS.white, 
+    padding: '32px', 
+    borderRadius: '8px', 
+    border: `1px solid ${COLORS.border}`, 
+    boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px'
   },
-  topBar: { maxWidth: 900, margin: '0 auto', padding: '24px 24px 0' },
-  backBtn: {
-    background: 'none', border: 'none', cursor: 'pointer',
-    fontSize: 13, fontWeight: 700, letterSpacing: 1,
-    color: COLORS.textMuted, fontFamily: 'Poppins, sans-serif', padding: 0,
+  statusAndCats: { display: 'flex', 
+    justifyContent: 'space-between', 
+    alignItems: 'flex-start', 
+    flexWrap: 'wrap', 
+    gap: '10px', 
+    marginBottom: '18px' // Κρατάει το σωστό κενό που ζήτησες
   },
-  header: {
-    backgroundColor: COLORS.white,
-    borderBottom: `1px solid ${COLORS.border}`,
-    padding: '28px 0', marginTop: 16,
+  statusBadge: { fontSize: 10, fontWeight: 700, letterSpacing: 1, padding: '4px 10px', borderRadius: 2 },
+  catRow: { display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' },
+  catBadge: { fontSize: 11, fontWeight: 600, padding: '3px 8px', backgroundColor: COLORS.bgLight, border: `1px solid ${COLORS.border}`, color: COLORS.dark, borderRadius: '2px' },
+  Title: { fontSize: '22px', fontWeight: '700', margin: '0 0 12px 0', color: COLORS.dark, letterSpacing: '0.5px', lineHeight: '1.3' },
+  PriceBadge: { fontSize: '11px', color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '2px' },
+  PriceValue: { fontSize: '30px', fontWeight: '800', color: COLORS.dark, margin: '0', lineHeight: '1' },
+  
+  // Διορθώθηκε το margin/padding conflict για αποφυγή react warning
+  DescriptionMeta: { 
+    color: COLORS.textMuted, 
+    fontSize: '14px', 
+    lineHeight: '1.6', 
+    borderTop: `1px solid ${COLORS.border}`, 
+    paddingTop: '16px',
+    paddingBottom: '4px'
   },
-  headerInner: { maxWidth: 900, margin: '0 auto', padding: '0 24px' },
-  statusBadge: {
-    display: 'inline-block', fontSize: 11, fontWeight: 700,
-    letterSpacing: 1, padding: '4px 12px', borderRadius: 1, marginBottom: 14,
+  ContactBtn: { 
+    width: '100%', 
+    backgroundColor: COLORS.primary, 
+    color: '#2c2c2c',                
+    border: 'none', 
+    padding: '14px 0', 
+    fontSize: '13px',                
+    fontWeight: '700',               
+    borderRadius: '4px',             
+    cursor: 'pointer', 
+    transition: 'background-color 0.15s ease', 
+    letterSpacing: '1px',            
+    textTransform: 'uppercase',
+    boxShadow: '0 2px 6px rgba(210, 184, 147, 0.2)'
   },
-  catRow: { display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 },
-  catBadge: {
-    fontSize: 11, fontWeight: 600, padding: '3px 10px',
-    backgroundColor: COLORS.bgLight, border: `1px solid ${COLORS.border}`, color: COLORS.dark,
-  },
-  title: {
-    fontSize: 'clamp(22px, 4vw, 34px)', fontWeight: 700,
-    margin: '0 0 10px', lineHeight: 1.2, color: COLORS.dark,
-  },
-  meta: { color: COLORS.textMuted, fontSize: 14, margin: '0 0 6px' },
-  dates: { color: COLORS.textMuted, fontSize: 13, margin: 0 },
-  body: { maxWidth: 900, margin: '0 auto', padding: '36px 24px 80px' },
-  section: { marginBottom: 44 },
-  sectionTitle: {
-    fontSize: 15, fontWeight: 700, letterSpacing: 2,
-    textTransform: 'uppercase', color: COLORS.dark,
-    marginBottom: 16, paddingBottom: 10, borderBottom: `1px solid ${COLORS.border}`,
-  },
-  description: { color: COLORS.textMuted, lineHeight: 1.8, fontSize: 15 },
-  address: { color: COLORS.textMuted, fontSize: 13, marginBottom: 14 },
-  map: { width: '100%', height: 320, borderRadius: 1, border: `1px solid ${COLORS.border}` },
-  mapPlaceholder: {
-    width: '100%', height: 200, backgroundColor: COLORS.white,
-    border: `1px dashed ${COLORS.border}`,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: COLORS.textMuted, fontSize: 13,
-  },
-  capacity: { color: COLORS.textMuted, fontSize: 13, marginBottom: 20 },
-  ticketGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 16 },
-  ticketCard: { backgroundColor: COLORS.white, borderRadius: 1, padding: 20, transition: 'border-color .2s' },
+  section: { marginBottom: 40 },
+  sectionTitle: { fontSize: '16px', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: COLORS.dark, marginBottom: 16, paddingBottom: 8, borderBottom: `1px solid ${COLORS.border}` },
+  description: { color: COLORS.textMuted, lineHeight: '1.8', fontSize: '14px' },
+  address: { color: COLORS.textMuted, fontSize: '13px', marginBottom: 14 },
+  map: { width: '100%', height: 320, borderRadius: 4, border: `1px solid ${COLORS.border}` },
+  mapPlaceholder: { width: '100%', height: 200, backgroundColor: COLORS.white, border: `1px dashed ${COLORS.border}`, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.textMuted, fontSize: 13 },
+  capacity: { color: COLORS.textMuted, fontSize: 14, marginBottom: 20 },
+  ticketGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 },
+  ticketCard: { backgroundColor: COLORS.white, borderRadius: 4, padding: 20, border: `1px solid ${COLORS.border}` },
   ticketName: { fontWeight: 700, fontSize: 14, marginBottom: 4, color: COLORS.dark },
   ticketPrice: { fontSize: 22, fontWeight: 700, color: COLORS.dark, marginBottom: 16 },
   progressBg: { height: 4, background: COLORS.border, borderRadius: 2, marginBottom: 6 },
   progressFill: { height: '100%', borderRadius: 2, transition: 'width .4s' },
-  bookBtn: {
-    width: '100%', padding: '11px 0', border: 'none', borderRadius: 1,
-    fontFamily: 'Poppins, sans-serif', fontSize: 12, fontWeight: 700,
-    letterSpacing: 1, cursor: 'pointer', transition: 'background-color .15s',
-  },
+  bookBtn: { width: '100%', padding: '11px 0', border: 'none', borderRadius: 4, fontFamily: 'Poppins, sans-serif', fontSize: 12, fontWeight: 700, letterSpacing: 1, cursor: 'pointer', transition: 'background-color .15s' },
   soldOut: { display: 'block', textAlign: 'center', color: COLORS.textMuted, fontSize: 13 },
   photoGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 },
-  photo: { width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: 1 },
-  successBanner: {
-    backgroundColor: COLORS.publishedBg, border: `1px solid ${COLORS.publishedText}`,
-    borderRadius: 1, padding: '14px 18px', marginBottom: 24,
-    color: COLORS.publishedText, fontSize: 14, fontWeight: 600,
-  },
-  errorBanner: {
-    backgroundColor: COLORS.cancelledBg, border: `1px solid ${COLORS.cancelledText}`,
-    borderRadius: 1, padding: '14px 18px', marginBottom: 24,
-    color: COLORS.cancelledText, fontSize: 14, fontWeight: 600,
-  },
-  overlay: {
-    position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    zIndex: 1000, padding: 16,
-  },
-  modal: {
-    backgroundColor: COLORS.white, border: `1px solid ${COLORS.border}`,
-    borderRadius: 1, padding: 32, width: '100%', maxWidth: 440,
-    fontFamily: 'Poppins, sans-serif',
-  },
+  photo: { width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: 4 },
+  successBanner: { backgroundColor: COLORS.publishedBg, border: `1px solid ${COLORS.publishedText}`, padding: '14px 18px', marginBottom: 24, color: COLORS.publishedText, fontSize: 14, fontWeight: 600, borderRadius: 4 },
+  errorBanner: { backgroundColor: COLORS.cancelledBg, border: `1px solid ${COLORS.cancelledText}`, padding: '14px 18px', marginBottom: 24, color: COLORS.cancelledText, fontSize: 14, fontWeight: 600, borderRadius: 4 },
+  overlay: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 },
+  modal: { backgroundColor: COLORS.white, border: `1px solid ${COLORS.border}`, borderRadius: 8, padding: 32, width: '100%', maxWidth: 440, fontFamily: 'Poppins, sans-serif' },
   modalTitle: { fontSize: 18, fontWeight: 700, marginBottom: 4, color: COLORS.dark },
   modalEvent: { color: COLORS.textMuted, fontSize: 13, marginBottom: 24 },
   modalRow: { display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: `1px solid ${COLORS.bgLight}` },
@@ -539,34 +556,12 @@ const styles = {
   modalValue: { fontSize: 13, fontWeight: 600, color: COLORS.dark },
   qtyRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0' },
   qtyControl: { display: 'flex', alignItems: 'center', gap: 14 },
-  qtyBtn: {
-    width: 32, height: 32, borderRadius: '50%',
-    backgroundColor: COLORS.bgLight, border: `1px solid ${COLORS.border}`,
-    color: COLORS.dark, fontSize: 18, cursor: 'pointer',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-  },
+  qtyBtn: { width: 32, height: 32, borderRadius: '50%', backgroundColor: COLORS.bgLight, border: `1px solid ${COLORS.border}`, color: COLORS.dark, fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   qtyNum: { fontSize: 20, fontWeight: 700, minWidth: 24, textAlign: 'center' },
-  totalRow: {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '14px 0', borderTop: `1px solid ${COLORS.border}`, marginTop: 4,
-  },
+  totalRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderTop: `1px solid ${COLORS.border}`, marginTop: 4 },
   totalAmount: { fontSize: 22, fontWeight: 700, color: COLORS.dark },
-  modalWarning: {
-    color: '#b45309', fontSize: 12, lineHeight: 1.5, margin: '14px 0',
-    backgroundColor: '#fffbeb', padding: '10px 12px',
-    border: '1px solid #fcd34d', borderRadius: 1,
-  },
+  modalWarning: { color: '#b45309', fontSize: '12px', lineHeight: '1.5', margin: '14px 0', backgroundColor: '#fffbeb', padding: '10px 14px', border: '1px solid #fcd34d', borderRadius: 4 },
   modalButtons: { display: 'flex', gap: 12, marginTop: 8 },
-  cancelBtn: {
-    flex: 1, padding: '12px 0', borderRadius: 1,
-    backgroundColor: COLORS.bgLight, border: `1px solid ${COLORS.border}`,
-    color: COLORS.textMuted, cursor: 'pointer',
-    fontFamily: 'Poppins, sans-serif', fontSize: 12, fontWeight: 700,
-  },
-  confirmBtn: {
-    flex: 2, padding: '12px 0', borderRadius: 1,
-    backgroundColor: COLORS.primary, border: 'none',
-    color: COLORS.dark, cursor: 'pointer',
-    fontFamily: 'Poppins, sans-serif', fontSize: 12, fontWeight: 700, letterSpacing: 1,
-  },
+  cancelBtn: { flex: 1, padding: '12px 0', borderRadius: 4, backgroundColor: COLORS.bgLight, border: `1px solid ${COLORS.border}`, color: COLORS.textMuted, cursor: 'pointer', fontSize: 12, fontWeight: 700 },
+  confirmBtn: { flex: 2, padding: '12px 0', borderRadius: 4, backgroundColor: COLORS.primary, border: 'none', color: COLORS.dark, cursor: 'pointer', fontSize: 12, fontWeight: 700, letterSpacing: 1 },
 }

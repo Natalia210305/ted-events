@@ -61,6 +61,10 @@ export default function EventsBrowse() {
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentPage]);
+
   // 1. useEffect: Ανάκτηση όλων των εκδηλώσεων
   useEffect(() => {
     const fetchEventsFromBackend = async () => {
