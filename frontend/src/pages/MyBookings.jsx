@@ -10,6 +10,12 @@ const COLORS = {
   white: '#ffffff',
 };
 
+const STATUS_TRANSLATIONS = {
+  confirmed: 'ΕΠΙΒΕΒΑΙΩΜΕΝΗ',
+  pending: 'ΣΕ ΕΚΚΡΕΜΟΤΗΤΑ',
+  cancelled: 'ΑΚΥΡΩΘΗΚΕ',
+};
+
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,19 +38,25 @@ const MyBookings = () => {
 
   return (
     <div style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto' }}>
-      <h1 style={{ color: COLORS.dark, borderBottom: `2px solid ${COLORS.primary}`, paddingBottom: '10px' }}>
-        Το Ιστορικό μου
-      </h1>
+      
+      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+        <h1 style={{ fontSize: '1.9rem', fontWeight: '800', color: COLORS.dark, letterSpacing: '1px', margin: 0 }}>
+          ΤΟ ΙΣΤΟΡΙΚΟ ΤΩΝ ΚΡΑΤΗΣΕΩΝ ΜΟΥ
+        </h1>
+        <div style={{ width: '150px', height: '4px', backgroundColor: COLORS.primary, marginTop: '10px', marginRight: 'auto', marginLeft: 'auto' }} />
+      </div>
       
       {bookings.length === 0 ? (
-        <p style={{ marginTop: '20px', color: '#666' }}>Δεν έχετε πραγματοποιήσει κάποια κράτηση ακόμα.</p>
+        <p style={{ marginTop: '20px', color: '#666', textAlign: 'center' }}>Δεν έχετε πραγματοποιήσει κάποια κράτηση ακόμα.</p>
       ) : (
         <div style={{ marginTop: '20px' }}>
           {bookings.map((booking) => (
             <div key={booking.id} style={styles.card}>
               <div style={styles.cardHeader}>
                 <h3 style={{ margin: 0 }}>{booking.event?.title}</h3>
-                <span style={styles.statusBadge}>{booking.status}</span>
+                <span style={styles.statusBadge}>
+                  {STATUS_TRANSLATIONS[booking.status?.toLowerCase()] || booking.status}
+                </span>
               </div>
               <div style={styles.cardBody}>
                 <p><strong>Τοποθεσία:</strong> {booking.event?.venue}, {booking.event?.city}</p>
