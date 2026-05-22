@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../services/api'; // Σιγουρέψου ότι το path για το api service σου είναι σωστό
 
 const PER_PAGE = 6;
 
-// Παλέτα χρωμάτων από το Home.jsx σου
+// Παλέτα χρωμάτων
 const COLORS = {
   primary: '#d2b893',      // Το μπεζ/χρυσό
   dark: '#2c2c2c',         // Σκούρο γκρι/μαύρο
@@ -18,60 +19,33 @@ const COLORS = {
 };
 
 const getEventImage = (type, title) => {
-  // Ενώνουμε τον τύπο και τον τίτλο για να ψάξουμε λέξεις-κλειδιά
   const searchStr = `${type || ''} ${title || ''}`.toLowerCase().trim();
-  
-  if (
-    searchStr.includes('συναυλία') || 
-    searchStr.includes('concert') || 
-    searchStr.includes('μουσική') || 
-    searchStr.includes('jazz') || 
-    searchStr.includes('live')
-  ) {
+  if (searchStr.includes('συναυλία') || searchStr.includes('concert') || searchStr.includes('μουσική') || searchStr.includes('jazz') || searchStr.includes('live')) {
     return '/event-images/concert.jpg';
   }
-  
-  if (
-    searchStr.includes('φεστιβάλ') || 
-    searchStr.includes('festival') || 
-    searchStr.includes('wine') || 
-    searchStr.includes('γαστρονομία')
-  ) {
+  if (searchStr.includes('φεστιβάλ') || searchStr.includes('festival') || searchStr.includes('wine') || searchStr.includes('γαστρονομία')) {
     return '/event-images/festival.jpg';
   }
-  
-  if (
-    searchStr.includes('θέατρο') || 
-    searchStr.includes('παράσταση') || 
-    searchStr.includes('theater') || 
-    searchStr.includes('cinema') || 
-    searchStr.includes('ταινία') || 
-    searchStr.includes('pulp')
-  ) {
+  if (searchStr.includes('θέατρο') || searchStr.includes('παράσταση') || searchStr.includes('theater') || searchStr.includes('cinema') || searchStr.includes('ταινία') || searchStr.includes('pulp')) {
     return '/event-images/theater.jpg';
   }
-  
-  if (
-    searchStr.includes('σεμινάριο') || 
-    searchStr.includes('workshop') || 
-    searchStr.includes('conference') || 
-    searchStr.includes('hackathon') || 
-    searchStr.includes('code') || 
-    searchStr.includes('τεχνολογία')
-  ) {
+  if (searchStr.includes('σεμινάριο') || searchStr.includes('workshop') || searchStr.includes('conference') || searchStr.includes('hackathon') || searchStr.includes('code') || searchStr.includes('τεχνολογία')) {
     return '/event-images/seminar.jpg';
   }
-  
-  // Αν δεν βρει τίποτα, επιστρέφει το custom κολλάζ του Canva
   return '/event-images/default.jpg';
 };
 
 export default function EventsBrowse() {
   const navigate = useNavigate();
-  // 1. Δημιουργία state για τα δυναμικά events της βάσης
+  
+  // States για τα events της βάσης
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // States για τα Recommendations (Ερώτημα 13)
+  const [recommendations, setRecommendations] = useState([]);
+  const [isRecsActive, setIsRecsActive] = useState(false); // State που δείχνει αν πατήθηκε το φίλτρο συστάσεων
 
   // States για τα φίλτρα
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,20 +56,19 @@ export default function EventsBrowse() {
   const [currentPage, setCurrentPage] = useState(1);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  // 2. useEffect Hook: Τραβάει τα δεδομένα από το Backend κατά το αρχικό φόρτωμα
+
+  // Ανάκτηση στοιχείων συνδεδεμένου χρήστη
+  const userString = localStorage.getItem('user');
+  const user = userString ? JSON.parse(userString) : null;
+
+  // 1. useEffect: Ανάκτηση όλων των εκδηλώσεων
   useEffect(() => {
     const fetchEventsFromBackend = async () => {
       try {
         setLoading(true);
-        
-        // Αντικατάστησε το URL με το δικό σου endpoint (π.χ., http://localhost:3000/api/events)
         const response = await fetch('http://localhost:3000/api/events', {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            // Αν το API σου ζητάει JWT token για τους επισκέπτες, ξεσχολίασε την από κάτω γραμμή:
-            // 'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+          headers: { 'Content-Type': 'application/json' }
         });
 
         if (!response.ok) {
@@ -104,18 +77,15 @@ export default function EventsBrowse() {
 
         const data = await response.json();
 
-        // Map τα fields της βάσης στα fields που περιμένει το component
         const mapped = data.map(e => ({
           ...e,
-          desc: e.description,                          // fix: description → desc
-          cats: (e.categories || []).map(c => c.name),  // fix: [{name}] → ['Τεχνολογία']
-          start: e.startDateTime,                        // fix: startDateTime → start
-          available: (e.ticketTypes || []).reduce((sum, t) => sum + t.available, 0), // συνολικές θέσεις
-          minPrice: e.ticketTypes?.length > 0 ? Math.min(...e.ticketTypes.map(t => t.price)) : 0,}));
+          desc: e.description,
+          cats: (e.categories || []).map(c => c.name),
+          start: e.startDateTime,
+          available: (e.ticketTypes || []).reduce((sum, t) => sum + t.available, 0),
+          minPrice: e.ticketTypes?.length > 0 ? Math.min(...e.ticketTypes.map(t => t.price)) : 0,
+        }));
 
-        
-        // Προσαρμογή: Βεβαιώσου ότι το mapping των πεδίων ταιριάζει με τα ονόματα της PostgreSQL σου
-        // Αν η βάση επιστρέφει π.χ. start_date αντί για start, μπορείς να τα κάνεις map εδώ.
         setEvents(mapped); 
       } catch (error) {
         console.error("Error fetching events:", error);
@@ -128,44 +98,67 @@ export default function EventsBrowse() {
     fetchEventsFromBackend();
   }, []);
 
-  // 3. Δυναμικός υπολογισμός των κατηγοριών από τα events που ήρθαν
+  // 2. useEffect: Ανάκτηση Συστάσεων αν ο χρήστης είναι συνδεδεμένος (Biased Matrix Factorization)
+  useEffect(() => {
+    if (user) {
+      api.get(`/events/recommendations?userId=${user.id || user.user_id}`)
+        .then(res => {
+          // Κρατάμε μόνο τα IDs των προτεινόμενων εκδηλώσεων για εύκολο φιλτράρισμα
+          const recIds = res.data.map(item => item.id || item.event_id);
+          setRecommendations(recIds);
+        })
+        .catch(err => {
+          console.error("Error loading recommendations:", err);
+        });
+    }
+  }, []);
+
+  // Δυναμικός υπολογισμός των κατηγοριών
   const CATS = [...new Set(events.flatMap(e => e.cats || e.categories || []))].sort();
 
-  // Συναρτήσεις διαχείρισης ενεργειών
-  const handleViewEvent = (id) => {
-  navigate(`/events/${id}`);
-};
+  const handleViewEvent = (id) => { navigate(`/events/${id}`); };
+  const handleBookEvent = (e, id) => { e.stopPropagation(); navigate(`/events/${id}`); };
 
-const handleBookEvent = (e, id) => {
-  e.stopPropagation();
-  navigate(`/events/${id}`);
-};
-
+  // Λογική Φιλτραρίσματος
   const filteredEvents = events.filter(event => {
-  const eventCats = event.cats || event.categories || [];
-  if (activeCat && !eventCats.includes(activeCat)) return false;
+    const eventId = event.id || event.EventID;
 
-  // Βελτιωμένο φίλτρο πόλης
-  if (selectedCity) {
-    // Παίρνουμε την πόλη από το event (είτε city είτε City βάσει DTD)
-    const eventCity = (event.city || event.City || "").toString().trim().toLowerCase();
-    const filterCity = selectedCity.trim().toLowerCase();
+    // Αν το premium φίλτρο συστάσεων είναι ενεργό, δείξε μόνο όσα επέστρεψε ο αλγόριθμος
+    if (isRecsActive && !recommendations.includes(eventId)) {
+      return false;
+    }
+
+    const eventCats = event.cats || event.categories || [];
+    if (activeCat && !eventCats.includes(activeCat)) return false;
+
+    if (selectedCity) {
+      const eventCity = (event.city || event.City || "").toString().trim().toLowerCase();
+      const filterCity = selectedCity.trim().toLowerCase();
+      if (eventCity !== filterCity) return false;
+    }
+
+    if (searchQuery) {
+      const title = (event.title || "").toLowerCase();
+      const desc = (event.desc || event.description || "").toLowerCase();
+      const query = searchQuery.toLowerCase();
+      if (!title.includes(query) && !desc.includes(query)) return false;
+    }
     
-    if (eventCity !== filterCity) return false;
-  }
+    if (selectedPrice) {
+      const [lo, hi] = selectedPrice === '30+' ? [30, 99999] : selectedPrice.split('-').map(Number);
+      if (event.minPrice < lo || event.minPrice > hi) return false;
+    }
 
-  if (searchQuery) {
-    const title = (event.title || "").toLowerCase();
-    const desc = (event.desc || event.description || "").toLowerCase();
-    const query = searchQuery.toLowerCase();
-    if (!title.includes(query) && !desc.includes(query)) return false;
-  }
-  
-  if (selectedPrice) {
-    const [lo, hi] = selectedPrice === '30+' ? [30, 99999] : selectedPrice.split('-').map(Number);
-    if (event.minPrice < lo || event.minPrice > hi) return false;
-  }
-  return true;
+    // Φίλτρο ημερομηνιών (ΑΠΟ - ΕΩΣ)
+    const eventDate = new Date(event.start || event.startDateTime);
+    if (startDate && eventDate < new Date(startDate)) return false;
+    if (endDate) {
+      const endCondition = new Date(endDate);
+      endCondition.setHours(23, 59, 59, 999); // Συμπερίληψη ολόκληρης της ημέρας λήξης
+      if (eventDate > endCondition) return false;
+    }
+
+    return true;
   }).sort((a, b) => {
     if (selectedSort === 'price_asc') return a.minPrice - b.minPrice;
     if (selectedSort === 'price_desc') return b.minPrice - a.minPrice;
@@ -179,14 +172,12 @@ const handleBookEvent = (e, id) => {
   const startIndex = (validCurrentPage - 1) * PER_PAGE;
   const paginatedEvents = filteredEvents.slice(startIndex, startIndex + PER_PAGE);
 
-  // Format ημερομηνίας
   const formatDate = (str) => {
     if (!str) return '—';
     const d = new Date(str);
     return d.toLocaleDateString('el-GR', { day: '2-digit', month: 'short', year: 'numeric' }) + ' · ' + d.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Κατάσταση Loading ή Σφάλματος
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#faf9f8', fontFamily: 'Poppins, sans-serif' }}>
@@ -207,48 +198,68 @@ const handleBookEvent = (e, id) => {
     <div style={{ backgroundColor: '#faf9f8', minHeight: '100vh', padding: '40px 20px', fontFamily: 'Poppins, sans-serif' }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
         
-        {/* ─── TOPBAR: ΤΙΤΛΟΣ & PREMIUM ΑΝΑΖΗΤΗΣΗ ─── */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '24px', marginBottom: '35px' }}>
+        {/* ─── TOPBAR ─── */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          gap: '30px',              // Δίνει καθαρό κενό ανάμεσα σε τίτλο και αναζήτηση
+          marginBottom: '50px' 
+        }}>
+          
+          {/* ΤΙΤΛΟΣ */}
           <div>
-            <h1 style={{ fontSize: '2.2rem', fontWeight: '800', color: COLORS.dark, letterSpacing: '1px', margin: 0 }}>ΕΚΔΗΛΩΣΕΙΣ</h1>
-            <div style={{ width: '50px', height: '4px', backgroundColor: COLORS.primary, marginTop: '8px' }} />
+            <h1 style={{ fontSize: '2.2rem', fontWeight: '800', color: COLORS.dark, letterSpacing: '1px', margin: 0 }}>
+              ΕΚΔΗΛΩΣΕΙΣ
+            </h1>
+            <div style={{ width: '110px', height: '4px', backgroundColor: COLORS.primary, marginTop: '8px', marginRight: 'auto', marginLeft: 'auto' }} />
           </div>
           
-          <div style={{ display: 'flex', position: 'relative', flex: '1', minWidth: '280px', maxWidth: '450px' }}>
-            <span style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', fontSize: '16px', color: '#888' }}>🔍</span>
+          {/* ΜΠΑΡΑ ΑΝΑΖΗΤΗΣΗΣ (Απλωμένη κάτω από τον τίτλο) */}
+          <div style={{ 
+            width: '100%', 
+            maxWidth: '700px' // Αυξήσαμε το πλάτος για να μην είναι συμπυκνωμένη
+          }}>
             <input 
               type="text" 
               placeholder="Αναζήτηση τίτλου ή περιγραφής..." 
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
               style={{ 
-                flex: 1, 
-                padding: '14px 14px 14px 45px', 
+                width: '100%', 
+                padding: '16px 25px', // Περισσότερο εσωτερικό padding για να "ανασάνει" το κείμενο
                 border: `1px solid ${COLORS.border}`, 
-                borderRadius: '50px', 
-                fontSize: '14px', 
+                borderRadius: '30px',  // Πιο modern γωνίες που βοηθούν στην αίσθηση του χώρου
+                fontSize: '16px', 
                 outline: 'none', 
                 backgroundColor: COLORS.white,
-                boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
-                transition: 'all 0.2s',
-                fontFamily: 'Montserrat, sans-serif'
+                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                transition: 'all 0.2s ease',
+                boxSizing: 'border-box'
               }}
-              onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary}
-              onBlur={(e) => e.currentTarget.style.borderColor = COLORS.border}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = COLORS.primary;
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(210, 184, 147, 0.15)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = COLORS.border;
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.03)';
+              }}
             />
           </div>
+
         </div>
 
-        {/* ─── FILTERS ROW (Premium Selects & Dates) ─── */}
+        {/* ─── FILTERS ROW ─── */}
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '35px', backgroundColor: COLORS.white, padding: '20px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.02)', border: `1px solid ${COLORS.border}` }}>
-          <span style={{ fontSize: '13px', fontWeight: '700', color: COLORS.dark, letterSpacing: '1px', textTransform: 'uppercase' }}>Φίλτρα:</span>
+          <span style={{ fontSize: '15px', fontWeight: '700', color: COLORS.dark, letterSpacing: '1px', textTransform: 'uppercase' }}>Φιλτρα:</span>
           
           <select 
             value={selectedCity} 
             onChange={(e) => { setSelectedCity(e.target.value); setCurrentPage(1); }}
-            style={{ padding: '10px 16px', border: `1px solid ${COLORS.border}`, borderRadius: '30px', backgroundColor: '#fcfbfa', cursor: 'pointer', fontSize: '13px', fontFamily: 'Montserrat, sans-serif', fontWeight: '600', outline: 'none', color: COLORS.dark }}
+            style={{ padding: '10px 16px', border: `1px solid ${COLORS.border}`, borderRadius: '30px', backgroundColor: '#fcfbfa', cursor: 'pointer', fontSize: '12px', fontFamily: 'Poppins, sans-serif', fontWeight: '600', outline: 'none', color: COLORS.dark }}
           >
-            <option value="">📍 Πόλη (όλες)</option>
+            <option value=""> Πόλη (όλες)</option>
             <option value="Αθήνα">Αθήνα</option>
             <option value="Θεσσαλονίκη">Θεσσαλονίκη</option>
             <option value="Πάτρα">Πάτρα</option>
@@ -273,94 +284,127 @@ const handleBookEvent = (e, id) => {
           <select 
             value={selectedPrice} 
             onChange={(e) => { setSelectedPrice(e.target.value); setCurrentPage(1); }}
-            style={{ padding: '10px 16px', border: `1px solid ${COLORS.border}`, borderRadius: '30px', backgroundColor: '#fcfbfa', cursor: 'pointer', fontSize: '13px', fontFamily: 'Montserrat, sans-serif', fontWeight: '600', outline: 'none', color: COLORS.dark }}
+            style={{ padding: '10px 16px', border: `1px solid ${COLORS.border}`, borderRadius: '30px', backgroundColor: '#fcfbfa', cursor: 'pointer', fontSize: '12px', fontFamily: 'Poppins, sans-serif', fontWeight: '600', outline: 'none', color: COLORS.dark }}
           >
-            <option value="">💰 Τιμή (όλες)</option>
+            <option value="">Τιμή (όλες)</option>
             <option value="0-15">0–15€</option>
             <option value="15-30">15–30€</option>
             <option value="30+">30€+</option>
           </select>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: `1px solid ${COLORS.border}`, borderRadius: '30px', padding: '4px 14px', backgroundColor: '#fcfbfa' }}>
+          {/* ─── ΦΙΛΤΡΟ: ΑΠΟ ─── */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: `1px solid ${COLORS.border}`, borderRadius: '30px', padding: '10px 16px', backgroundColor: '#fcfbfa' }}>
             <span style={{ fontSize: '12px', fontWeight: '700', color: '#888' }}>ΑΠΟ:</span>
             <input 
-              type="date"
+              type="text"                       // Ξεκινάει ως κείμενο
+              placeholder="--"                  // Αυτό θα φαίνεται αντί για το ηη/μμ/εεεε
               value={startDate}
               onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }}
-              style={{ border: 'none', backgroundColor: 'transparent', fontSize: '13px', fontFamily: 'Montserrat, sans-serif', outline: 'none', color: COLORS.dark, cursor: 'pointer' }}
+              onFocus={(e) => e.target.type = 'date'} // Μόλις πατηθεί, γίνεται ημερομηνία
+              onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }} // Αν βγει και είναι άδειο, ξαναγίνεται text
+              style={{ 
+                border: 'none', 
+                backgroundColor: 'transparent', 
+                fontSize: '13px', 
+                fontFamily: 'Poppins, sans-serif', 
+                outline: 'none', 
+                color: COLORS.dark, 
+                cursor: 'pointer',
+                width: '100px'                  // Δίνουμε σταθερό πλάτος για να μην αναβοσβήνει στο focus
+              }}
             />
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: `1px solid ${COLORS.border}`, borderRadius: '30px', padding: '4px 14px', backgroundColor: '#fcfbfa' }}>
+          {/* ─── ΦΙΛΤΡΟ: ΕΩΣ ─── */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: `1px solid ${COLORS.border}`, borderRadius: '30px', padding: '10px 16px', backgroundColor: '#fcfbfa' }}>
             <span style={{ fontSize: '12px', fontWeight: '700', color: '#888' }}>ΕΩΣ:</span>
             <input 
-              type="date"
+              type="text"                       
+              placeholder="--"                  
               value={endDate}
               onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }}
-              style={{ border: 'none', backgroundColor: 'transparent', fontSize: '13px', fontFamily: 'Montserrat, sans-serif', outline: 'none', color: COLORS.dark, cursor: 'pointer' }}
+              onFocus={(e) => e.target.type = 'date'} // Μόλις πατηθεί, γίνεται ημερομηνία
+              onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }} // Αν βγει και είναι άδειο, ξαναγίνεται text
+              style={{ 
+                border: 'none', 
+                backgroundColor: 'transparent', 
+                fontSize: '13px', 
+                fontFamily: 'Poppins, sans-serif', 
+                outline: 'none', 
+                color: COLORS.dark, 
+                cursor: 'pointer',
+                width: '100px'                  // Δίνουμε σταθερό πλάτος
+              }}
             />
           </div>
 
           <select 
             value={selectedSort} 
             onChange={(e) => { setSelectedSort(e.target.value); setCurrentPage(1); }}
-            style={{ padding: '10px 16px', border: `1px solid ${COLORS.border}`, borderRadius: '30px', backgroundColor: '#fcfbfa', cursor: 'pointer', fontSize: '13px', fontFamily: 'Montserrat, sans-serif', fontWeight: '600', outline: 'none', color: COLORS.dark, marginLeft: 'auto' }}
+            style={{ padding: '10px 16px', border: `1px solid ${COLORS.border}`, borderRadius: '30px', backgroundColor: '#fcfbfa', cursor: 'pointer', fontSize: '12px', fontFamily: 'Poppins, sans-serif', fontWeight: '600', outline: 'none', color: COLORS.dark, marginLeft: 'auto' }}
           >
-            <option value="date">🕒 Ταξινόμηση: Ημερομηνία</option>
-            <option value="price_asc">📈 Τιμή (αύξουσα)</option>
-            <option value="price_desc">📉 Τιμή (φθίνουσα)</option>
+            <option value="date">Ταξινόμηση: Ημερομηνία</option>
+            <option value="price_asc">Τιμή (αύξουσα)</option>
+            <option value="price_desc">Τιμή (φθίνουσα)</option>
           </select>
         </div>
 
-       {/* ─── CATEGORY PILLS (Horizontal Scroll Look) ─── */}
-        <div style={{ 
-          display: 'flex', 
-          gap: '10px', 
-          overflowX: 'auto', 
-          whiteSpace: 'nowrap', 
-          paddingBottom: '15px',
-          marginBottom: '20px',
-          scrollbarWidth: 'none', /* Κρύβει τη μπάρα σε Firefox */
-          msOverflowStyle: 'none' /* Κρύβει τη μπάρα σε IE/Edge */
-        }}>
+        {/* ─── CATEGORY PILLS + RECOMMENDATIONS FILTER ─── */}
+        <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '15px', marginBottom: '20px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          
+          {/* Κουμπί ΟΛΕΣ */}
           <button 
-            onClick={() => { setActiveCat(null); setCurrentPage(1); }}
+            onClick={() => { setIsRecsActive(false); setActiveCat(null); setCurrentPage(1); }}
             style={{
-              padding: '10px 24px', 
-              borderRadius: '50px', 
-              backgroundColor: !activeCat ? COLORS.primary : COLORS.white, 
-              color: 'black',
-              boxShadow: !activeCat ? '0 4px 15px rgba(210, 184, 147, 0.3)' : 'none',
-              border: !activeCat ? `1px solid ${COLORS.primary}` : `1px solid ${COLORS.border}`,
-              fontSize: '12px', 
-              fontWeight: '700', 
-              cursor: 'pointer', 
-              letterSpacing: '1px',
-              transition: 'all 0.2s ease',
-              fontFamily: 'Montserrat, sans-serif'
+              padding: '10px 24px', borderRadius: '50px', 
+              backgroundColor: (!activeCat && !isRecsActive) ? COLORS.primary : COLORS.white, 
+              color: 'black', border: (!activeCat && !isRecsActive) ? `1px solid ${COLORS.primary}` : `1px solid ${COLORS.border}`,
+              boxShadow: (!activeCat && !isRecsActive) ? '0 4px 15px rgba(210, 184, 147, 0.3)' : 'none',
+              fontSize: '12px', fontWeight: '700', cursor: 'pointer', letterSpacing: '1px', transition: 'all 0.2s ease', fontFamily: 'Poppins, sans-serif'
             }}
           >
             ΟΛΕΣ
           </button>
+
+          {/* ΝΕΟ ΦΙΛΤΡΟ: ΠΡΟΤΕΙΝΟΜΕΝΕΣ ΓΙΑ ΕΣΑΣ (Εμφανίζεται μόνο αν ο χρήστης είναι συνδεδεμένος) */}
+          {user && (
+            <button 
+              onClick={() => { setIsRecsActive(true); setActiveCat(null); setCurrentPage(1); }}
+              style={{
+                padding: '10px 24px', borderRadius: '50px', 
+                backgroundColor: isRecsActive ? COLORS.primary : COLORS.white, 
+                color: 'black', border: isRecsActive ? `1px solid ${COLORS.primary}` : `1px solid ${COLORS.border}`,
+                boxShadow: isRecsActive ? '0 4px 15px rgba(210, 184, 147, 0.3)' : 'none',
+                fontSize: '12px', fontWeight: '700', cursor: 'pointer', letterSpacing: '1px', transition: 'all 0.2s ease', fontFamily: 'Poppins, sans-serif'
+              }}
+            >
+              <img 
+                src="/star (1).png" 
+                alt="Party Icon" 
+                style={{ 
+                  width: '12px',  
+                  height: '12px', 
+                  objectFit: 'contain', 
+                  marginRight: '8px'
+                }} 
+              />
+              ΠΡΟΤΕΙΝΟΜΕΝΕΣ ΓΙΑ ΕΣΑΣ
+            </button>
+          )}
+
+          {/* Υπόλοιπες Κατηγορίες */}
           {CATS.map(cat => {
-            const isActive = activeCat === cat;
+            const isActive = activeCat === cat && !isRecsActive;
             return (
               <button 
                 key={cat}
-                onClick={() => { setActiveCat(cat); setCurrentPage(1); }}
+                onClick={() => { setIsRecsActive(false); setActiveCat(cat); setCurrentPage(1); }}
                 style={{
-                  padding: '10px 24px', 
-                  borderRadius: '50px', 
-                  backgroundColor: isActive ? COLORS.primary : COLORS.white, 
-                  color: 'black',
+                  padding: '10px 24px', borderRadius: '50px', 
+                  backgroundColor: isActive ? COLORS.primary : COLORS.white, color: 'black',
                   border: isActive ? `1px solid ${COLORS.primary}` : `1px solid ${COLORS.border}`,
                   boxShadow: isActive ? '0 4px 15px rgba(210, 184, 147, 0.3)' : 'none',
-                  fontSize: '12px', 
-                  fontWeight: '700', 
-                  cursor: 'pointer', 
-                  letterSpacing: '1px',
-                  transition: 'all 0.2s ease',
-                  fontFamily: 'Montserrat, sans-serif'
+                  fontSize: '12px', fontWeight: '700', cursor: 'pointer', letterSpacing: '1px', transition: 'all 0.2s ease', fontFamily: 'Poppins, sans-serif'
                 }}
                 onMouseEnter={(e) => { if(!isActive) e.currentTarget.style.backgroundColor = COLORS.bgLight; }}
                 onMouseLeave={(e) => { if(!isActive) e.currentTarget.style.backgroundColor = COLORS.white; }}
@@ -373,13 +417,15 @@ const handleBookEvent = (e, id) => {
 
         {/* Results Count Info */}
         <div style={{ fontSize: '13px', color: COLORS.textMuted, marginBottom: '25px', fontWeight: '600', letterSpacing: '0.5px' }}>
-          ✨ Βρέθηκαν {totalEvents} εκδηλώσεις
+          Βρέθηκαν {totalEvents} εκδηλώσεις {isRecsActive && "βάσει των ενδιαφερόντων σας"}
         </div>
 
         {/* Events Grid */}
         {paginatedEvents.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px', border: `1px dashed ${COLORS.border}`, color: COLORS.textMuted, backgroundColor: COLORS.white }}>
-            Δεν βρέθηκαν εκδηλώσεις που να ταιριάζουν με τα κριτήρια.
+          <div style={{ textAlign: 'center', padding: '60px 20px', border: `1px dashed ${COLORS.border}`, color: COLORS.textMuted, backgroundColor: COLORS.white, borderRadius: '15px' }}>
+            {isRecsActive 
+              ? 'Δεν υπάρχουν ακόμα αρκετά δεδομένα κρατήσεων για να εμφανιστούν εξατομικευμένες προτάσεις.' 
+              : 'Δεν βρέθηκαν εκδηλώσεις που να ταιριάζουν με τα κριτήρια.'}
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '25px' }}>
@@ -406,24 +452,16 @@ const handleBookEvent = (e, id) => {
                     e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)';
                   }}
                 >
-                  {/* ΣΩΣΤΟ CARD HEADER: Η φωτογραφία γεμίζει όλο το πλαίσιο και το badge κάθεται από πάνω της */}
                   <div style={{ width: '100%', height: '160px', overflow: 'hidden', position: 'relative' }}>
-                    <img 
-                      src={getEventImage(event.eventType, event.title)} // <-- Προσθέσαμε και το event.title
-                      alt={event.title} 
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                    />
-                      <span style={{
-                      position: 'absolute', top: '12px', right: '12px', fontSize: '11px', fontWeight: '700',
-                      padding: '4px 12px', borderRadius: '15px', letterSpacing: '1px',
-                      backgroundColor: isCancelled ? COLORS.cancelledBg : COLORS.publishedBg,
-                      color: isCancelled ? COLORS.cancelledText : COLORS.publishedText
+                    <img src={getEventImage(event.eventType, event.title)} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <span style={{
+                      position: 'absolute', top: '12px', right: '12px', fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '15px', letterSpacing: '1px',
+                      backgroundColor: isCancelled ? COLORS.cancelledBg : COLORS.publishedBg, color: isCancelled ? COLORS.cancelledText : COLORS.publishedText
                     }}>
                       {isCancelled ? 'ΑΚΥΡΩΜΕΝΗ' : 'ΔΗΜΟΣΙΕΥΜΕΝΗ'}
                     </span>
                   </div>
 
-                  {/* Card Body */}
                   <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
                       {eventCats.map(c => (
@@ -433,54 +471,28 @@ const handleBookEvent = (e, id) => {
                       ))}
                     </div>
 
-                    <h3 style={{ fontSize: '18px', fontWeight: '700', color: COLORS.dark, marginBottom: '12px', lineHeight: '1.4' }}>
-                      {event.title}
-                    </h3>
+                    <h3 style={{ fontSize: '18px', fontWeight: '700', color: COLORS.dark, marginBottom: '12px', lineHeight: '1.4' }}>{event.title}</h3>
 
                     <div style={{ fontSize: '13.5px', color: COLORS.textMuted, display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '20px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', lineHeight: '1' }}> 
-                        <img 
-                          src= "calendar (1).png" 
-                          alt="" 
-                          style={{ width: '19px', height: '19px', objectFit: 'contain', flexShrink: 0}} 
-                      /> {formatDate(event.start || event.startDateTime)}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', lineHeight: '1' }} > 
-                        <img 
-                          src= "pin.png" 
-                          alt="" 
-                          style={{ width: '19px', height: '19px', objectFit: 'contain', flexShrink: 0}} 
-                      /> {event.venue}, {event.city}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', lineHeight: '1' }}>
-                        <img 
-                          src= "team.png" 
-                          alt="" 
-                          style={{ width: '19px', height: '19px', objectFit: 'contain', flexShrink: 0}} 
-                        /> {event.available === 0 ? (
-                          <span style={{ color: COLORS.cancelledText, fontWeight: '700' }}>Εξαντλήθηκε</span>
-                        ) : (
-                          <span>{event.available} θέσεις διαθέσιμες</span>
-                        )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><img src="calendar (1).png" alt="" style={{ width: '19px', height: '19px', objectFit: 'contain', flexShrink: 0}} /> {formatDate(event.start || event.startDateTime)}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><img src="pin.png" alt="" style={{ width: '19px', height: '19px', objectFit: 'contain', flexShrink: 0}} /> {event.venue || event.Venue}, {event.city || event.City}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <img src="team.png" alt="" style={{ width: '19px', height: '19px', objectFit: 'contain', flexShrink: 0}} /> 
+                        {event.available === 0 ? <span style={{ color: COLORS.cancelledText, fontWeight: '700' }}>Εξαντλήθηκε</span> : <span>{event.available} θέσεις διαθέσιμες</span>}
                       </div>
                     </div>
 
-                    {/* Card Footer */}
                     <div style={{ marginTop: 'auto', paddingTop: '15px', borderTop: `1px solid ${COLORS.bgLight}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <div style={{ fontSize: '11px', color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '1px' }}>Τιμη απο</div>
-                        <div style={{ fontSize: '16px', fontWeight: '700', color: COLORS.dark }}>
-                          {event.minPrice === 0 ? 'Δωρεάν' : `${event.minPrice}€`}
-                        </div>
+                        <div style={{ fontSize: '16px', fontWeight: '700', color: COLORS.dark }}>{event.minPrice === 0 ? 'Δωρεάν' : `${event.minPrice}€`}</div>
                       </div>
-                      
                       <button 
                         disabled={!isAvailable}
                         onClick={(e) => handleBookEvent(e, event.id || event.EventID)}
                         style={{
                           padding: '10px 20px', fontSize: '12px', fontWeight: '700', letterSpacing: '1px', border: 'none', borderRadius: '5px',
-                          backgroundColor: isAvailable ? COLORS.primary : '#e0e0e0',
-                          color: isAvailable ? 'black' : '#888888',
-                          cursor: isAvailable ? 'pointer' : 'not-allowed',
-                          transition: 'background-color 0.15s'
+                          backgroundColor: isAvailable ? COLORS.primary : '#e0e0e0', color: isAvailable ? 'black' : '#888888', cursor: isAvailable ? 'pointer' : 'not-allowed', transition: 'background-color 0.15s'
                         }}
                         onMouseEnter={(e) => { if(isAvailable) e.currentTarget.style.backgroundColor = '#c4aa82'; }}
                         onMouseLeave={(e) => { if(isAvailable) e.currentTarget.style.backgroundColor = COLORS.primary; }}
@@ -494,6 +506,7 @@ const handleBookEvent = (e, id) => {
             })}
           </div>
         )}
+
         {/* Pagination Buttons */}
         {totalPages > 1 && (
           <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '40px' }}>
@@ -513,7 +526,6 @@ const handleBookEvent = (e, id) => {
             ))}
           </div>
         )}
-
       </div>
     </div>
   );
