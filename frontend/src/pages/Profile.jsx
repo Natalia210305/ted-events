@@ -104,7 +104,7 @@ export default function Profile() {
 
   return (
     <div style={{ minHeight: 'calc(100vh - 90px)', backgroundColor: COLORS.bgLight, fontFamily: 'Poppins, sans-serif', padding: '40px 20px' }}>
-      <div style={{ maxWidth: '650px', margin: '0 auto', backgroundColor: COLORS.white, padding: '4px 40px 40px 40px', borderRadius: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
+      <div style={{ maxWidth: '650px', margin: '0 auto', backgroundColor: COLORS.white, padding: '4px 70px 70px 70px', borderRadius: '30px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
         
         <h1 style={{ fontSize: '1.4rem', fontWeight: '700', letterSpacing: '2px', margin: '30px 0', color: COLORS.dark ,display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', }}>
           <img 
