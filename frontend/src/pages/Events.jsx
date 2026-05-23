@@ -222,8 +222,25 @@ export default function EventsBrowse() {
           {/* ΜΠΑΡΑ ΑΝΑΖΗΤΗΣΗΣ (Απλωμένη κάτω από τον τίτλο) */}
           <div style={{ 
             width: '100%', 
-            maxWidth: '700px' // Αυξήσαμε το πλάτος για να μην είναι συμπυκνωμένη
+            maxWidth: '700px', 
+            position: 'relative' // Απαραίτητο για να κλειδώσει το εικονίδιο μέσα εδώ
           }}>
+            {/* ΤΟ ΕΙΚΟΝΙΔΙΟ PNG */}
+            <img 
+              src="search.png" 
+              alt="search" 
+              style={{
+                position: 'absolute',
+                left: '20px',         // Απόσταση από αριστερά
+                top: '50%',           // Κεντράρισμα καθ' ύψος
+                transform: 'translateY(-50%)',
+                width: '20px',        // Ρύθμισε το μέγεθος ανάλογα με το PNG σου
+                height: '20px',
+                opacity: '0.5',       // Το κάνει ελαφρώς ημιδιάφανο για να δένει με το γκρι
+                pointerEvents: 'none' // Ώστε αν ο χρήστης κάνει κλικ στο εικονίδιο, να πατιέται το input από πίσω
+              }} 
+            />
+
             <input 
               type="text" 
               placeholder="Αναζήτηση τίτλου ή περιγραφής..." 
@@ -231,9 +248,9 @@ export default function EventsBrowse() {
               onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
               style={{ 
                 width: '100%', 
-                padding: '16px 25px', // Περισσότερο εσωτερικό padding για να "ανασάνει" το κείμενο
+                padding: '16px 25px 16px 55px', // Αυξήσαμε το αριστερό padding (55px) για να μην πέφτει το κείμενο πάνω στο εικονίδιο
                 border: `1px solid ${COLORS.border}`, 
-                borderRadius: '30px',  // Πιο modern γωνίες που βοηθούν στην αίσθηση του χώρου
+                borderRadius: '30px',  
                 fontSize: '16px', 
                 outline: 'none', 
                 backgroundColor: COLORS.white,
