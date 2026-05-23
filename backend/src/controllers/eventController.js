@@ -109,6 +109,10 @@ const updateEvent = async (req, res) => {
 
     if (!oldEvent) return res.status(404).json({ error: 'Η εκδήλωση δεν βρέθηκε' });
 
+    if (oldEvent.organizerId !== req.user.id) {
+      return res.status(403).json({ error: 'Δεν έχετε δικαίωμα να τροποποιήσετε αυτή την εκδήλωση' });
+    }
+
     let changeMessages = [];
 
     if (startDateTime && new Date(startDateTime).getTime() !== new Date(oldEvent.startDateTime).getTime()) {
@@ -376,6 +380,39 @@ const getMyBookings = async (req, res) => {
   }
 };
 
+const getOrganizerBookings = async (req, res) => {
+  try {
+    const organizerId = req.user.id; // Το ID του συνδεδεμένου διοργανωτή από το Auth Middleware
+
+    const bookings = await prisma.booking.findMany({
+      where: {
+        event: {
+          organizerId: organizerId // Φιλτράρουμε τις κρατήσεις για τα events αυτού του διοργανωτή
+        }
+      },
+      include: {
+        event: {
+          select: { title: true }
+        },
+        attendee: {
+          select: { username: true, email: true } // Για να ξέρει ο διοργανωτής ποιος αγόρασε
+        },
+        ticketType: {
+          select: { name: true }
+        }
+      },
+      orderBy: {
+        time: 'desc' // Οι πιο πρόσφατες αγορές εμφανίζονται πρώτες
+      }
+    });
+
+    res.json(bookings);
+  } catch (err) {
+    console.error("❌ Σφάλμα στο getOrganizerBookings:", err);
+    res.status(500).json({ error: 'Σφάλμα κατά την ανάκτηση των κρατήσεων του διοργανωτή' });
+  }
+};
+
 const exportEventsXML = async (req, res) => {
   try {
     const events = await prisma.event.findMany({
@@ -485,7 +522,8 @@ module.exports = {
   getMyEvents, 
   createBooking,
   getMyBookings,
+  getOrganizerBookings,
   exportEventsXML,
   exportEventsJSON,
-  getRecommendations // ΠΡΟΣΘΕΣΕ ΚΑΙ ΑΥΤΟ ΣΤΑ EXPORTS!
+  getRecommendations 
 };

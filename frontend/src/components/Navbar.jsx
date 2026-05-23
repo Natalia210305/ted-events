@@ -120,10 +120,11 @@ function Navbar() {
         {role === 'ORGANIZER' && (
           <>
             <Link to="/my-events" style={getActiveStyle('/my-events')}>ΟΙ ΕΚΔΗΛΩΣΕΙΣ ΜΟΥ</Link>
+            <Link to="/organizer/bookings" style={getActiveStyle('/organizer/bookings')}>ΙΣΤΟΡΙΚΟ ΠΩΛΗΣΕΩΝ</Link>
           </>
         )}
 
-        {user && role !== 'ADMIN' && (
+        {user && role == 'ATTENDEE' && (
           <>
             <Link to="/my-bookings" style={getActiveStyle('/my-bookings')}>ΙΣΤΟΡΙΚΟ</Link>
           </>
