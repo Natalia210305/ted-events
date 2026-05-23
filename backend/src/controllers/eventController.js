@@ -140,16 +140,38 @@ const updateEvent = async (req, res) => {
     console.log(`✔ Το event "${updatedEvent.title}" ενημερώθηκε επιτυχώς στη βάση.`);
 
     if (req.body.ticketTypes && req.body.ticketTypes.length > 0) {
-      await prisma.ticketType.deleteMany({ where: { eventId: id } });
-      await prisma.ticketType.createMany({
-        data: req.body.ticketTypes.map(t => ({
-          eventId: id,
-          name: t.name,
-          price: parseFloat(t.price),
-          quantity: parseInt(t.quantity),
-          available: parseInt(t.quantity),
-        }))
+      const eventId = updatedEvent.id; // Ή req.params.id ανάλογα πώς το έχεις ορίσει
+
+      // Δημιουργούμε ένα array από promises για να εκτελεστούν παράλληλα και με ασφάλεια
+      const ticketOperations = req.body.ticketTypes.map(ticket => {
+        // Αν το εισιτήριο έχει ID, κάνουμε update αντί για delete
+        if (ticket.id) {
+          return prisma.ticketType.update({
+            where: { id: ticket.id },
+            data: {
+              name: ticket.name,
+              price: parseFloat(ticket.price),
+              quantity: parseInt(ticket.quantity, 10),
+              // Εδώ αν θες ενημερώνεις και το Available σύμφωνα με τις τρέχουσες κρατήσεις
+            }
+          });
+        } else {
+          // Αν ΔΕΝ έχει ID, σημαίνει ότι ο διοργανωτής πρόσθεσε έναν νέο τύπο εισιτηρίου τώρα
+          return prisma.ticketType.create({
+            data: {
+              eventId: eventId,
+              name: ticket.name,
+              price: parseFloat(ticket.price),
+              quantity: parseInt(ticket.quantity, 10),
+              available: parseInt(ticket.quantity, 10) // Αρχικά όλα είναι διαθέσιμα
+            }
+          });
+        }
       });
+
+      // Εκτέλεση όλων των operations μαζί με ασφάλεια
+      await prisma.$transaction(ticketOperations);
+      console.log(`✔ Οι τύποι εισιτηρίων για το event "${updatedEvent.title}" ενημερώθηκαν με ασφάλεια.`);
     }
 
     if (req.body.categories && req.body.categories.length > 0) {

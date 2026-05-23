@@ -32,10 +32,14 @@ export default function CreateEvent() {
     categories: editEvent?.categories ? editEvent.categories.map(c => c.name || c).join(', ') : editEvent?.cats ? editEvent.cats.join(', ') : '',
   });
 
-  // 2. ΣΩΣΤΗ ΑΡΧΙΚΟΠΟΙΗΣΗ ΕΙΣΙΤΗΡΙΩΝ
   const [ticketTypes, setTicketTypes] = useState(
     editEvent?.ticketTypes && editEvent.ticketTypes.length > 0
-      ? editEvent.ticketTypes.map(t => ({ name: t.name, price: t.price.toString(), quantity: t.quantity.toString() }))
+      ? editEvent.ticketTypes.map(t => ({ 
+          id: t.id || t.ticketTypeID || null, // <-- ΚΡΑΤΑΜΕ ΤΟ ID
+          name: t.name, 
+          price: t.price.toString(), 
+          quantity: t.quantity.toString() 
+        }))
       : [{ name: '', price: '', quantity: '' }]
   );
 
@@ -58,7 +62,12 @@ export default function CreateEvent() {
         categories: editEvent.categories ? editEvent.categories.map(c => c.name || c).join(', ') : editEvent.cats ? editEvent.cats.join(', ') : '',
       });
       if (editEvent.ticketTypes && editEvent.ticketTypes.length > 0) {
-        setTicketTypes(editEvent.ticketTypes.map(t => ({ name: t.name, price: t.price.toString(), quantity: t.quantity.toString() })));
+        setTicketTypes(editEvent.ticketTypes.map(t => ({ 
+          id: t.id || t.ticketTypeID || null, // <-- ΚΡΑΤΑΜΕ ΤΟ ID ΚΙ ΕΔΩ
+          name: t.name, 
+          price: t.price.toString(), 
+          quantity: t.quantity.toString() 
+        })));
       }
     }
   }, [editEvent]);
@@ -73,10 +82,10 @@ export default function CreateEvent() {
     setTicketTypes(updated);
   };
 
-  const addTicket = () => setTicketTypes([...ticketTypes, { name: '', price: '', quantity: '' }]);
+  const addTicket = () => setTicketTypes([...ticketTypes, { id: null, name: '', price: '', quantity: '' }]);
   const removeTicket = (i) => setTicketTypes(ticketTypes.filter((_, idx) => idx !== i));
 
-const handleSubmit = async () => {
+  const handleSubmit = async () => {
     setError('');
     setLoading(true);
     try {
@@ -87,13 +96,39 @@ const handleSubmit = async () => {
         return;
       }
 
+      // 2. Προσθήκη δευτερολέπτων στις ημερομηνίες αν λείπουν (Format: YYYY-MM-DDTHH:mm:ss)
+      const fixDateTime = (dtStr) => {
+        if (!dtStr) return '';
+        // Αν η ημερομηνία έχει μόνο λεπτά (μήκος 16, π.χ. "2026-07-18T18:00"), προσθέτουμε ":00"
+        return dtStr.length === 16 ? `${dtStr}:00` : dtStr;
+      };
+
       const categoriesArray = form.categories.split(',').map(c => c.trim()).filter(Boolean);
       
-      // 2. ΕΝΩΝΟΥΜΕ ΤΑ ΣΤΟΙΧΕΙΑ ΤΗΣ ΦΟΡΜΑΣ ΜΑΖΙ ΜΕ ΤΑ ΕΙΣΙΤΗΡΙΑ
+      // 3. Δημιουργία καθαρού Payload με σωστούς τύπους δεδομένων
       const payload = {
-        ...form,
+        title: form.title,
+        description: form.description,
+        eventType: form.eventType,
+        venue: form.venue,
+        address: form.address,
+        city: form.city,
+        country: form.country,
+        capacity: parseInt(form.capacity, 10), // Μετατροπή σε ακέραιο αριθμό
+        startDateTime: fixDateTime(form.startDateTime), // Προσθήκη :00
+        endDateTime: fixDateTime(form.endDateTime),     // Προσθήκη :00
         categories: categoriesArray,
-        ticketTypes: ticketTypes // <--- ΑΥΤΟ ΗΤΑΝ ΤΟ ΚΛΕΙΔΙ ΠΟΥ ΕΛΕΙΠΕ!
+        geoLocation: form.latitude && form.longitude ? {
+          latitude: parseFloat(form.latitude),
+          longitude: parseFloat(form.longitude)
+        } : null,
+        // Μετατροπή των πεδίων των εισιτηρίων σε καθαρούς αριθμούς
+        ticketTypes: ticketTypes.map(t => ({
+          id: t.id || null,
+          name: t.name,
+          price: parseFloat(t.price || 0),
+          quantity: parseInt(t.quantity || 0, 10)
+        }))
       };
 
       console.log("🚀 Αποστολή Payload στο Backend:", payload);
@@ -110,7 +145,8 @@ const handleSubmit = async () => {
       navigate('/my-events');
     } catch (err) {
       console.error("Σφάλμα στο Frontend:", err);
-      setError(err.response?.data?.error || 'Σφάλμα κατά την αποθήκευση');
+      // Εμφάνιση του μηνύματος σφάλματος από τον server αν υπάρχει
+      setError(err.response?.data?.message || err.response?.data?.error || 'Σφάλμα κατά την αποθήκευση (Internal Server Error 500)');
     } finally {
       setLoading(false);
     }

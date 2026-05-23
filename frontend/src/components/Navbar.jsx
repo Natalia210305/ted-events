@@ -33,7 +33,7 @@ function Navbar() {
         const msgResponse = await api.get('/messages/unread-count');
         setUnreadCount(msgResponse.data.unreadCount);
 
-        // Κλήση Β: Για τις ειδοποιήσεις (Φέρνουμε όλες και φιλτράρουμε τις unread)
+        // Κλήση Β: Για τις ειδοποιήσεις
         const notifResponse = await api.get('/notifications');
         const unreadNotifs = notifResponse.data.filter(n => n.isRead === false || !n.isRead).length;
         setUnreadNotificationsCount(unreadNotifs);
@@ -43,11 +43,15 @@ function Navbar() {
       }
     };
 
+    // Αρχική κλήση κατά το mount
     fetchUnreadData();
-    // Μειώνουμε το χρόνο σε 10 δευτερόλεπτα για να ενημερώνεται πιο γρήγορα το καμπανάκι!
+
+    // Εκτέλεση κάθε 10 δευτερόλεπτα
     const interval = setInterval(fetchUnreadData, 10000);
+    
+    // Σωστό cleanup function για την αποφυγή loops και memory leaks
     return () => clearInterval(interval);
-  }, [location.pathname]);
+  }, []); // <-- Άδειο dependency array ώστε να ξεκινάει ΜΟΝΟ μια φορά!
 
   // Απόκρυψη στην αρχική σελίδα
   if (location.pathname === '/') {
