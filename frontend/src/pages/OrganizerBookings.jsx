@@ -233,7 +233,7 @@ export default function OrganizerBookings() {
                   {/* Οικονομικά Στοιχεία (Δεξιά) */}
                   <div style={{ textAlign: 'right', minWidth: '110px' }}>
                     <div style={{ fontSize: '0.75rem', color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '500' }}>
-                      Εσοδο
+                      Εσοδα
                     </div>
                     <div style={{ fontSize: '1.35rem', fontWeight: '800', color: COLORS.dark, marginTop: '2px' }}>
                       €{Number(booking.totalCost).toFixed(2)}
