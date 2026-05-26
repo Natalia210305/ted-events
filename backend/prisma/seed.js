@@ -1,5 +1,7 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+// ΠΡΩΤΗ ΓΡΑΜΜΗ SOS: Φορτώνει το .env ώστε το db.js να βρει το password της βάσης!
+require('dotenv').config(); 
+
+const prisma = require('../src/db'); 
 const bcrypt = require('bcryptjs');
 
 async function main() {
@@ -38,21 +40,21 @@ async function main() {
         venue: 'Δημοτικό Θέατρο',
         address: 'Κεντρική Πλατεία 1',
         city: city,
-        country: 'Greece', // Κουμπώνει 1:1 με το schema σου
+        country: 'Greece',
         startDateTime: new Date('2026-07-20T21:00:00Z'),
         endDateTime: new Date('2026-07-20T23:30:00Z'),
         capacity: 500,
         status: 'PUBLISHED',
         organizerId: admin.id,
         
-        // Σωστή δημιουργία κατηγορίας βάσει του model EventCategory
+        // Σωστή δημιουργία κατηγορίας
         categories: {
           create: [
             { name: 'Music' }
           ]
         },
         
-        // Σωστή δημιουργία τύπων εισιτηρίων βάσει του model TicketType
+        // Σωστή δημιουργία τύπων εισιτηρίων
         ticketTypes: {
           create: [
             { name: 'General Admission', price: 20.0, quantity: 400, available: 400 },
@@ -73,6 +75,5 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    // Αποσύνδεση από τον Prisma Client για να μην μένει ανοιχτό το process
     await prisma.$disconnect();
   });
