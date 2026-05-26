@@ -113,10 +113,10 @@ const getConversation = async (req, res) => {
         ]
       },
       include: {
-        sender: { select: { id: true, firstName: true, lastName: true } },
-        receiver: { select: { id: true, firstName: true, lastName: true } },
-        event: {
-          select: {
+      sender: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
+      receiver: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
+      event: {
+              select: {
             id: true,
             title: true,
             bookings: {

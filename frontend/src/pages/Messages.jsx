@@ -228,18 +228,76 @@ const unread = inbox.reduce((sum, m) => sum + (m.unreadCount || 0), 0);
         ) : selectedConv ? (
           <div style={styles.conversationArea}>
             <div style={styles.chatHeader}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#333', fontSize: '16px' }}>
-                <img 
-                  src="/live-chat.png" 
-                  alt="Chat Icon" 
-                  style={{ width: '22px', height: '22px', objectFit: 'contain' }} 
-                />
-                <span>
-                  {user?.role?.toUpperCase() === 'ORGANIZER' ? "Συνομιλία με τον χρήστη" : "Συνομιλία με τον διαχειριστή"}
-                </span>
-              </div>
-            </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#333', fontSize: '16px' }}>
+                    <img 
+                      src="/live-chat.png" 
+                      alt="Chat Icon" 
+                      style={{ width: '22px', height: '22px', objectFit: 'contain' }} 
+                    />
+                    <span>
+                      {user?.role?.toUpperCase() === 'ORGANIZER' ? "Συνομιλία με τον χρήστη" : "Συνομιλία με τον διαχειριστή"}
+                    </span>
+                  </div>
+                  
+                  {/* 🎯 ΔΙΟΡΘΩΘΗΚΕ: Στοιχεία Πελάτη με τα Custom Εικονίδιά σου */}
+                  {user?.role?.toUpperCase() === 'ORGANIZER' && conversation.length > 0 && (() => {
+                    const clientMsg = conversation.find(c => c.senderId !== user.id);
+                    const clientData = clientMsg ? clientMsg.sender : conversation[0]?.receiver;
 
+                    if (!clientData) return null;
+
+                    return (
+                      <div style={{ 
+                        fontSize: '13px', 
+                        color: '#555', 
+                        marginTop: '8px', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: '6px',
+                        borderLeft: `3px solid ${COLORS.primary}`,
+                        marginLeft: '32px',
+                        paddingLeft: '12px'
+                      }}>
+                        {/* Ονοματεπώνυμο */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <img src="/user.png" alt="User" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                          <span>
+                            <span style={{ fontWeight: '500' }}>Ονοματεπώνυμο:</span>{' '}
+                            <span style={{ fontWeight: '700', color: COLORS.darkbrown }}>
+                              {clientData.firstName} {clientData.lastName}
+                            </span>
+                          </span>
+                        </div>
+
+                        {/* Email */}
+                        {clientData.email && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <img src="/mail.png" alt="Email" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                            <span>
+                              <span style={{ fontWeight: '500' }}>Email:</span>{' '}
+                              <a href={`mailto:${clientData.email}`} style={{ color: '#555', textDecoration: 'none', fontWeight: '600' }}>
+                                {clientData.email}
+                              </a>
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Τηλέφωνο */}
+                        {clientData.phone && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <img src="/phone.png" alt="Phone" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                            <span>
+                              <span style={{ fontWeight: '500' }}>Τηλέφωνο:</span>{' '}
+                              <a href={`tel:${clientData.phone}`} style={{ color: '#555', textDecoration: 'none', fontWeight: '600' }}>
+                                {clientData.phone}
+                              </a>
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
             <div style={styles.messagesList}>
               {conversation.map(c => (
                 <div key={c.id} style={{
