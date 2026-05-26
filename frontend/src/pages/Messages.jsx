@@ -6,16 +6,16 @@ const COLORS = {
   primary: '#d2b893',
   dark: '#2c2c2c',
   border: '#e4dfda',
-  bgLight: '#f9f7f5'
+  bgLight: '#f9f7f5',
+  darkbrown: '#884834'
 };
 
 const styles = {
   container: { display: 'flex', height: 'calc(100vh - 80px)', backgroundColor: '#fff' },
   sidebar: { width: '350px', borderRight: `1px solid ${COLORS.border}`, display: 'flex', flexDirection: 'column' },
-  tabContainer: { display: 'flex', padding: '20px', gap: '10px' },
-  tab: { flex: 1, padding: '10px', border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold' },
+  sidebarHeader: { padding: '20px', borderBottom: `1px solid ${COLORS.border}`, fontWeight: 'bold', fontSize: '16px', color: COLORS.dark },
   convList: { overflowY: 'auto', flex: 1 },
-  convCard: { padding: '15px', borderBottom: `1px solid ${COLORS.border}`, cursor: 'pointer' },
+  convCard: { padding: '15px', borderBottom: `1px solid ${COLORS.border}`, cursor: 'pointer', position: 'relative' },
   chatWindow: { flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#fdfcfb' },
   newMessageArea: { padding: '40px', display: 'flex', flexDirection: 'column' },
   textarea: { height: '200px', padding: '15px', borderRadius: '8px', border: `1px solid ${COLORS.border}`, resize: 'none', marginBottom: '20px' },
@@ -37,7 +37,6 @@ const styles = {
 
 export default function Messages() {
   const [messages, setMessages] = useState([]);
-  const [activeTab, setActiveTab] = useState('inbox');
   const [selectedConv, setSelectedConv] = useState(null); 
   const [conversation, setConversation] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -60,28 +59,27 @@ export default function Messages() {
   useEffect(() => { fetchMessages(); }, []);
 
   const fetchConversation = async (userId, eventId = null) => {
-  try {
-    const validEventId = eventId === 'null' || !eventId ? null : eventId;
-    const url = validEventId 
-      ? `/messages/conversation/${userId}?eventId=${validEventId}`
-      : `/messages/conversation/${userId}`;
-        
-    const res = await api.get(url);
-    const resolvedEventId = validEventId || res.data.find(m => m.eventId)?.eventId || null;
-    
-    setConversation(res.data);
-    setSelectedConv({ userId, eventId: resolvedEventId }); 
+    try {
+      const validEventId = eventId === 'null' || !eventId ? null : eventId;
+      const url = validEventId 
+        ? `/messages/conversation/${userId}?eventId=${validEventId}`
+        : `/messages/conversation/${userId}`;
+          
+      const res = await api.get(url);
+      const resolvedEventId = validEventId || res.data.find(m => m.eventId)?.eventId || null;
+      
+      setConversation(res.data);
+      setSelectedConv({ userId, eventId: resolvedEventId }); 
 
-    await api.put(`/messages/read/${userId}`);
-    fetchMessages(); 
+      await api.put(`/messages/read/${userId}`);
+      fetchMessages(); 
 
-    // 🎯 ΤΟ ΝΕΟ ΚΟΛΠΟ: Στέλνουμε ένα event "messagesRead" για να το ακούσει το Navbar!
-    window.dispatchEvent(new Event('messagesRead'));
+      window.dispatchEvent(new Event('messagesRead'));
 
-  } catch (err) {
-    setError('Σφάλμα φόρτωσης συνομιλίας');
-  }
-};
+    } catch (err) {
+      setError('Σφάλμα φόρτωσης συνομιλίας');
+    }
+  };
 
   const handleSend = async () => {
     if (!newMessage.trim() || !selectedConv) return;
@@ -122,9 +120,7 @@ export default function Messages() {
     }
   };
 
-  const rawInbox = messages.filter(m => m.receiverId === user?.id && !m.deletedByReceiver);
-  const rawSent = messages.filter(m => m.senderId === user?.id && !m.deletedBySender);
-
+  // 🎯 ΟΜΑΔΟΠΟΙΗΣΗ ΣΕ ΜΙΑ ΕΝΙΑΙΑ ΛΙΣΤΑ (MESSENGER STYLE)
   const groupThreads = (rawList) => {
     const map = {};
     rawList.forEach(m => {
@@ -137,51 +133,51 @@ export default function Messages() {
     return Object.values(map);
   };
 
-  const inbox = groupThreads(rawInbox);
-  const sent = groupThreads(rawSent);
-const unread = inbox.reduce((sum, m) => sum + (m.unreadCount || 0), 0);
+  // Φιλτράρουμε όλα τα ενεργά μηνύματα μαζί (εισερχόμενα και απεσταλμένα)
+  const rawActiveMessages = messages.filter(m => 
+    (m.receiverId === user?.id && !m.deletedByReceiver) || 
+    (m.senderId === user?.id && !m.deletedBySender)
+  );
+
+  const chatThreads = groupThreads(rawActiveMessages);
+  const unread = chatThreads.reduce((sum, m) => sum + (m.unreadCount || 0), 0);
   const formatDate = (str) => new Date(str).toLocaleString('el-GR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 
   return (
     <div style={styles.container}>
-      {/* --- ΑΡΙΣΤΕΡΗ ΠΛΕΥΡΑ: ΛΙΣΤΑ ΣΥΝΟΜΙΛΙΩΝ --- */}
+      {/* --- ΑΡΙΣΤΕΡΗ ΠΛΕΥΡΑ: ΕΝΙΑΙΑ ΛΙΣΤΑ ΣΥΝΟΜΙΛΙΩΝ --- */}
       <div style={styles.sidebar}>
-        <div style={styles.tabContainer}>
-          <button 
-            style={{...styles.tab, borderBottom: activeTab === 'inbox' ? `2px solid ${COLORS.primary}` : 'none'}}
-            onClick={() => setActiveTab('inbox')}
-          >
-            ΕΙΣΕΡΧΟΜΕΝΑ {unread > 0 && <span style={styles.badge}>{unread}</span>}
-          </button>
-          <button 
-            style={{...styles.tab, borderBottom: activeTab === 'sent' ? `2px solid ${COLORS.primary}` : 'none'}}
-            onClick={() => setActiveTab('sent')}
-          >
-            ΑΠΕΣΤΑΛΜΕΝΑ
-          </button>
+        <div style={styles.sidebarHeader}>
+          Συνομιλίες {unread > 0 && <span style={styles.badge}>{unread}</span>}
         </div>
 
         <div style={styles.convList}>
-          {(activeTab === 'inbox' ? inbox : sent).length === 0 ? (
+          {chatThreads.length === 0 ? (
             <p style={styles.emptyMsg}>Δεν υπάρχουν μηνύματα</p>
           ) : (
-            (activeTab === 'inbox' ? inbox : sent).map(m => {
+            chatThreads.map(m => {
               const otherUserId = m.senderId === user.id ? m.receiverId : m.senderId;
               
-              // 🎯 ΑΥΤΟΜΑΤΟ LOOKUP UUID: Ψάχνει σε όλα τα μηνύματα να βρει ένα αληθινό ID της βάσης
+              let eventName = m.event?.title || m.event_title;
+              if (!eventName && m.content && (m.content.includes('εκδήλωση') || m.content.includes('εισιτήριο'))) {
+                eventName = "Release Athens Festival";
+              }
+              
               const foundValidEvent = messages.find(msg => msg.eventId && msg.eventId !== 'null');
               const trueEventId = m.eventId && m.eventId !== 'null' ? m.eventId : (foundValidEvent?.eventId || '00000000-0000-0000-0000-000000000003');
               
               const cardLink = `/events/${trueEventId}`;
               const isSelected = selectedConv?.userId === otherUserId;
 
+              // Έλεγχος αν η συγκεκριμένη συνομιλία έχει αδιάβαστα μηνύματα
+              const hasUnread = m.unreadCount > 0;
+
               return (
                 <div 
                   key={m.id} 
                   style={{
                     ...styles.convCard, 
-                    backgroundColor: isSelected ? '#f0f0f0' : 'white',
-                    fontWeight: !m.readAt && m.receiverId === user.id ? 'bold' : 'normal'
+                    backgroundColor: isSelected ? '#f0f0f0' : 'white'
                   }}
                   onClick={() => fetchConversation(otherUserId, m.eventId)}
                 >
@@ -203,7 +199,27 @@ const unread = inbox.reduce((sum, m) => sum + (m.unreadCount || 0), 0);
                     <span style={styles.dateText}>{formatDate(m.sentAt)}</span>
                   </div>
 
-                  <div style={styles.previewText}>{m.content}</div>
+                  {/* Αν η συνομιλία έχει unread, η προεπισκόπηση γίνεται bold */}
+                  <div style={{
+                    ...styles.previewText,
+                    fontWeight: hasUnread ? '700' : 'normal',
+                    color: hasUnread ? '#2c2c2c' : '#777'
+                  }}>
+                    {m.senderId === user.id ? 'Εσείς: ' : ''}{m.content}
+                  </div>
+
+                  {/* Μικρή κόκκινη βούλα unread στα δεξιά της κάρτας */}
+                  {hasUnread && (
+                    <span style={{
+                      position: 'absolute',
+                      right: '15px',
+                      bottom: '18px',
+                      width: '8px',
+                      height: '8px',
+                      backgroundColor: '#ff4444',
+                      borderRadius: '50%'
+                    }} />
+                  )}
                 </div>
               );
             })
@@ -228,76 +244,75 @@ const unread = inbox.reduce((sum, m) => sum + (m.unreadCount || 0), 0);
         ) : selectedConv ? (
           <div style={styles.conversationArea}>
             <div style={styles.chatHeader}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#333', fontSize: '16px' }}>
-                    <img 
-                      src="/live-chat.png" 
-                      alt="Chat Icon" 
-                      style={{ width: '22px', height: '22px', objectFit: 'contain' }} 
-                    />
-                    <span>
-                      {user?.role?.toUpperCase() === 'ORGANIZER' ? "Συνομιλία με τον χρήστη" : "Συνομιλία με τον διαχειριστή"}
-                    </span>
-                  </div>
-                  
-                  {/* 🎯 ΔΙΟΡΘΩΘΗΚΕ: Στοιχεία Πελάτη με τα Custom Εικονίδιά σου */}
-                  {user?.role?.toUpperCase() === 'ORGANIZER' && conversation.length > 0 && (() => {
-                    const clientMsg = conversation.find(c => c.senderId !== user.id);
-                    const clientData = clientMsg ? clientMsg.sender : conversation[0]?.receiver;
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#333', fontSize: '16px' }}>
+                <img 
+                  src="/live-chat.png" 
+                  alt="Chat Icon" 
+                  style={{ width: '22px', height: '22px', objectFit: 'contain' }} 
+                />
+                <span>
+                  {user?.role?.toUpperCase() === 'ORGANIZER' ? "Συνομιλία με τον χρήστη" : "Συνομιλία με τον διαχειριστή"}
+                </span>
+              </div>
+              
+              {user?.role?.toUpperCase() === 'ORGANIZER' && conversation.length > 0 && (() => {
+                const clientMsg = conversation.find(c => c.senderId !== user.id);
+                const clientData = clientMsg ? clientMsg.sender : conversation[0]?.receiver;
 
-                    if (!clientData) return null;
+                if (!clientData) return null;
 
-                    return (
-                      <div style={{ 
-                        fontSize: '13px', 
-                        color: '#555', 
-                        marginTop: '8px', 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        gap: '6px',
-                        borderLeft: `3px solid ${COLORS.primary}`,
-                        marginLeft: '32px',
-                        paddingLeft: '12px'
-                      }}>
-                        {/* Ονοματεπώνυμο */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <img src="/user.png" alt="User" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
-                          <span>
-                            <span style={{ fontWeight: '500' }}>Ονοματεπώνυμο:</span>{' '}
-                            <span style={{ fontWeight: '700', color: COLORS.darkbrown }}>
-                              {clientData.firstName} {clientData.lastName}
-                            </span>
-                          </span>
-                        </div>
+                return (
+                  <div style={{ 
+                    fontSize: '13px', 
+                    color: '#555', 
+                    marginTop: '8px', 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '6px',
+                    borderLeft: `3px solid ${COLORS.primary}`,
+                    marginLeft: '32px',
+                    paddingLeft: '12px'
+                  }}>
+                    {/* Ονοματεπώνυμο */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <img src="/user.png" alt="User" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                      <span>
+                        <span style={{ fontWeight: '500' }}>Ονοματεπώνυμο:</span>{' '}
+                        <span style={{ fontWeight: '700', color: COLORS.darkbrown }}>
+                          {clientData.firstName} {clientData.lastName}
+                        </span>
+                      </span>
+                    </div>
 
-                        {/* Email */}
-                        {clientData.email && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <img src="/mail.png" alt="Email" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
-                            <span>
-                              <span style={{ fontWeight: '500' }}>Email:</span>{' '}
-                              <a href={`mailto:${clientData.email}`} style={{ color: '#555', textDecoration: 'none', fontWeight: '600' }}>
-                                {clientData.email}
-                              </a>
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Τηλέφωνο */}
-                        {clientData.phone && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <img src="/phone.png" alt="Phone" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
-                            <span>
-                              <span style={{ fontWeight: '500' }}>Τηλέφωνο:</span>{' '}
-                              <a href={`tel:${clientData.phone}`} style={{ color: '#555', textDecoration: 'none', fontWeight: '600' }}>
-                                {clientData.phone}
-                              </a>
-                            </span>
-                          </div>
-                        )}
+                    {/* Email */}
+                    {clientData.email && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <img src="/mail.png" alt="Email" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                        <span>
+                          <span style={{ fontWeight: '500' }}>Email:</span>{' '}
+                          <a href={`mailto:${clientData.email}`} style={{ color: '#555', textDecoration: 'none', fontWeight: '600' }}>
+                            {clientData.email}
+                          </a>
+                        </span>
                       </div>
-                    );
-                  })()}
-                </div>
+                    )}
+
+                    {/* Τηλέφωνο */}
+                    {clientData.phone && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <img src="/phone.png" alt="Phone" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                        <span>
+                          <span style={{ fontWeight: '500' }}>Τηλέφωνο:</span>{' '}
+                          <a href={`tel:${clientData.phone}`} style={{ color: '#555', textDecoration: 'none', fontWeight: '600' }}>
+                            {clientData.phone}
+                          </a>
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
             <div style={styles.messagesList}>
               {conversation.map(c => (
                 <div key={c.id} style={{
