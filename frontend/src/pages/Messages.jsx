@@ -1,4 +1,4 @@
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 
@@ -21,7 +21,7 @@ const styles = {
   textarea: { height: '200px', padding: '15px', borderRadius: '8px', border: `1px solid ${COLORS.border}`, resize: 'none', marginBottom: '20px' },
   sendBtn: { padding: '12px 24px', backgroundColor: COLORS.dark, color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', alignSelf: 'flex-end' },
   conversationArea: { display: 'flex', flexDirection: 'column', height: '100%' },
-  chatHeader: { padding: '20px', borderBottom: `1px solid ${COLORS.border}`, fontWeight: 'bold' },
+  chatHeader: { padding: '20px', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', flexDirection: 'column', gap: '5px' },
   messagesList: { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px' },
   bubble: { padding: '10px 15px', borderRadius: '15px', maxWidth: '70%', fontSize: '14px', position: 'relative' },
   bubbleDate: { fontSize: '10px', marginTop: '5px', opacity: 0.6 },
@@ -35,22 +35,18 @@ const styles = {
   emptyMsg: { textAlign: 'center', marginTop: '40px', color: '#999' }
 };
 
-
-
-
-
-
-
 export default function Messages() {
   const [messages, setMessages] = useState([]);
   const [activeTab, setActiveTab] = useState('inbox');
-  const [selectedConv, setSelectedConv] = useState(null);
+  const [selectedConv, setSelectedConv] = useState(null); 
   const [conversation, setConversation] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [error, setError] = useState('');
   const user = JSON.parse(localStorage.getItem('user'));
   const location = useLocation();
+  const navigate = useNavigate(); 
   const [content, setContent] = useState("");
+  
   const fetchMessages = async () => {
     try {
       const res = await api.get('/messages/my');
@@ -59,38 +55,41 @@ export default function Messages() {
       setError('Σφάλμα φόρτωσης μηνυμάτων');
     }
   };
+  
   const newContact = location.state;
   useEffect(() => { fetchMessages(); }, []);
 
-  const fetchConversation = async (userId) => {
+  const fetchConversation = async (userId, eventId = null) => {
     try {
-      const res = await api.get(`/messages/conversation/${userId}`);
+      const validEventId = eventId === 'null' || !eventId ? null : eventId;
+      const url = validEventId 
+        ? `/messages/conversation/${userId}?eventId=${validEventId}`
+        : `/messages/conversation/${userId}`;
+          
+      const res = await api.get(url);
+      const resolvedEventId = validEventId || res.data.find(m => m.eventId)?.eventId || null;
+      
       setConversation(res.data);
-      setSelectedConv(userId);
+      setSelectedConv({ userId, eventId: resolvedEventId }); 
     } catch (err) {
       setError('Σφάλμα φόρτωσης συνομιλίας');
     }
   };
 
   const handleSend = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !selectedConv) return;
     try {
-      await api.post('/messages', { receiverId: selectedConv, content: newMessage });
+      const targetEventId = selectedConv.eventId === 'null' ? null : selectedConv.eventId;
+      await api.post('/messages', { 
+        receiverId: selectedConv.userId, 
+        content: newMessage, 
+        eventId: targetEventId
+      });
       setNewMessage('');
-      fetchConversation(selectedConv);
+      fetchConversation(selectedConv.userId, targetEventId);
       fetchMessages();
     } catch (err) {
       setError('Σφάλμα αποστολής');
-    }
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      await api.delete(`/messages/${id}`);
-      fetchMessages();
-      if (selectedConv) fetchConversation(selectedConv);
-    } catch (err) {
-      setError('Σφάλμα διαγραφής');
     }
   };
 
@@ -102,29 +101,40 @@ export default function Messages() {
         content: content,
         eventId: newContact.eventId
       });
+
+      const nextConvId = newContact.recipientId;
+      const nextEventId = newContact.eventId;
+
       alert("Το μήνυμα στάλθηκε!");
       setContent("");
-      // Εδώ μπορείς να κάνεις navigate στο Inbox για να δεις τη συνομιλία
+      navigate('/messages', { replace: true, state: null });
+      await fetchMessages();
+      await fetchConversation(nextConvId, nextEventId);
     } catch (error) {
       console.error("Σφάλμα αποστολής:", error);
     }
   };
 
-  const inbox = messages.filter(m => m.receiverId === user?.id && !m.deletedByReceiver);
-  const sent = messages.filter(m => m.senderId === user?.id && !m.deletedBySender);
-  const unread = inbox.filter(m => !m.readAt).length;
+  const rawInbox = messages.filter(m => m.receiverId === user?.id && !m.deletedByReceiver);
+  const rawSent = messages.filter(m => m.senderId === user?.id && !m.deletedBySender);
 
-  const conversations = [...new Map(
-    messages.map(m => {
-      const otherId = m.senderId === user?.id ? m.receiverId : m.senderId;
-      const other = m.senderId === user?.id ? m.receiver : m.sender;
-      return [otherId, { userId: otherId, name: `${other.firstName} ${other.lastName}` }];
-    })
-  ).values()];
+  const groupThreads = (rawList) => {
+    const map = {};
+    rawList.forEach(m => {
+      const otherId = m.senderId === user.id ? m.receiverId : m.senderId;
+      const key = `${otherId}_release_athens`;
+      if (!map[key]) {
+        map[key] = m;
+      }
+    });
+    return Object.values(map);
+  };
+
+  const inbox = groupThreads(rawInbox);
+  const sent = groupThreads(rawSent);
+  const unread = rawInbox.filter(m => !m.readAt).length;
 
   const formatDate = (str) => new Date(str).toLocaleString('el-GR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-
-  const s = { fontFamily: 'Poppins, sans-serif' };
 
   return (
     <div style={styles.container}>
@@ -149,23 +159,48 @@ export default function Messages() {
           {(activeTab === 'inbox' ? inbox : sent).length === 0 ? (
             <p style={styles.emptyMsg}>Δεν υπάρχουν μηνύματα</p>
           ) : (
-            (activeTab === 'inbox' ? inbox : sent).map(m => (
-              <div 
-                key={m.id} 
-                style={{
-                  ...styles.convCard, 
-                  backgroundColor: selectedConv === (m.senderId === user.id ? m.receiverId : m.senderId) ? '#f0f0f0' : 'white',
-                  fontWeight: !m.readAt && m.receiverId === user.id ? 'bold' : 'normal'
-                }}
-                onClick={() => fetchConversation(m.senderId === user.id ? m.receiverId : m.senderId)}
-              >
-                <div style={{display:'flex', justifyContent:'space-between'}}>
-                  <span>{m.senderId === user.id ? `${m.receiver.firstName} ${m.receiver.lastName}` : `${m.sender.firstName} ${m.sender.lastName}`}</span>
-                  <span style={styles.dateText}>{formatDate(m.sentAt)}</span>
+            (activeTab === 'inbox' ? inbox : sent).map(m => {
+              const otherUserId = m.senderId === user.id ? m.receiverId : m.senderId;
+              
+              // 🎯 ΑΥΤΟΜΑΤΟ LOOKUP UUID: Ψάχνει σε όλα τα μηνύματα να βρει ένα αληθινό ID της βάσης
+              const foundValidEvent = messages.find(msg => msg.eventId && msg.eventId !== 'null');
+              const trueEventId = m.eventId && m.eventId !== 'null' ? m.eventId : (foundValidEvent?.eventId || '00000000-0000-0000-0000-000000000003');
+              
+              const cardLink = `/events/${trueEventId}`;
+              const isSelected = selectedConv?.userId === otherUserId;
+
+              return (
+                <div 
+                  key={m.id} 
+                  style={{
+                    ...styles.convCard, 
+                    backgroundColor: isSelected ? '#f0f0f0' : 'white',
+                    fontWeight: !m.readAt && m.receiverId === user.id ? 'bold' : 'normal'
+                  }}
+                  onClick={() => fetchConversation(otherUserId, m.eventId)}
+                >
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems: 'center'}}>
+                    <span style={{ fontSize: '14px' }}>
+                      <Link 
+                        to={cardLink} 
+                        style={{ 
+                          color: '#bfa37a', 
+                          textDecoration: 'underline', 
+                          fontWeight: '700',
+                          cursor: 'pointer'
+                        }}
+                        onClick={(e) => e.stopPropagation()} 
+                      >
+                        Release Athens Festival
+                      </Link>
+                    </span>
+                    <span style={styles.dateText}>{formatDate(m.sentAt)}</span>
+                  </div>
+
+                  <div style={styles.previewText}>{m.content}</div>
                 </div>
-                <div style={styles.previewText}>{m.content}</div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -173,7 +208,6 @@ export default function Messages() {
       {/* --- ΔΕΞΙΑ ΠΛΕΥΡΑ: ΠΑΡΑΘΥΡΟ ΣΥΝΟΜΙΛΙΑΣ --- */}
       <div style={styles.chatWindow}>
         {newContact ? (
-          /* ΠΕΡΙΠΤΩΣΗ Α: ΝΕΟ ΜΗΝΥΜΑ ΑΠΟ EVENT */
           <div style={styles.newMessageArea}>
             <h3 style={{color: COLORS.primary, marginBottom: '10px'}}>Νέο μήνυμα προς: {newContact.recipientName}</h3>
             <p style={{fontSize: '13px', color: '#666', marginBottom: '20px'}}>Θέμα: {newContact.subject}</p>
@@ -186,11 +220,20 @@ export default function Messages() {
             <button onClick={handleSendNewMessage} style={styles.sendBtn}>ΑΠΟΣΤΟΛΗ ΜΗΝΥΜΑΤΟΣ</button>
           </div>
         ) : selectedConv ? (
-          /* ΠΕΡΙΠΤΩΣΗ Β: ΥΠΑΡΧΟΥΣΑ ΣΥΝΟΜΙΛΙΑ */
           <div style={styles.conversationArea}>
             <div style={styles.chatHeader}>
-              Συνομιλία με τον χρήστη
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#333', fontSize: '16px' }}>
+                <img 
+                  src="/live-chat.png" 
+                  alt="Chat Icon" 
+                  style={{ width: '22px', height: '22px', objectFit: 'contain' }} 
+                />
+                <span>
+                  {user?.role?.toUpperCase() === 'ORGANIZER' ? "Συνομιλία με τον χρήστη" : "Συνομιλία με τον διαχειριστή"}
+                </span>
+              </div>
             </div>
+
             <div style={styles.messagesList}>
               {conversation.map(c => (
                 <div key={c.id} style={{
@@ -214,7 +257,6 @@ export default function Messages() {
             </div>
           </div>
         ) : (
-          /* ΠΕΡΙΠΤΩΣΗ Γ: ΤΙΠΟΤΑ ΕΠΙΛΕΓΜΕΝΟ */
           <div style={styles.emptyState}>
             <p>Επιλέξτε μια συνομιλία για να δείτε τα μηνύματά σας</p>
           </div>

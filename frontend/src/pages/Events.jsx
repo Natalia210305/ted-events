@@ -530,21 +530,77 @@ export default function EventsBrowse() {
 
         {/* Pagination Buttons */}
         {totalPages > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '40px' }}>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-              <button
-                key={page}
-                onClick={() => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                style={{
-                  width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: `1px solid ${validCurrentPage === page ? COLORS.primary : COLORS.border}`,
-                  backgroundColor: validCurrentPage === page ? COLORS.primary : COLORS.white,
-                  color: 'black', fontWeight: '600', fontSize: '14px', cursor: 'pointer', borderRadius: '1px'
-                }}
-              >
-                {page}
-              </button>
-            ))}
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', marginTop: '40px' }}>
+
+            {/* Προηγούμενο */}
+            <button
+              onClick={() => { setCurrentPage(p => Math.max(p - 1, 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              disabled={validCurrentPage === 1}
+              style={{
+                padding: '10px 16px', height: '40px', display: 'flex', alignItems: 'center',
+                border: `1px solid ${COLORS.border}`,
+                backgroundColor: validCurrentPage === 1 ? '#f0f0f0' : COLORS.white,
+                color: validCurrentPage === 1 ? '#bbb' : COLORS.dark,
+                fontWeight: '600', fontSize: '13px',
+                cursor: validCurrentPage === 1 ? 'not-allowed' : 'pointer',
+                borderRadius: '6px', fontFamily: 'Poppins, sans-serif'
+              }}
+            >
+              ← Προηγούμενο
+            </button>
+
+            {/* Αριθμοί με "..." */}
+            {(() => {
+              const pages = [];
+              const rangeStart = Math.max(2, validCurrentPage - 2);
+              const rangeEnd = Math.min(totalPages - 1, validCurrentPage + 2);
+
+              pages.push(1);
+              if (rangeStart > 2) pages.push('...');
+              for (let i = rangeStart; i <= rangeEnd; i++) pages.push(i);
+              if (rangeEnd < totalPages - 1) pages.push('...');
+              if (totalPages > 1) pages.push(totalPages);
+
+              return pages.map((page, idx) => {
+                if (page === '...') {
+                  return <span key={`dots-${idx}`} style={{ width: '40px', textAlign: 'center', color: COLORS.textMuted, fontSize: '14px' }}>...</span>;
+                }
+                const isActive = validCurrentPage === page;
+                return (
+                  <button
+                    key={page}
+                    onClick={() => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    style={{
+                      width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      border: `1px solid ${isActive ? COLORS.primary : COLORS.border}`,
+                      backgroundColor: isActive ? COLORS.primary : COLORS.white,
+                      color: 'black', fontWeight: '600', fontSize: '14px',
+                      cursor: 'pointer', borderRadius: '6px', fontFamily: 'Poppins, sans-serif'
+                    }}
+                  >
+                    {page}
+                  </button>
+                );
+              });
+            })()}
+
+            {/* Επόμενο */}
+            <button
+              onClick={() => { setCurrentPage(p => Math.min(p + 1, totalPages)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              disabled={validCurrentPage === totalPages}
+              style={{
+                padding: '10px 16px', height: '40px', display: 'flex', alignItems: 'center',
+                border: `1px solid ${COLORS.border}`,
+                backgroundColor: validCurrentPage === totalPages ? '#f0f0f0' : COLORS.white,
+                color: validCurrentPage === totalPages ? '#bbb' : COLORS.dark,
+                fontWeight: '600', fontSize: '13px',
+                cursor: validCurrentPage === totalPages ? 'not-allowed' : 'pointer',
+                borderRadius: '6px', fontFamily: 'Poppins, sans-serif'
+              }}
+            >
+              Επόμενο →
+            </button>
+
           </div>
         )}
       </div>
