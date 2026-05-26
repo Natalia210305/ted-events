@@ -105,8 +105,10 @@ function Navbar() {
       {/* ─── ΚΕΝΤΡΟ: ΑΝΕΤΟ, ΚΕΝΤΡΑΡΙΣΜΕΝΟ ΜΕΝΟΥ LINKS ─── */} 
       <div style={menuLinksStyle}>
         
+        {/* 🎯 ΔΙΟΡΘΩΘΗΚΕ: Προστέθηκε η καρτέλα ΑΡΧΙΚΗ για Attendee και Organizer */}
         {role !== 'ADMIN' && (
           <>
+            <Link to="/" style={getActiveStyle('/')}>ΑΡΧΙΚΗ</Link>
             <Link to="/events" style={getActiveStyle('/events')}>ΠΕΡΙΗΓΗΣΗ ΣΕ ΕΚΔΗΛΩΣΕΙΣ</Link>
           </>
         )}
@@ -175,8 +177,16 @@ function Navbar() {
               color: isDropdownOpen || ['/profile', '/settings'].includes(location.pathname) ? COLORS.primary : COLORS.dark, 
               cursor: 'pointer',
               borderBottom: ['/profile', '/settings'].includes(location.pathname) ? `3px solid ${COLORS.primary}` : '3px solid transparent',
-              paddingBottom: '5px'
+              paddingBottom: '5px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
             }}>
+              <img 
+                src="/profile.png" 
+                alt="Profile" 
+                style={{ width: '22px', height: '22px', objectFit: 'contain' }} 
+              />
               ΠΡΟΦΙΛ
             </span>
 
@@ -263,7 +273,7 @@ const rightActionsStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'flex-end',
-  gap: '35px' // Περισσότερος αέρας μεταξύ των icons
+  gap: '35px'
 };
 
 const linkStyle = {

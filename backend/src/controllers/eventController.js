@@ -419,7 +419,9 @@ const exportEventsXML = async (req, res) => {
       include: { categories: true, ticketTypes: true, bookings: true }
     });
 
-    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<Events>\n';
+    // ΕΔΩ ΕΓΙΝΕ Η ΑΛΛΑΓΗ: Προστέθηκε η γραμμή του DOCTYPE αμέσως μετά την πρώτη γραμμή του XML
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE Events SYSTEM "events.dtd">\n<Events>\n';
+    
     for (const e of events) {
       xml += `  <Event EventID="${e.id}">\n`;
       xml += `    <Title>${e.title}</Title>\n`;

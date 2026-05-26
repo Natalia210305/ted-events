@@ -3,9 +3,12 @@ const prisma = new PrismaClient();
 const bcrypt = require('bcryptjs');
 
 async function main() {
+  console.log('Έναρξη αρχικοποίησης της βάσης δεδομένων...');
+
+  // 1. Παραγωγή κρυπτογραφημένου κωδικού για τον Admin
   const hashed = await bcrypt.hash('admin123', 10);
   
-  // 1. Δημιουργία Admin [cite: 24, 25]
+  // 2. Δημιουργία ή Ενημέρωση (Upsert) του Admin χρήστη
   const admin = await prisma.user.upsert({
     where: { username: 'admin' },
     update: {},
@@ -20,38 +23,56 @@ async function main() {
     },
   });
 
-  // 2. Δημιουργία Εκδηλώσεων σε διάφορες πόλεις [cite: 163]
+  console.log(`Ο χρήστης Admin δημιουργήθηκε ή υπήρχε ήδη (ID: ${admin.id})`);
+
+  // 3. Δημιουργία Εκδηλώσεων σε διάφορες πόλεις
   const cities = ['Αθήνα', 'Θεσσαλονίκη', 'Πάτρα', 'Λάρισα', 'Ηράκλειο'];
   
+  console.log('Δημιουργία αρχικών εκδηλώσεων...');
   for (const city of cities) {
     await prisma.event.create({
       data: {
         title: `Συναυλία στην ${city}`,
-        description: `Μεγάλη μουσική εκδήλωση στην πόλη: ${city}`,
+        description: `Μεγάλη μουσική εκδήλωση στην πόλη: ${city}. Ελάτε να απολαύσετε μια μοναδική βραδιά γεμάτη live performances και αγαπημένα τραγούδια κάτω από τα αστέρια.`,
         eventType: 'Concert',
         venue: 'Δημοτικό Θέατρο',
         address: 'Κεντρική Πλατεία 1',
         city: city,
-        startDateTime: new Date('2026-07-20T21:00:00'),
-        endDateTime: new Date('2026-07-20T23:30:00'),
+        country: 'Greece', // Κουμπώνει 1:1 με το schema σου
+        startDateTime: new Date('2026-07-20T21:00:00Z'),
+        endDateTime: new Date('2026-07-20T23:30:00Z'),
         capacity: 500,
         status: 'PUBLISHED',
         organizerId: admin.id,
-        // Δημιουργία Κατηγορίας
+        
+        // Σωστή δημιουργία κατηγορίας βάσει του model EventCategory
         categories: {
-          create: [{ name: 'Music' }]
+          create: [
+            { name: 'Music' }
+          ]
         },
-        // Δημιουργία Εισιτηρίων [cite: 133, 156]
+        
+        // Σωστή δημιουργία τύπων εισιτηρίων βάσει του model TicketType
         ticketTypes: {
           create: [
-            { name: 'General', price: 20.0, quantity: 400, available: 400 },
-            { name: 'VIP', price: 50.0, quantity: 100, available: 100 }
+            { name: 'General Admission', price: 20.0, quantity: 400, available: 400 },
+            { name: 'VIP Access', price: 50.0, quantity: 100, available: 100 }
           ]
         }
       }
     });
+    console.log(`+ Δημιουργήθηκε η εκδήλωση: Συναυλία στην ${city}`);
   }
-  console.log('Η βάση γέμισε επιτυχώς!');
+
+  console.log('Η βάση γέμισε επιτυχώς με όλα τα απαραίτητα δεδομένα!');
 }
 
-main().catch(console.error).finally(() => prisma.$disconnect());
+main()
+  .catch((error) => {
+    console.error('Προέκυψε σφάλμα κατά το seeding:', error);
+    process.exit(1);
+  })
+  .finally(async () => {
+    // Αποσύνδεση από τον Prisma Client για να μην μένει ανοιχτό το process
+    await prisma.$disconnect();
+  });
