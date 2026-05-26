@@ -17,8 +17,6 @@ function Navbar() {
   const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  
-  // 1. ΝΕΟ STATE ΓΙΑ ΤΙΣ ΕΙΔΟΠΟΙΗΣΕΙΣ
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
 
   useEffect(() => {
@@ -29,11 +27,9 @@ function Navbar() {
       if (!userObj) return;
 
       try {
-        // Κλήση Α: Για τον αριθμό των αδιάβαστων μηνυμάτων
         const msgResponse = await api.get('/messages/unread-count');
         setUnreadCount(msgResponse.data.unreadCount);
 
-        // Κλήση Β: Για τις ειδοποιήσεις
         const notifResponse = await api.get('/notifications');
         const unreadNotifs = notifResponse.data.filter(n => n.isRead === false || !n.isRead).length;
         setUnreadNotificationsCount(unreadNotifs);
@@ -43,27 +39,21 @@ function Navbar() {
       }
     };
 
-    // Αρχική κλήση κατά το mount
     fetchUnreadData();
 
-    // 🎯 ΤΟ ΝΕΟ ΑΚΟΥΣΤΙΚΟ: Μόλις γίνει dispatch το 'messagesRead' από τα Messages, 
-    // το Navbar ξανατρέχει την fetchUnreadData και μηδενίζει το badge ακαριαία!
     const handleMessagesRead = () => {
       fetchUnreadData();
     };
     window.addEventListener('messagesRead', handleMessagesRead);
 
-    // Εκτέλεση κάθε 10 δευτερόλεπτα (για real-time έλεγχο)
     const interval = setInterval(fetchUnreadData, 10000);
     
-    // Σωστό cleanup function για την αποφυγή loops, duplicate listeners και memory leaks
     return () => {
       clearInterval(interval);
       window.removeEventListener('messagesRead', handleMessagesRead);
     };
-  }, []); // <-- Παραμένει άδειο array, όλα δουλεύουν ρολόι!
+  }, []);
   
-  // Απόκρυψη στην αρχική σελίδα
   if (location.pathname === '/') {
     return null;
   }
@@ -97,25 +87,26 @@ function Navbar() {
   return (
     <nav style={navStyle}>
 
-      {/* ─── LOGO ─── */}
-      <Link to="/events" style={{ marginLeft: '0px', display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-        <img 
-          src="/logo.png" 
-          alt="EventQ Logo" 
-          style={{ 
-            width: '160px',       
-            height: '160px',      
-            objectFit: 'contain' 
-          }} 
-        />
-      </Link>
+      {/* ─── ΑΡΙΣΤΕΡΑ: LOGO ─── */}
+      <div style={logoWrapperStyle}>
+        <Link to="/events" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+          <img 
+            src="/logo.png" 
+            alt="EventQ Logo" 
+            style={{ 
+              width: '160px',      
+              height: '160px',      
+              objectFit: 'contain' 
+            }} 
+          />
+        </Link>
+      </div>
 
-      {/* ─── ΔΥΝΑΜΙΚΟ LINKS AREA ─── */} 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
+      {/* ─── ΚΕΝΤΡΟ: ΑΝΕΤΟ, ΚΕΝΤΡΑΡΙΣΜΕΝΟ ΜΕΝΟΥ LINKS ─── */} 
+      <div style={menuLinksStyle}>
         
         {role !== 'ADMIN' && (
           <>
-            <Link to="/" style={getActiveStyle('/')}>ΑΡΧΙΚΗ</Link>
             <Link to="/events" style={getActiveStyle('/events')}>ΠΕΡΙΗΓΗΣΗ ΣΕ ΕΚΔΗΛΩΣΕΙΣ</Link>
           </>
         )}
@@ -123,6 +114,7 @@ function Navbar() {
         {role === 'ADMIN' && (
           <>
             <Link to="/admin/users" style={getActiveStyle('/admin/users')}>ΔΙΑΧΕΙΡΙΣΗ ΧΡΗΣΤΩΝ</Link>
+            <Link to="/events" style={getActiveStyle('/events')}>ΕΚΔΗΛΩΣΕΙΣ</Link>
             <Link to="/admin/export" style={getActiveStyle('/admin/export')}>ΕΞΑΓΩΓΗ ΕΚΔΗΛΩΣΕΩΝ</Link>
           </>
         )}
@@ -134,19 +126,21 @@ function Navbar() {
           </>
         )}
 
-        {user && role == 'ATTENDEE' && (
+        {user && role === 'ATTENDEE' && (
           <>
             <Link to="/my-bookings" style={getActiveStyle('/my-bookings')}>ΙΣΤΟΡΙΚΟ</Link>
           </>
         )}
+      </div>
 
-        {/* 🎯 ΔΙΟΡΘΩΘΗΚΕ: Αφαιρέθηκε το role !== 'ADMIN' ώστε να εμφανίζονται τα μηνύματα ΚΑΙ στον Admin */}
+      {/* ─── ΔΕΞΙΑ: UTILITIES ΜΕ ΑΝΕΣΗ ΧΩΡΟΥ ─── */}
+      <div style={rightActionsStyle}>
         {user && (
           <>
             {/* Μηνύματα */}
             <Link to="/messages" style={iconLinkStyle} title="Messages">
-              <div style={{ position: 'relative', display: 'inline-block' }}>
-                <img src="/email.png" alt="" style={{ width: '23px', height: '21px' }} />
+              <div style={{ position: 'relative', display: 'inline-block', marginTop: '6px' }}>
+                <img src="/email.png" alt="Messages" style={{ width: '23px', height: '21px' }} />
                 {unreadCount > 0 && (
                   <span style={badgeStyle}>{unreadCount}</span>
                 )}
@@ -159,8 +153,8 @@ function Navbar() {
               style={{ ...iconLinkStyle, color: location.pathname === '/notifications' ? COLORS.primary : COLORS.dark }} 
               title="Notifications"
             >
-              <div style={{ position: 'relative', display: 'inline-block' }}>
-                <img src="/notification.png" alt="" style={{ width: '22px', height: '22px' }} />
+              <div style={{ position: 'relative', display: 'inline-block', marginTop: '4px' }}>
+                <img src="/notification.png" alt="Notifications" style={{ width: '22px', height: '22px' }} />
                 {unreadNotificationsCount > 0 && (
                   <span style={badgeStyle}>{unreadNotificationsCount}</span>
                 )}
@@ -183,7 +177,7 @@ function Navbar() {
               borderBottom: ['/profile', '/settings'].includes(location.pathname) ? `3px solid ${COLORS.primary}` : '3px solid transparent',
               paddingBottom: '5px'
             }}>
-              ΠΡΟΦΙΛ <span style={{ fontSize: '0.8rem' }}></span>
+              ΠΡΟΦΙΛ
             </span>
 
             {isDropdownOpen && (
@@ -198,18 +192,11 @@ function Navbar() {
                       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.bgLight}
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
-                      {typeof item.icon === 'string' && item.icon.startsWith('/') ? (
-                        <img 
-                          src={item.icon} 
-                          alt="" 
-                          style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} 
-                        />
-                      ) : (
-                        <span style={{ fontSize: '1.4rem', width: '24px', textAlign: 'center', flexShrink: 0 }}>
-                          {item.icon}
-                        </span>
-                      )}
-                      
+                      <img 
+                        src={item.icon} 
+                        alt="" 
+                        style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} 
+                      />
                       <div>
                         <div style={{ ...itemTitle, color: COLORS.dark }}>{item.title}</div>
                         <div style={itemDesc}>{item.desc}</div>
@@ -224,10 +211,10 @@ function Navbar() {
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     <div>
-                      <img src="/power.png" alt="" style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0   }} />
+                      <img src="/power.png" alt="" style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} />
                     </div>
                     <div>
-                      <div style={{ ...itemTitle, color: '#da5e5e' }}>ΑΠΟΣΥΝΔΕΣΗ</div>
+                      <div style={{ ...itemTitle, color: '#da5e5e' }}>ΑΠΟΣΟΥΝΔΕΣΗ</div>
                       <div style={itemDesc}>Έξοδος από την εφαρμογή</div>
                     </div>
                   </div>
@@ -235,17 +222,6 @@ function Navbar() {
               </div>
             )}
           </div>
-        )}
-
-        {role === 'ORGANIZER' && (
-          <button 
-            onClick={() => navigate('/create-event')} 
-            style={createButtonStyle}
-            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            + ΔΗΜΙΟΥΡΓΙΑ ΕΚΔΗΛΩΣΗΣ
-          </button>
         )}
       </div>
     </nav>
@@ -258,7 +234,7 @@ const navStyle = {
   alignItems: 'center', 
   justifyContent: 'space-between',
   paddingLeft: '24px',
-  paddingRight: '4%',
+  paddingRight: '40px',
   height: '90px', 
   background: COLORS.white, 
   boxShadow: '0 2px 15px rgba(0,0,0,0.05)',
@@ -268,12 +244,35 @@ const navStyle = {
   fontFamily: 'Poppins, sans-serif'
 };
 
+const logoWrapperStyle = {
+  flex: '1',
+  display: 'flex',
+  justifyContent: 'flex-start'
+};
+
+const menuLinksStyle = {
+  display: 'flex', 
+  alignItems: 'center', 
+  justifyContent: 'center',
+  gap: '40px',
+  flex: '2' 
+};
+
+const rightActionsStyle = {
+  flex: '1',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  gap: '35px' // Περισσότερος αέρας μεταξύ των icons
+};
+
 const linkStyle = {
   textDecoration: 'none',
   fontSize: '1.04rem',
   fontWeight: '600',
   transition: 'color 0.2s, border-color 0.2s',
-  cursor: 'pointer'
+  cursor: 'pointer',
+  whiteSpace: 'nowrap'
 };
 
 const badgeStyle = {
@@ -299,14 +298,6 @@ const iconLinkStyle = {
   fontSize: '1.3rem',
   cursor: 'pointer',
   transition: 'transform 0.2s',
-};
-
-const dividerStyle = {
-  marginLeft: '0px',
-  marginRight: '0px',
-  width: '1px',
-  height: '25px',
-  backgroundColor: COLORS.border,
 };
 
 const dropdownWrapper = {
@@ -340,18 +331,6 @@ const dropdownItem = {
   cursor: 'pointer',
 };
 
-const iconBox = {
-  width: '40px',
-  height: '40px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  flexShrink: 0,
-  fontSize: '1.3rem',
-  backgroundColor: COLORS.bgLight,
-  borderRadius: '10px'
-};
-
 const itemTitle = {
   fontWeight: '700',
   fontSize: '1rem',
@@ -362,20 +341,6 @@ const itemDesc = {
   color: COLORS.textMuted,
   fontSize: '0.85rem',
   lineHeight: '1.3'
-};
-
-const createButtonStyle = {
-  padding: '9px 20px',
-  borderRadius: '50px',
-  border: 'none',
-  background: COLORS.primary,
-  color: COLORS.dark,
-  fontSize: '0.9rem',
-  fontWeight: '700',
-  cursor: 'pointer',
-  boxShadow: `0 4px 15px rgba(210, 184, 147, 0.25)`,
-  transition: '0.3s',
-  fontFamily: 'Poppins, sans-serif',
 };
 
 export default Navbar;

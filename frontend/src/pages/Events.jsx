@@ -211,14 +211,51 @@ export default function EventsBrowse() {
           marginBottom: '50px' 
         }}>
           
-          {/* ΤΙΤΛΟΣ */}
-          <div>
-            <h1 style={{ fontSize: '2.2rem', fontWeight: '800', color: COLORS.dark, letterSpacing: '1px', margin: 0 }}>
+          {/* ─── ΔΙΟΡΘΩΘΗΚΕ: ΚΑΘΑΡΟ FLEX LAYOUT ΓΙΑ ΝΑ ΜΗΝ ΚΑΒΑΛΙΟΥΝΤΑΙ ΤΑ ΣΤΟΙΧΕΙΑ ─── */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          marginBottom: '40px',
+          width: '100%',
+          position: 'relative'
+        }}>
+          {/* Empty spacer στα αριστερά για να κρατάει τον τίτλο τέλεια κεντραρισμένο */}
+          <div style={{ width: '160px', display: 'block' }} className="nav-spacer" />
+
+          {/* Ο Τίτλος στη Μέση */}
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <h1 style={{ fontWeight: '800', fontSize: '2.2rem', letterSpacing: '1px', color: '#2c2c2c', margin: 0 }}>
               ΕΚΔΗΛΩΣΕΙΣ
             </h1>
-            <div style={{ width: '110px', height: '4px', backgroundColor: COLORS.primary, marginTop: '8px', marginRight: 'auto', marginLeft: 'auto' }} />
+            <div style={{ width: '80px', height: '4px', backgroundColor: '#d2b893', marginTop: '10px', marginLeft: 'auto', marginRight: 'auto' }} />
           </div>
-          
+
+          {/* Το Κουμπί στα Δεξιά (Πιάνει χώρο 160px για να ισορροπεί με τον αριστερό spacer) */}
+          <div style={{ width: '160px', display: 'flex', justifyContent: 'flex-end' }}>
+            {JSON.parse(localStorage.getItem('user'))?.role?.toUpperCase() === 'ORGANIZER' && (
+              <button
+                onClick={() => navigate('/create-event')}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#d2b893',
+                  color: '#2c2c2c',
+                  border: 'none',
+                  borderRadius: '25px',
+                  fontWeight: '700',
+                  fontSize: '0.85rem',
+                  letterSpacing: '1px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(210,184,147,0.2)',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                + ΝΕΑ ΕΚΔΗΛΩΣΗ
+              </button>
+            )}
+          </div>
+        </div>
+
           {/* ΜΠΑΡΑ ΑΝΑΖΗΤΗΣΗΣ (Απλωμένη κάτω από τον τίτλο) */}
           <div style={{ 
             width: '100%', 

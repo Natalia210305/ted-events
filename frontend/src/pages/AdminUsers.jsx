@@ -115,16 +115,10 @@ export default function AdminUsers() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f0eb', fontFamily: 'Poppins, sans-serif', padding: '60px 20px' }}>
       <div style={{ maxWidth: '950px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-          <h1 style={{ textAlign: 'center', fontWeight: '700', fontSize: '1.7rem', letterSpacing: '2px', color: 'black' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', marginBottom: '32px' }}>
+          <h1 style={{ fontWeight: '700', fontSize: '1.7rem', letterSpacing: '2px', color: 'black', margin: 0 }}>
             ΔΙΑΧΕΙΡΙΣΗ ΧΡΗΣΤΩΝ
           </h1>
-          <button
-            onClick={() => navigate('/events')}
-            style={{ padding: '10px 24px', backgroundColor: '#d2b893', border: '1px solid black', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', letterSpacing: '1px', fontSize: '0.8rem' }}
-          >
-            EKΔΗΛΩΣΕΙΣ
-          </button>
         </div>
 
         {error && <p style={{ color: 'red', marginBottom: '16px' }}>{error}</p>}
