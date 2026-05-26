@@ -46,13 +46,23 @@ function Navbar() {
     // Αρχική κλήση κατά το mount
     fetchUnreadData();
 
-    // Εκτέλεση κάθε 10 δευτερόλεπτα
+    // 🎯 ΤΟ ΝΕΟ ΑΚΟΥΣΤΙΚΟ: Μόλις γίνει dispatch το 'messagesRead' από τα Messages, 
+    // το Navbar ξανατρέχει την fetchUnreadData και μηδενίζει το badge ακαριαία!
+    const handleMessagesRead = () => {
+      fetchUnreadData();
+    };
+    window.addEventListener('messagesRead', handleMessagesRead);
+
+    // Εκτέλεση κάθε 10 δευτερόλεπτα (για real-time έλεγχο)
     const interval = setInterval(fetchUnreadData, 10000);
     
-    // Σωστό cleanup function για την αποφυγή loops και memory leaks
-    return () => clearInterval(interval);
-  }, []); // <-- Άδειο dependency array ώστε να ξεκινάει ΜΟΝΟ μια φορά!
-
+    // Σωστό cleanup function για την αποφυγή loops, duplicate listeners και memory leaks
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('messagesRead', handleMessagesRead);
+    };
+  }, []); // <-- Παραμένει άδειο array, όλα δουλεύουν ρολόι!
+  
   // Απόκρυψη στην αρχική σελίδα
   if (location.pathname === '/') {
     return null;

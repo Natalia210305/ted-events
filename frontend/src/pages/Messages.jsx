@@ -60,21 +60,28 @@ export default function Messages() {
   useEffect(() => { fetchMessages(); }, []);
 
   const fetchConversation = async (userId, eventId = null) => {
-    try {
-      const validEventId = eventId === 'null' || !eventId ? null : eventId;
-      const url = validEventId 
-        ? `/messages/conversation/${userId}?eventId=${validEventId}`
-        : `/messages/conversation/${userId}`;
-          
-      const res = await api.get(url);
-      const resolvedEventId = validEventId || res.data.find(m => m.eventId)?.eventId || null;
-      
-      setConversation(res.data);
-      setSelectedConv({ userId, eventId: resolvedEventId }); 
-    } catch (err) {
-      setError('Σφάλμα φόρτωσης συνομιλίας');
-    }
-  };
+  try {
+    const validEventId = eventId === 'null' || !eventId ? null : eventId;
+    const url = validEventId 
+      ? `/messages/conversation/${userId}?eventId=${validEventId}`
+      : `/messages/conversation/${userId}`;
+        
+    const res = await api.get(url);
+    const resolvedEventId = validEventId || res.data.find(m => m.eventId)?.eventId || null;
+    
+    setConversation(res.data);
+    setSelectedConv({ userId, eventId: resolvedEventId }); 
+
+    await api.put(`/messages/read/${userId}`);
+    fetchMessages(); 
+
+    // 🎯 ΤΟ ΝΕΟ ΚΟΛΠΟ: Στέλνουμε ένα event "messagesRead" για να το ακούσει το Navbar!
+    window.dispatchEvent(new Event('messagesRead'));
+
+  } catch (err) {
+    setError('Σφάλμα φόρτωσης συνομιλίας');
+  }
+};
 
   const handleSend = async () => {
     if (!newMessage.trim() || !selectedConv) return;
@@ -132,8 +139,7 @@ export default function Messages() {
 
   const inbox = groupThreads(rawInbox);
   const sent = groupThreads(rawSent);
-  const unread = rawInbox.filter(m => !m.readAt).length;
-
+const unread = inbox.reduce((sum, m) => sum + (m.unreadCount || 0), 0);
   const formatDate = (str) => new Date(str).toLocaleString('el-GR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 
   return (

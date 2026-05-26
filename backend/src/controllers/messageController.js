@@ -33,12 +33,10 @@ const sendMessage = async (req, res) => {
   }
 };
 
-// 2. Λίστα μηνυμάτων χρήστη (ΟΜΑΔΟΠΟΙΗΜΕΝΗ ΑΝΑ ΕΚΔΗΛΩΣΗ)
 const getMyMessages = async (req, res) => {
   try {
     const currentUserId = req.user.id;
 
-    // Παίρνουμε όλα τα μηνύματα του χρήστη
     const allMessages = await prisma.message.findMany({
       where: {
         OR: [
@@ -51,10 +49,9 @@ const getMyMessages = async (req, res) => {
         receiver: { select: { id: true, firstName: true, lastName: true } },
         event: { select: { id: true, title: true } }
       },
-      orderBy: { sentAt: 'desc' } // Πιο πρόσφατα πρώτα
+      orderBy: { sentAt: 'desc' }
     });
 
-    // Ομαδοποίηση με βάση τον συνδυασμό: Άλλος Χρήστης + Εκδήλωση
     const threadsMap = new Map();
 
     for (const msg of allMessages) {
@@ -64,10 +61,12 @@ const getMyMessages = async (req, res) => {
       const eventKey = msg.eventId || 'general';
       const threadKey = `${otherUser.id}_${eventKey}`;
 
-      // Κρατάμε μόνο το πρώτο (δηλαδή το πιο πρόσφατο μήνυμα ως προεπισκόπηση)
+      // 🎯 ΥΠΟΛΟΓΙΣΜΟΣ UNREAD: Αν το μήνυμα το λάβαμε εμείς και το readAt είναι null, είναι αδιάβαστο
+      const isUnreadForMe = msg.receiverId === currentUserId && msg.readAt === null;
+
       if (!threadsMap.has(threadKey)) {
         threadsMap.set(threadKey, {
-          id: msg.id, // ID του τελευταίου μηνύματος
+          id: msg.id,
           content: msg.content,
           sentAt: msg.sentAt,
           readAt: msg.readAt,
@@ -79,8 +78,16 @@ const getMyMessages = async (req, res) => {
             id: otherUser.id,
             firstName: otherUser.firstName,
             lastName: otherUser.lastName
-          }
+          },
+          // Ξεκινάμε το μέτρημα των unread για αυτό το thread
+          unreadCount: isUnreadForMe ? 1 : 0 
         });
+      } else {
+        // Αν η συνομιλία υπάρχει ήδη στο χάρτη, και βρούμε κι άλλο unread μήνυμά της, αυξάνουμε το count
+        if (isUnreadForMe) {
+          const existing = threadsMap.get(threadKey);
+          existing.unreadCount += 1;
+        }
       }
     }
 
@@ -196,4 +203,28 @@ const getUnreadCount = async (req, res) => {
   }
 };
 
-module.exports = { sendMessage, getMyMessages, getConversation, deleteMessage, getUnreadCount };
+// 6. Σήμανση όλων των μηνυμάτων μιας συνομιλίας ως διαβασμένα
+const markAsRead = async (req, res) => {
+  try {
+    const { userId } = req.params; // Το ID του άλλου χρήστη
+    
+    // Ενημερώνουμε όλα τα μηνύματα που λάβαμε από αυτόν τον χρήστη και είναι unread
+    await prisma.message.updateMany({
+      where: {
+        senderId: userId,
+        receiverId: req.user.id,
+        readAt: null
+      },
+      data: {
+        readAt: new Date() // Βάζουμε το τρέχον timestamp
+      }
+    });
+
+    res.json({ message: 'Η συνομιλία αναγνώστηκε' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Σφάλμα server' });
+  }
+};
+
+module.exports = { sendMessage, getMyMessages, getConversation, deleteMessage, getUnreadCount, markAsRead };
