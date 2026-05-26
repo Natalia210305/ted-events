@@ -9,15 +9,15 @@ const roleLabels = {
 };
 
 const statusColors = {
-  PENDING: '#f0a500',
-  APPROVED: '#4caf50',
-  REJECTED: '#e53935'
+    PENDING: '#f0a500',
+    APPROVED: '#4caf50',
+    REJECTED: '#e53935'
 };
 
 const statusLabels = {
-  PENDING: 'ΕΚΚΡΕΜΗΣ',
-  APPROVED: 'ΕΓΚΕΚΡΙΜΕΝΟΣ',
-  REJECTED: 'ΑΠΟΡΡΙΦΘΕΙΣ'
+    PENDING: 'ΕΚΚΡΕΜΗΣ',
+    APPROVED: 'ΕΓΚΕΚΡΙΜΕΝΟΣ',
+    REJECTED: 'ΑΠΟΡΡΙΦΘΕΙΣ'
 };
 
 export default function AdminUsers() {
@@ -64,12 +64,24 @@ export default function AdminUsers() {
     }
   };
 
+  // 🎯 ΣΥΝΔΕΣΗ ΜΕ ΤΟ CHAT: Στέλνει τον Admin στα Messages ανοίγοντας τη συνομιλία
+  const handleOpenChat = (targetUser) => {
+    navigate('/messages', {
+      state: {
+        recipientId: targetUser.id,
+        recipientName: `${targetUser.firstName} ${targetUser.lastName}`,
+        subject: `Επικοινωνία από τον Διαχειριστή (Λογαριασμός: ${targetUser.username})`,
+        eventId: null // Γενική συνομιλία διαχειριστή-χρήστη
+      }
+    });
+  };
+
   const pending = users.filter(u => u.status === 'PENDING');
   const rest = users.filter(u => u.status !== 'PENDING');
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f0eb', fontFamily: 'Poppins, sans-serif', padding: '60px 20px' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '950px', margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
           <h1 style={{ textAlign: 'center', fontWeight: '700', fontSize: '1.7rem', letterSpacing: '2px', color: 'black' }}>
             ΔΙΑΧΕΙΡΙΣΗ ΧΡΗΣΤΩΝ
@@ -78,7 +90,7 @@ export default function AdminUsers() {
             onClick={() => navigate('/events')}
             style={{ padding: '10px 24px', backgroundColor: '#d2b893', border: '1px solid black', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', letterSpacing: '1px', fontSize: '0.8rem' }}
           >
-            ΕΚΔΗΛΩΣΕΙΣ
+            EKΔΗΛΩΣΕΙΣ
           </button>
         </div>
 
@@ -90,7 +102,7 @@ export default function AdminUsers() {
               ΕΚΚΡΕΜΕΙΣ ΑΙΤΗΣΕΙΣ ({pending.length})
             </h2>
             {pending.map(user => (
-              <UserCard key={user.id} user={user} onApprove={handleApprove} onReject={handleReject} onView={handleView} />
+              <UserCard key={user.id} user={user} onApprove={handleApprove} onReject={handleReject} onView={handleView} onChat={handleOpenChat} />
             ))}
           </div>
         )}
@@ -100,18 +112,18 @@ export default function AdminUsers() {
             ΟΛΟΙ ΟΙ ΧΡΗΣΤΕΣ ({rest.length})
           </h2>
           {rest.map(user => (
-            <UserCard key={user.id} user={user} onApprove={handleApprove} onReject={handleReject} onView={handleView} />
+            <UserCard key={user.id} user={user} onApprove={handleApprove} onReject={handleReject} onView={handleView} onChat={handleOpenChat} />
           ))}
         </div>
       </div>
 
       {/* Modal στοιχείων χρήστη */}
-      {selectedUser && <UserDetailsModal user={selectedUser} onClose={() => setSelectedUser(null)} />}
+      {selectedUser && <UserDetailsModal user={selectedUser} onClose={() => setSelectedUser(null)} onChat={handleOpenChat} />}
     </div>
   );
 }
 
-function UserCard({ user, onApprove, onReject, onView }) {
+function UserCard({ user, onApprove, onReject, onView, onChat }) {
   return (
     <div style={{
       backgroundColor: 'white',
@@ -144,12 +156,22 @@ function UserCard({ user, onApprove, onReject, onView }) {
         </span>
 
         <div style={{ display: 'flex', gap: '8px' }}>
+            {/* 🎯 ΝΕΟ: Κουμπί Άμεσης Αποστολής Μηνύματος από την κάρτα (Κρύβεται αν είναι ο ίδιος ο Admin) */}
+            {user.role !== 'ADMIN' && (
+              <button
+                onClick={() => onChat(user)}
+                style={{ padding: '8px 14px', backgroundColor: '#2c2c2c', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontSize: '0.8rem', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                ΜΗΝΥΜΑ
+              </button>
+            )}
+
             {/* Κουμπί προβολής πάντα εμφανές */}
             <button
             onClick={() => onView(user.id)}
             style={{ padding: '8px 16px', backgroundColor: 'transparent', color: '#2c2c2c', border: '1px solid #d2b893', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontSize: '0.8rem', letterSpacing: '1px' }}
             >
-            ΠΡΟΒΟΛΗ ΣΤΟΙΧΕΙΩΝ
+            ΠΡΟΒΟΛΗ
             </button>
 
             {user.status === 'PENDING' && (
@@ -169,12 +191,12 @@ function UserCard({ user, onApprove, onReject, onView }) {
             </>
             )}
         </div>
-        </div>
+      </div>
            
-    );
-    }
+  );
+}
 
-  function UserDetailsModal({ user, onClose }) {
+function UserDetailsModal({ user, onClose, onChat }) {
     const fields = [
         { label: 'ΟΝΟΜΑ', value: `${user.firstName} ${user.lastName}` },
         { label: 'Username', value: `${user.username}` },
@@ -191,17 +213,15 @@ function UserCard({ user, onApprove, onReject, onView }) {
 
     return (
         <>
-        {/* ─── ΑΛΛΑΓΗ Z-INDEX ΣΤΟ OVERLAY (ΑΠΟ 100 ΣΕ 3000) ─── */}
         <div onClick={onClose} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 3000 }} />
         
-        {/* ─── ΑΛΛΑΓΗ Z-INDEX ΣΤΟ ΚΥΡΙΩΣ MODAL (ΑΠΟ 101 ΣΕ 3001) ─── */}
         <div style={{
             position: 'fixed', top: '50%', left: '50%',
             transform: 'translate(-50%, -50%)',
             backgroundColor: '#faf8f5',
             padding: '40px', 
-            zIndex: 3001, // <--- Εδώ έγινε η αλλαγή
-            minWidth: '400px', maxHeight: '85vh',
+            zIndex: 3001,
+            minWidth: '450px', maxHeight: '85vh',
             overflowY: 'auto', fontFamily: 'Poppins, sans-serif'
         }}>
             <button onClick={onClose} style={{ position: 'absolute', top: '12px', right: '16px', background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#888' }}>✕</button>
@@ -220,6 +240,21 @@ function UserCard({ user, onApprove, onReject, onView }) {
                 </span>
             </div>
             ))}
+
+            {/* 🎯 ΝΕΟ: Κουμπί Αποστολής Μηνύματος μέσα από το Modal */}
+            {user.role !== 'ADMIN' && (
+              <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
+                <button
+                  onClick={() => {
+                    onClose();
+                    onChat(user);
+                  }}
+                  style={{ width: '100%', padding: '12px', backgroundColor: '#2c2c2c', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '1px' }}
+                >
+                  ✉️ ΑΠΟΣΤΟΛΗ ΜΗΝΥΜΑΤΟΣ ΔΙΕΥΚΡΙΝΙΣΕΩΝ
+                </button>
+              </div>
+            )}
         </div>
         </>
     );

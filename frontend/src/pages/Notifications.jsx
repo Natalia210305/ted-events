@@ -14,7 +14,8 @@ const NOTIF_TRANSLATIONS = {
   'event_cancelled': 'ΑΚΥΡΩΣΗ ΕΚΔΗΛΩΣΗΣ',
   'event cancelled': 'ΑΚΥΡΩΣΗ ΕΚΔΗΛΩΣΗΣ', 
   'event_updated': 'ΕΝΗΜΕΡΩΣΗ ΕΚΔΗΛΩΣΗΣ',
-  'event updated': 'ΕΝΗΜΕΡΩΣΗ ΕΚΔΗΛΩΣΗΣ'
+  'event updated': 'ΕΝΗΜΕΡΩΣΗ ΕΚΔΗΛΩΣΗΣ',
+  'new_register': 'ΝΕΑ ΕΓΓΡΑΦΗ' // 🎯 Προσθήκη μετάφρασης για τον Admin
 };
 
 function Notifications() {
@@ -31,7 +32,6 @@ function Notifications() {
       setNotifications(response.data);
       setLoading(false);
       
-      // Μόλις φορτώσουν, τις μαρκάρουμε ως διαβασμένες στο Backend
       if (response.data.some(n => !n.isRead)) {
         await api.post('/notifications/read');
       }
@@ -53,21 +53,34 @@ function Notifications() {
         {notifications.length === 0 ? (
           <p style={styles.emptyMsg}>Δεν έχετε νέες ειδοποιήσεις.</p>
         ) : (
-          notifications.map((notif) => (
-            <div key={notif.id} style={{
-              ...styles.card,
-              borderLeft: notif.isRead ? `5px solid ${COLORS.border}` : `5px solid ${COLORS.primary}`,
-              backgroundColor: notif.isRead ? COLORS.white : '#fffdfa'
-            }}>
-              <div style={styles.cardHeader}>
-                <span style={styles.typeTag}>
-                  {NOTIF_TRANSLATIONS[notif.type?.toLowerCase()] || notif.type?.replace('_', ' ')}
-                </span>
-                <span style={styles.date}>{new Date(notif.createdAt).toLocaleString('el-GR')}</span>
+          notifications.map((notif) => {
+            // 🎯 ΕΞΥΠΝΟΣ ΕΛΕΓΧΟΣ TAG: Αν το κείμενο περιέχει τη λέξη "εγγραφή", βάζουμε tag "ΝΕΑ ΕΓΓΡΑΦΗ"
+            const isRegistration = notif.content?.includes('εγγραφή') || notif.type === 'new_register';
+            const displayTag = isRegistration 
+              ? 'ΝΕΑ ΕΓΓΡΑΦΗ' 
+              : (NOTIF_TRANSLATIONS[notif.type?.toLowerCase()] || notif.type?.replace('_', ' ') || 'ΕΙΔΟΠΟΙΗΣΗ');
+
+            return (
+              <div key={notif.id} style={{
+                ...styles.card,
+                borderLeft: notif.isRead ? `5px solid ${COLORS.border}` : `5px solid ${COLORS.primary}`,
+                backgroundColor: notif.isRead ? COLORS.white : '#fffdfa'
+              }}>
+                <div style={styles.cardHeader}>
+                  <span style={{
+                    ...styles.typeTag,
+                    backgroundColor: isRegistration ? 'rgba(136, 72, 52, 0.1)' : 'rgba(210, 184, 147, 0.1)',
+                    color: isRegistration ? '#884834' : COLORS.primary
+                  }}>
+                    {displayTag}
+                  </span>
+                  <span style={styles.date}>{new Date(notif.createdAt).toLocaleString('el-GR')}</span>
+                </div>
+                {/* 🎯 ΔΙΟΡΘΩΘΗΚΕ: Διαβάζει το notif.content αντί για notif.message */}
+                <p style={styles.message}>{notif.content}</p> 
               </div>
-              <p style={styles.message}>{notif.message}</p>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
@@ -109,8 +122,6 @@ const styles = {
     fontSize: '0.7rem',
     fontWeight: 'bold',
     textTransform: 'uppercase',
-    color: COLORS.primary,
-    backgroundColor: 'rgba(210, 184, 147, 0.1)',
     padding: '4px 8px',
     borderRadius: '4px'
   },

@@ -98,7 +98,6 @@ function Navbar() {
     <nav style={navStyle}>
 
       {/* ─── LOGO ─── */}
-      {/* 🎯 ΑΛΛΑΓΗ ΕΔΩ: Από to="/" έγινε to="/events" */}
       <Link to="/events" style={{ marginLeft: '0px', display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
         <img 
           src="/logo.png" 
@@ -141,7 +140,8 @@ function Navbar() {
           </>
         )}
 
-        {user && role !== 'ADMIN' && (
+        {/* 🎯 ΔΙΟΡΘΩΘΗΚΕ: Αφαιρέθηκε το role !== 'ADMIN' ώστε να εμφανίζονται τα μηνύματα ΚΑΙ στον Admin */}
+        {user && (
           <>
             {/* Μηνύματα */}
             <Link to="/messages" style={iconLinkStyle} title="Messages">
@@ -153,7 +153,7 @@ function Navbar() {
               </div>
             </Link>
             
-            {/* Ειδοποιήσεις με Δυναμικό Κόκκινο Κυκλάκι */}
+            {/* Ειδοποιήσεις */}
             <Link 
               to="/notifications" 
               style={{ ...iconLinkStyle, color: location.pathname === '/notifications' ? COLORS.primary : COLORS.dark }} 
@@ -198,7 +198,6 @@ function Navbar() {
                       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.bgLight}
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
-                      {/* ─── ΜΟΝΟ ΤΟ ICON ΧΩΡΙΣ ΤΟ ICONBOX ─── */}
                       {typeof item.icon === 'string' && item.icon.startsWith('/') ? (
                         <img 
                           src={item.icon} 
@@ -225,7 +224,7 @@ function Navbar() {
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     <div>
-                      <img src="/power.png" alt="" style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0  }} />
+                      <img src="/power.png" alt="" style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0   }} />
                     </div>
                     <div>
                       <div style={{ ...itemTitle, color: '#da5e5e' }}>ΑΠΟΣΥΝΔΕΣΗ</div>
@@ -258,8 +257,8 @@ const navStyle = {
   display: 'flex', 
   alignItems: 'center', 
   justifyContent: 'space-between',
-  paddingLeft: '24px',   // Μικρό, κομψό κενό στα αριστερά για το λογότυπο
-  paddingRight: '4%',    // Απόσταση στα δεξιά για τα μενού/κουμπιά
+  paddingLeft: '24px',
+  paddingRight: '4%',
   height: '90px', 
   background: COLORS.white, 
   boxShadow: '0 2px 15px rgba(0,0,0,0.05)',

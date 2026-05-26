@@ -120,7 +120,7 @@ export default function Messages() {
     }
   };
 
-  // 🎯 ΟΜΑΔΟΠΟΙΗΣΗ ΣΕ ΜΙΑ ΕΝΙΑΙΑ ΛΙΣΤΑ (MESSENGER STYLE)
+  // ΟΜΑΔΟΠΟΙΗΣΗ ΣΕ ΜΙΑ ΕΝΙΑΙΑ ΛΙΣΤΑ (MESSENGER STYLE)
   const groupThreads = (rawList) => {
     const map = {};
     rawList.forEach(m => {
@@ -133,7 +133,6 @@ export default function Messages() {
     return Object.values(map);
   };
 
-  // Φιλτράρουμε όλα τα ενεργά μηνύματα μαζί (εισερχόμενα και απεσταλμένα)
   const rawActiveMessages = messages.filter(m => 
     (m.receiverId === user?.id && !m.deletedByReceiver) || 
     (m.senderId === user?.id && !m.deletedBySender)
@@ -142,6 +141,63 @@ export default function Messages() {
   const chatThreads = groupThreads(rawActiveMessages);
   const unread = chatThreads.reduce((sum, m) => sum + (m.unreadCount || 0), 0);
   const formatDate = (str) => new Date(str).toLocaleString('el-GR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+  // 🎯 ΚΟΙΝΗ ΣΥΝΑΡΤΗΣΗ RENDER ΓΙΑ ΤΑ ΣΤΟΙΧΕΙΑ ΧΡΗΣΤΗ
+  const renderClientInfoBox = (clientData) => {
+    if (!clientData) return null;
+    return (
+      <div style={{ 
+        fontSize: '13px', 
+        color: '#555', 
+        marginTop: '8px', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '6px',
+        borderLeft: `3px solid ${COLORS.primary}`,
+        marginLeft: '32px',
+        paddingLeft: '12px'
+      }}>
+        {/* Ονοματεπώνυμο */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <img src="/user.png" alt="User" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+          <span>
+            <span style={{ fontWeight: '500' }}>Ονοματεπώνυμο:</span>{' '}
+            <span style={{ fontWeight: '700', color: COLORS.darkbrown }}>
+              {clientData.firstName || clientData.recipientName || ''} {clientData.lastName || ''}
+            </span>
+          </span>
+        </div>
+
+        {/* Email */}
+        {clientData.email && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img src="/mail.png" alt="Email" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+            <span>
+              <span style={{ fontWeight: '500' }}>Email:</span>{' '}
+              <a href={`mailto:${clientData.email}`} style={{ color: '#555', textDecoration: 'none', fontWeight: '600' }}>
+                {clientData.email}
+              </a>
+            </span>
+          </div>
+        )}
+
+        {/* Τηλέφωνο */}
+        {clientData.phone && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img src="/phone.png" alt="Phone" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+            <span>
+              <span style={{ fontWeight: '500' }}>Τηλέφωνο:</span>{' '}
+              <a href={`tel:${clientData.phone}`} style={{ color: '#555', textDecoration: 'none', fontWeight: '600' }}>
+                {clientData.phone}
+              </a>
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const isAdminOrOrganizer = user?.role?.toUpperCase() === 'ORGANIZER' || user?.role?.toUpperCase() === 'ADMIN';
 
   return (
     <div style={styles.container}>
@@ -168,8 +224,6 @@ export default function Messages() {
               
               const cardLink = `/events/${trueEventId}`;
               const isSelected = selectedConv?.userId === otherUserId;
-
-              // Έλεγχος αν η συγκεκριμένη συνομιλία έχει αδιάβαστα μηνύματα
               const hasUnread = m.unreadCount > 0;
 
               return (
@@ -185,12 +239,7 @@ export default function Messages() {
                     <span style={{ fontSize: '14px' }}>
                       <Link 
                         to={cardLink} 
-                        style={{ 
-                          color: '#bfa37a', 
-                          textDecoration: 'underline', 
-                          fontWeight: '700',
-                          cursor: 'pointer'
-                        }}
+                        style={{ color: '#bfa37a', textDecoration: 'underline', fontWeight: '700', cursor: 'pointer' }}
                         onClick={(e) => e.stopPropagation()} 
                       >
                         Release Athens Festival
@@ -199,7 +248,6 @@ export default function Messages() {
                     <span style={styles.dateText}>{formatDate(m.sentAt)}</span>
                   </div>
 
-                  {/* Αν η συνομιλία έχει unread, η προεπισκόπηση γίνεται bold */}
                   <div style={{
                     ...styles.previewText,
                     fontWeight: hasUnread ? '700' : 'normal',
@@ -208,17 +256,8 @@ export default function Messages() {
                     {m.senderId === user.id ? 'Εσείς: ' : ''}{m.content}
                   </div>
 
-                  {/* Μικρή κόκκινη βούλα unread στα δεξιά της κάρτας */}
                   {hasUnread && (
-                    <span style={{
-                      position: 'absolute',
-                      right: '15px',
-                      bottom: '18px',
-                      width: '8px',
-                      height: '8px',
-                      backgroundColor: '#ff4444',
-                      borderRadius: '50%'
-                    }} />
+                    <span style={{ position: 'absolute', right: '15px', bottom: '18px', width: '8px', height: '8px', backgroundColor: '#ff4444', borderRadius: '50%' }} />
                   )}
                 </div>
               );
@@ -230,89 +269,54 @@ export default function Messages() {
       {/* --- ΔΕΞΙΑ ΠΛΕΥΡΑ: ΠΑΡΑΘΥΡΟ ΣΥΝΟΜΙΛΙΑΣ --- */}
       <div style={styles.chatWindow}>
         {newContact ? (
-          <div style={styles.newMessageArea}>
-            <h3 style={{color: COLORS.primary, marginBottom: '10px'}}>Νέο μήνυμα προς: {newContact.recipientName}</h3>
-            <p style={{fontSize: '13px', color: '#666', marginBottom: '20px'}}>Θέμα: {newContact.subject}</p>
-            <textarea
-              style={styles.textarea}
-              placeholder="Γράψτε το μήνυμά σας εδώ..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            />
-            <button onClick={handleSendNewMessage} style={styles.sendBtn}>ΑΠΟΣΤΟΛΗ ΜΗΝΥΜΑΤΟΣ</button>
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            {/* HEADER ΓΙΑ ΝΕΟ ΜΗΝΥΜΑ (ADMIN / ORGANIZER) */}
+            <div style={styles.chatHeader}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#333', fontSize: '16px' }}>
+                <img src="/live-chat.png" alt="Chat" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
+                <span>
+                  {user?.role?.toUpperCase() === 'ADMIN' ? "Διαχειριστική Επικοινωνία" : "Συνομιλία με τον χρήστη"}
+                </span>
+              </div>
+              {/* Αν ο Admin ξεκινάει chat, τραβάμε τα στοιχεία με fallback lookup */}
+              {isAdminOrOrganizer && renderClientInfoBox({
+                recipientName: newContact.recipientName,
+                email: newContact.email || messages.find(m => m.senderId === newContact.recipientId || m.receiverId === newContact.recipientId)?.sender?.email || messages.find(m => m.senderId === newContact.recipientId || m.receiverId === newContact.recipientId)?.receiver?.email,
+                phone: newContact.phone || messages.find(m => m.senderId === newContact.recipientId || m.receiverId === newContact.recipientId)?.sender?.phone || messages.find(m => m.senderId === newContact.recipientId || m.receiverId === newContact.recipientId)?.receiver?.phone
+              })}
+            </div>
+
+            <div style={styles.newMessageArea}>
+              <p style={{fontSize: '13px', color: '#666', marginBottom: '20px'}}>Θέμα: {newContact.subject}</p>
+              <textarea
+                style={styles.textarea}
+                placeholder="Γράψτε το μήνυμά σας εδώ..."
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+              />
+              <button onClick={handleSendNewMessage} style={styles.sendBtn}>ΑΠΟΣΤΟΛΗ ΜΗΝΥΜΑΤΟΣ</button>
+            </div>
           </div>
         ) : selectedConv ? (
           <div style={styles.conversationArea}>
+            {/* HEADER ΓΙΑ ΥΠΑΡΧΟΥΣΑ ΣΥΝΟΜΙΛΙΑ */}
             <div style={styles.chatHeader}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#333', fontSize: '16px' }}>
-                <img 
-                  src="/live-chat.png" 
-                  alt="Chat Icon" 
-                  style={{ width: '22px', height: '22px', objectFit: 'contain' }} 
-                />
+                <img src="/live-chat.png" alt="Chat Icon" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
                 <span>
-                  {user?.role?.toUpperCase() === 'ORGANIZER' ? "Συνομιλία με τον χρήστη" : "Συνομιλία με τον διαχειριστή"}
+                  {user?.role?.toUpperCase() === 'ORGANIZER' ? "Συνομιλία με τον χρήστη" : 
+                   user?.role?.toUpperCase() === 'ADMIN' ? "Διαχειριστική Επικοινωνία" : "Συνομιλία με τον διαχειριστή"}
                 </span>
               </div>
               
-              {user?.role?.toUpperCase() === 'ORGANIZER' && conversation.length > 0 && (() => {
+              {/* 🎯 Εμφάνιση στοιχείων χρήστη σε υπάρχον thread με έξυπνο fallback */}
+              {isAdminOrOrganizer && conversation.length > 0 && (() => {
                 const clientMsg = conversation.find(c => c.senderId !== user.id);
-                const clientData = clientMsg ? clientMsg.sender : conversation[0]?.receiver;
-
-                if (!clientData) return null;
-
-                return (
-                  <div style={{ 
-                    fontSize: '13px', 
-                    color: '#555', 
-                    marginTop: '8px', 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    gap: '6px',
-                    borderLeft: `3px solid ${COLORS.primary}`,
-                    marginLeft: '32px',
-                    paddingLeft: '12px'
-                  }}>
-                    {/* Ονοματεπώνυμο */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <img src="/user.png" alt="User" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
-                      <span>
-                        <span style={{ fontWeight: '500' }}>Ονοματεπώνυμο:</span>{' '}
-                        <span style={{ fontWeight: '700', color: COLORS.darkbrown }}>
-                          {clientData.firstName} {clientData.lastName}
-                        </span>
-                      </span>
-                    </div>
-
-                    {/* Email */}
-                    {clientData.email && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <img src="/mail.png" alt="Email" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
-                        <span>
-                          <span style={{ fontWeight: '500' }}>Email:</span>{' '}
-                          <a href={`mailto:${clientData.email}`} style={{ color: '#555', textDecoration: 'none', fontWeight: '600' }}>
-                            {clientData.email}
-                          </a>
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Τηλέφωνο */}
-                    {clientData.phone && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <img src="/phone.png" alt="Phone" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
-                        <span>
-                          <span style={{ fontWeight: '500' }}>Τηλέφωνο:</span>{' '}
-                          <a href={`tel:${clientData.phone}`} style={{ color: '#555', textDecoration: 'none', fontWeight: '600' }}>
-                            {clientData.phone}
-                          </a>
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                );
+                const clientData = clientMsg ? clientMsg.sender : (conversation[0]?.receiver || conversation[0]?.sender);
+                return renderClientInfoBox(clientData);
               })()}
             </div>
+            
             <div style={styles.messagesList}>
               {conversation.map(c => (
                 <div key={c.id} style={{
