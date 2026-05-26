@@ -409,7 +409,7 @@ export default function EventsBrowse() {
                   marginRight: '8px'
                 }} 
               />
-              ΠΡΟΤΕΙΝΟΜΕΝΕΣ ΓΙΑ ΕΣΑΣ
+              ΠΡΟΤΕΙΝΟΜΕΝΑ ΓΙΑ ΕΣΑΣ
             </button>
           )}
 

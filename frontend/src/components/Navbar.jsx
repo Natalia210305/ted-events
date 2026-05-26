@@ -88,7 +88,8 @@ function Navbar() {
     <nav style={navStyle}>
 
       {/* ─── LOGO ─── */}
-      <Link to="/" style={{ marginLeft: '0px', display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+      {/* 🎯 ΑΛΛΑΓΗ ΕΔΩ: Από to="/" έγινε to="/events" */}
+      <Link to="/events" style={{ marginLeft: '0px', display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
         <img 
           src="/logo.png" 
           alt="EventQ Logo" 
