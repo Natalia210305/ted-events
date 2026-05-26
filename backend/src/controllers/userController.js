@@ -24,27 +24,31 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-// Ενημέρωση Στοιχείων Προφίλ
+// Ενημέρωση Στοιχείων Προφίλ (Με αυτόματη ειδοποίηση στον Admin)
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user.id; 
-    
-    // Πιάνουμε ΟΛΑ τα πεδία που στέλνει η React φόρμα
     const { firstName, lastName, email, phone, address, city, country, afm } = req.body;
 
-    // Ενημέρωση στη βάση δεδομένων
+    // 1. Τραβάμε τα παλιά στοιχεία του χρήστη για να δούμε τι είχε πριν
+    const oldUser = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!oldUser) {
+      return res.status(404).json({ error: 'Ο χρήστης δεν βρέθηκε.' });
+    }
+
+    // Έλεγχος αν άλλαξε Email, ΑΦΜ ή Τηλέφωνο
+    let hasChanges = false;
+    if (oldUser.email !== email || oldUser.afm !== afm || oldUser.phone !== phone) {
+      hasChanges = true;
+    }
+
+    // 2. Ενημέρωση στη βάση δεδομένων
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: {
-        firstName,
-        lastName,
-        email,
-        phone,
-        address,
-        city,
-        country,
-        afm
-      },
+      data: { firstName, lastName, email, phone, address, city, country, afm },
       select: {
         id: true,
         username: true,
@@ -56,9 +60,35 @@ const updateProfile = async (req, res) => {
         city: true,
         country: true,
         afm: true,
-        role: true
+        role: true,
+        status: true
       }
     });
+
+    // 3. 🎯 ΔΗΜΙΟΥΡΓΙΑ ΕΙΔΟΠΟΙΗΣΗΣ (Εδώ κρύβεται όλη η μαγεία που έλειπε!)
+    if (hasChanges) {
+      try {
+        // Βρίσκουμε τον Admin του συστήματος
+        const adminUser = await prisma.user.findFirst({
+          where: { role: 'ADMIN' }
+        });
+
+        if (adminUser) {
+          await prisma.notification.create({
+            data: {
+              userId: adminUser.id, // Ο Admin είναι ο λήπτης
+              message: `ℹ️ Τροποποίηση προφίλ: Ο χρήστης ${updatedUser.firstName} ${updatedUser.lastName} (${updatedUser.username}) άλλαξε τα στοιχεία του (Email/ΑΦΜ/Τηλέφωνο).`,
+              isRead: false,
+              // 🎯 ΕΔΩ ΚΡΥΒΟΥΜΕ ΤΟ ID ΤΟΥ ΧΡΗΣΤΗ ΓΙΑ ΤΟ MODAL ΤΟΥ FRONTEND:
+              type: updatedUser.id 
+            }
+          });
+          console.log("✅ Η ειδοποίηση γράφτηκε επιτυχώς στο Supabase με Type (User ID):", updatedUser.id);
+        }
+      } catch (notifErr) {
+        console.error("❌ Σφάλμα κατά τη δημιουργία ειδοποίησης επανελέγχου:", notifErr);
+      }
+    }
 
     return res.json({ message: 'Το προφίλ ενημερώθηκε με επιτυχία', user: updatedUser });
   } catch (err) {

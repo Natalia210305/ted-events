@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom'; 
 import api from '../services/api';
 
 const roleLabels = {
@@ -23,8 +23,9 @@ const statusLabels = {
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [error, setError] = useState('');
-  const [selectedUser, setSelectedUser] = useState(null); // ← για το modal
+  const [selectedUser, setSelectedUser] = useState(null); 
   const navigate = useNavigate();
+  const location = useLocation(); 
 
   const fetchUsers = async () => {
     try {
@@ -37,6 +38,39 @@ export default function AdminUsers() {
 
   useEffect(() => { fetchUsers(); }, []);
 
+  // 🎯 ΔΙΟΡΘΩΘΗΚΕ: Ασύγχρονο, αλεξίσφαιρο effect που περιμένει το API call πριν σβήσει το state
+  useEffect(() => {
+    const userIdToOpen = location.state?.openModalForUserId;
+    
+    if (userIdToOpen && users.length > 0) {
+      const triggerAutoModal = async () => {
+        try {
+          console.log("🔍 Έλεγχος για αυτόματο άνοιγμα modal ID:", userIdToOpen);
+          
+          const userExists = users.some(u => u.id === userIdToOpen);
+          
+          if (userExists) {
+            setSelectedUser(null); // Καθαρισμός προηγούμενου state
+            
+            // 🎯 Περιμένουμε το API call να φέρει τα δεδομένα κανονικά
+            const res = await api.get(`/users/${userIdToOpen}`);
+            setSelectedUser(res.data);
+            console.log("✅ Το modal άνοιξε επιτυχώς για τον χρήστη:", res.data.firstName);
+          } else {
+            console.warn("⚠️ Το ID από την ειδοποίηση δεν αντιστοιχεί σε απλό χρήστη της λίστασ.");
+          }
+        } catch (err) {
+          console.error("❌ Σφάλμα κατά το αυτόματο άνοιγμα του modal:", err);
+        } finally {
+          // Καθαρίζουμε το state πλοήγησης ΑΦΟΥ τελειώσουν όλα, για να μην κολλάει το loop
+          navigate(location.pathname, { replace: true, state: null });
+        }
+      };
+
+      triggerAutoModal();
+    }
+  }, [location.state, users]);
+  
   const handleApprove = async (id) => {
     try {
       await api.patch(`/users/${id}/approve`);
@@ -64,14 +98,13 @@ export default function AdminUsers() {
     }
   };
 
-  // 🎯 ΣΥΝΔΕΣΗ ΜΕ ΤΟ CHAT: Στέλνει τον Admin στα Messages ανοίγοντας τη συνομιλία
   const handleOpenChat = (targetUser) => {
     navigate('/messages', {
       state: {
         recipientId: targetUser.id,
         recipientName: `${targetUser.firstName} ${targetUser.lastName}`,
         subject: `Επικοινωνία από τον Διαχειριστή (Λογαριασμός: ${targetUser.username})`,
-        eventId: null // Γενική συνομιλία διαχειριστή-χρήστη
+        eventId: null 
       }
     });
   };
@@ -117,7 +150,6 @@ export default function AdminUsers() {
         </div>
       </div>
 
-      {/* Modal στοιχείων χρήστη */}
       {selectedUser && <UserDetailsModal user={selectedUser} onClose={() => setSelectedUser(null)} onChat={handleOpenChat} />}
     </div>
   );
@@ -156,7 +188,6 @@ function UserCard({ user, onApprove, onReject, onView, onChat }) {
         </span>
 
         <div style={{ display: 'flex', gap: '8px' }}>
-            {/* 🎯 ΝΕΟ: Κουμπί Άμεσης Αποστολής Μηνύματος από την κάρτα (Κρύβεται αν είναι ο ίδιος ο Admin) */}
             {user.role !== 'ADMIN' && (
               <button
                 onClick={() => onChat(user)}
@@ -166,7 +197,6 @@ function UserCard({ user, onApprove, onReject, onView, onChat }) {
               </button>
             )}
 
-            {/* Κουμπί προβολής πάντα εμφανές */}
             <button
             onClick={() => onView(user.id)}
             style={{ padding: '8px 16px', backgroundColor: 'transparent', color: '#2c2c2c', border: '1px solid #d2b893', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontSize: '0.8rem', letterSpacing: '1px' }}
@@ -192,7 +222,6 @@ function UserCard({ user, onApprove, onReject, onView, onChat }) {
             )}
         </div>
       </div>
-           
   );
 }
 
@@ -241,7 +270,6 @@ function UserDetailsModal({ user, onClose, onChat }) {
             </div>
             ))}
 
-            {/* 🎯 ΝΕΟ: Κουμπί Αποστολής Μηνύματος μέσα από το Modal */}
             {user.role !== 'ADMIN' && (
               <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
                 <button
