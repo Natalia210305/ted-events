@@ -15,7 +15,7 @@ const NOTIF_TRANSLATIONS = {
   'event cancelled': 'ΑΚΥΡΩΣΗ ΕΚΔΗΛΩΣΗΣ', 
   'event_updated': 'ΕΝΗΜΕΡΩΣΗ ΕΚΔΗΛΩΣΗΣ',
   'event updated': 'ΕΝΗΜΕΡΩΣΗ ΕΚΔΗΛΩΣΗΣ',
-  'new_register': 'ΝΕΑ ΕΓΓΡΑΦΗ' // 🎯 Προσθήκη μετάφρασης για τον Admin
+  'new_register': 'ΝΕΑ ΕΓΓΡΑΦΗ' 
 };
 
 function Notifications() {
@@ -54,30 +54,49 @@ function Notifications() {
           <p style={styles.emptyMsg}>Δεν έχετε νέες ειδοποιήσεις.</p>
         ) : (
           notifications.map((notif) => {
-            // 🎯 ΕΞΥΠΝΟΣ ΕΛΕΓΧΟΣ TAG: Αν το κείμενο περιέχει τη λέξη "εγγραφή", βάζουμε tag "ΝΕΑ ΕΓΓΡΑΦΗ"
-            const isRegistration = notif.content?.includes('εγγραφή') || notif.type === 'new_register';
+            // 🎯 ΑΛΕΞΙΣΦΑΙΡΟΙ ΕΛΕΓΧΟΙ (Safe String Checks με fallback κενό string '')
+            const textToSearch = notif.message ? String(notif.message).toLowerCase() : '';
+            
+            const isRegistration = textToSearch.includes('εγγραφή') || notif.type === 'new_register';
+            const isProfileUpdate = textToSearch.includes('στοιχείων') || textToSearch.includes('προφίλ') || textToSearch.includes('τροποποίηση');
+
+            // Καθορισμός του κειμένου στο Tag
             const displayTag = isRegistration 
-              ? 'ΝΕΑ ΕΓΓΡΑΦΗ' 
-              : (NOTIF_TRANSLATIONS[notif.type?.toLowerCase()] || notif.type?.replace('_', ' ') || 'ΕΙΔΟΠΟΙΗΣΗ');
+              ? 'ΔΗΜΙΟΥΡΓΙΑ ΛΟΓΑΡΙΑΣΜΟΥ' 
+              : isProfileUpdate 
+                ? 'ΑΛΛΑΓΗ ΣΤΟΙΧΕΙΩΝ' 
+                : (NOTIF_TRANSLATIONS[notif.type?.toLowerCase()] || notif.type?.replace('_', ' ') || 'ΕΙΔΟΠΟΙΗΣΗ');
+
+            // Δυναμικά χρώματα για το Tag
+            const tagBgColor = isRegistration 
+              ? 'rgba(136, 72, 52, 0.1)' 
+              : isProfileUpdate 
+                ? 'rgba(44, 44, 44, 0.08)' 
+                : 'rgba(210, 184, 147, 0.1)';
+
+            const tagColor = isRegistration 
+              ? '#884834' 
+              : isProfileUpdate 
+                ? '#2c2c2c' 
+                : COLORS.primary;
 
             return (
               <div key={notif.id} style={{
                 ...styles.card,
-                borderLeft: notif.isRead ? `5px solid ${COLORS.border}` : `5px solid ${COLORS.primary}`,
+                borderLeft: notif.isRead ? `5px solid ${COLORS.border}` : `5px solid ${tagColor}`,
                 backgroundColor: notif.isRead ? COLORS.white : '#fffdfa'
               }}>
                 <div style={styles.cardHeader}>
                   <span style={{
                     ...styles.typeTag,
-                    backgroundColor: isRegistration ? 'rgba(136, 72, 52, 0.1)' : 'rgba(210, 184, 147, 0.1)',
-                    color: isRegistration ? '#884834' : COLORS.primary
+                    backgroundColor: tagBgColor,
+                    color: tagColor
                   }}>
                     {displayTag}
                   </span>
-                  <span style={styles.date}>{new Date(notif.createdAt).toLocaleString('el-GR')}</span>
+                  <span style={styles.date}>{notif.createdAt ? new Date(notif.createdAt).toLocaleString('el-GR') : '—'}</span>
                 </div>
-                {/* 🎯 ΔΙΟΡΘΩΘΗΚΕ: Διαβάζει το notif.content αντί για notif.message */}
-                <p style={styles.message}>{notif.content}</p> 
+                <p style={styles.message}>{notif.message || 'Χωρίς περιεχόμενο'}</p> 
               </div>
             );
           })

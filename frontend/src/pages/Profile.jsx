@@ -30,40 +30,39 @@ export default function Profile() {
   });
 
   useEffect(() => {
-  const fetchUserProfile = async () => {
-    try {
-      // 1. Παίρνουμε το id του συνδεδεμένου χρήστη από το localStorage
-      const storedUser = localStorage.getItem('user');
-      if (!storedUser) {
-        navigate('/');
-        return;
+    const fetchUserProfile = async () => {
+      try {
+        // 1. Παίρνουμε το id του συνδεδεμένου χρήστη από το localStorage
+        const storedUser = localStorage.getItem('user');
+        if (!storedUser) {
+          navigate('/');
+          return;
+        }
+        const loggedInUser = JSON.parse(storedUser);
+
+        // 2. Κάνουμε κλήση στο backend route που φέρνει τον χρήστη με βάση το ID του
+        const response = await api.get(`/users/${loggedInUser.id}`);
+        
+        const user = response.data;
+        setFormData({
+          firstName: user.firstName || '',
+          lastName: user.lastName || '',
+          email: user.email || '',
+          phone: user.phone || '',
+          address: user.address || '',
+          city: user.city || '',
+          country: user.country || '',
+          afm: user.afm || '',
+          role: user.role || ''
+        });
+      } catch (err) {
+        console.error("Σφάλμα κατά την ανάκτηση των στοιχείων του προφίλ:", err);
+        setError("Αποτυχία φόρτωσης των στοιχείων του προφίλ.");
       }
-      const loggedInUser = JSON.parse(storedUser);
+    };
 
-      // 2. Κάνουμε κλήση στο backend route που φέρνει τον χρήστη με βάση το ID του
-      // Χρησιμοποιούμε το endpoint που έχεις ήδη έτοιμο: /api/users/:id
-      const response = await api.get(`/users/${loggedInUser.id}`);
-      
-      const user = response.data;
-      setFormData({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        address: user.address || '',
-        city: user.city || '',
-        country: user.country || '',
-        afm: user.afm || '',
-        role: user.role || ''
-      });
-    } catch (err) {
-      console.error("Σφάλμα κατά την ανάκτηση των στοιχείων του προφίλ:", err);
-      setError("Αποτυχία φόρτωσης των στοιχείων του προφίλ.");
-    }
-  };
-
-  fetchUserProfile();
-}, [navigate]);
+    fetchUserProfile();
+  }, [navigate]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -76,7 +75,7 @@ export default function Profile() {
     setLoading(true);
 
     try {
-      // Στέλνουμε ΟΛΑ τα νέα πεδία στο backend
+      // Στέλνουμε τα πεδία στο backend
       const response = await api.put('/users/profile', {
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -88,9 +87,10 @@ export default function Profile() {
         afm: formData.afm
       });
 
-      // Ανανέωση του localStorage
+      // Ανανέωση του localStorage με τα νέα στοιχεία
       localStorage.setItem('user', JSON.stringify(response.data.user));
       setSuccess('Το προφίλ σας ενημερώθηκε με επιτυχία!');
+      
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.error || 'Σφάλμα κατά την ενημέρωση του προφίλ.');
