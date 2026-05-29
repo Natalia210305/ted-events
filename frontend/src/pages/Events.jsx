@@ -247,7 +247,8 @@ export default function EventsBrowse() {
                   letterSpacing: '1px',
                   cursor: 'pointer',
                   boxShadow: '0 4px 12px rgba(210,184,147,0.2)',
-                  whiteSpace: 'nowrap'
+                  whiteSpace: 'nowrap',
+                  fontFamily: 'Poppins, sans-serif'
                 }}
               >
                 + ΝΕΑ ΕΚΔΗΛΩΣΗ
@@ -574,7 +575,7 @@ export default function EventsBrowse() {
               onClick={() => { setCurrentPage(p => Math.max(p - 1, 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               disabled={validCurrentPage === 1}
               style={{
-                padding: '10px 16px', height: '40px', display: 'flex', alignItems: 'center',
+                padding: '10px 16px', height: '40px', display: 'flex', alignItems: 'center', gap: '8px',
                 border: `1px solid ${COLORS.border}`,
                 backgroundColor: validCurrentPage === 1 ? '#f0f0f0' : COLORS.white,
                 color: validCurrentPage === 1 ? '#bbb' : COLORS.dark,
@@ -582,8 +583,17 @@ export default function EventsBrowse() {
                 cursor: validCurrentPage === 1 ? 'not-allowed' : 'pointer',
                 borderRadius: '6px', fontFamily: 'Poppins, sans-serif'
               }}
-            >
-              ← Προηγούμενο
+            > <img 
+                src="/arrow (2).png" 
+                alt="Προηγούμενο" 
+                style={{ 
+                  height: '20px', 
+                  width: '13px', 
+                  objectFit: 'contain',
+                  opacity: validCurrentPage === 1 ? 0.3 : 1 // Γίνεται ημιδιάφανο αν είναι απενεργοποιημένο
+                }} 
+              />
+              Προηγούμενο                
             </button>
 
             {/* Αριθμοί με "..." */}
@@ -626,7 +636,7 @@ export default function EventsBrowse() {
               onClick={() => { setCurrentPage(p => Math.min(p + 1, totalPages)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               disabled={validCurrentPage === totalPages}
               style={{
-                padding: '10px 16px', height: '40px', display: 'flex', alignItems: 'center',
+                padding: '10px 16px', height: '40px', display: 'flex', alignItems: 'center', gap: '8px',
                 border: `1px solid ${COLORS.border}`,
                 backgroundColor: validCurrentPage === totalPages ? '#f0f0f0' : COLORS.white,
                 color: validCurrentPage === totalPages ? '#bbb' : COLORS.dark,
@@ -634,8 +644,18 @@ export default function EventsBrowse() {
                 cursor: validCurrentPage === totalPages ? 'not-allowed' : 'pointer',
                 borderRadius: '6px', fontFamily: 'Poppins, sans-serif'
               }}
-            >
-              Επόμενο →
+            > 
+              Επόμενο
+              <img 
+                src="/right-arrow.png" 
+                alt="Επόμενο" 
+                style={{ 
+                  height: '20px', 
+                  width: '13px', 
+                  objectFit: 'contain',
+                  opacity: validCurrentPage === totalPages ? 0.3 : 1 // Γίνεται ημιδιάφανο αν είναι απενεργοποιημένο
+                }} 
+              />
             </button>
 
           </div>
