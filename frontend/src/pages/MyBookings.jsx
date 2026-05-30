@@ -39,11 +39,11 @@ const MyBookings = () => {
   return (
     <div style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto' }}>
       
-      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '80px' }}>
         <h1 style={{ fontSize: '1.9rem', fontWeight: '800', color: COLORS.dark, letterSpacing: '1px', margin: 0 }}>
           ΤΟ ΙΣΤΟΡΙΚΟ ΤΩΝ ΚΡΑΤΗΣΕΩΝ ΜΟΥ
         </h1>
-        <div style={{ width: '150px', height: '4px', backgroundColor: COLORS.primary, marginTop: '10px', marginRight: 'auto', marginLeft: 'auto' }} />
+        <div style={{ width: '130px', height: '4px', backgroundColor: COLORS.primary, marginTop: '10px', marginRight: 'auto', marginLeft: 'auto' }} />
       </div>
       
       {bookings.length === 0 ? (

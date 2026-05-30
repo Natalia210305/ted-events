@@ -101,9 +101,9 @@ function Notifications() {
 
   return (
     <div style={styles.container}>
-      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '60px' }}>
         <h2 style={{ ...styles.title, marginBottom: 0 }}>ΟΙ ΕΙΔΟΠΟΙΗΣΕΙΣ ΜΟΥ</h2>
-        <div style={{ width: '110px', height: '4px', backgroundColor: COLORS.primary, marginTop: '10px', marginRight: 'auto', marginLeft: 'auto' }} /> 
+        <div style={{ width: '100px', height: '4px', backgroundColor: COLORS.primary, marginTop: '10px', marginRight: 'auto', marginLeft: 'auto' }} /> 
       </div>
       <div style={styles.list}>
         {notifications.length === 0 ? (
