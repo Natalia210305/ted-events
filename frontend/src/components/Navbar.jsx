@@ -224,7 +224,7 @@ function Navbar() {
                       <img src="/power.png" alt="" style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} />
                     </div>
                     <div>
-                      <div style={{ ...itemTitle, color: '#da5e5e' }}>ΑΠΟΣΟΥΝΔΕΣΗ</div>
+                      <div style={{ ...itemTitle, color: '#da5e5e' }}>ΑΠΟΣΥΝΔΕΣΗ</div>
                       <div style={itemDesc}>Έξοδος από την εφαρμογή</div>
                     </div>
                   </div>

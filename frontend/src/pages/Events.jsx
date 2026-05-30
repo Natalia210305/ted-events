@@ -556,7 +556,10 @@ export default function EventsBrowse() {
                         onMouseEnter={(e) => { if(isAvailable) e.currentTarget.style.backgroundColor = '#c4aa82'; }}
                         onMouseLeave={(e) => { if(isAvailable) e.currentTarget.style.backgroundColor = COLORS.primary; }}
                       >
-                        {isAvailable ? 'ΠΕΡΙΣΣΟΤΕΡΑ' : 'ΜΗ ΔΙΑΘΕΣΙΜΟ'}
+                        {isAvailable 
+                          ? (JSON.parse(localStorage.getItem('user'))?.role?.toUpperCase() === 'ATTENDEE' ? 'ΚΡΑΤΗΣΗ / ΠΕΡΙΣΣΟΤΕΡΑ' : 'ΠΕΡΙΣΣΟΤΕΡΑ') 
+                          : 'ΜΗ ΔΙΑΘΕΣΙΜΟ'
+                        }
                       </button>
                     </div>
                   </div>

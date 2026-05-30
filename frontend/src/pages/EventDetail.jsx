@@ -328,9 +328,20 @@ export default function EventDetail() {
             </p>
             <div style={styles.ticketGrid}>
               {(event.ticketTypes || []).map(t => {
-                const sold = isCancelled || t.available === 0
-                const pct = Math.round((t.available / t.quantity) * 100)
-                const color = t.available / t.quantity > 0.3 ? '#27500A' : t.available > 0 ? '#b45309' : '#791F1F'
+                const bookedTickets = t.quantity - t.available;
+                // ─── ΔΙΟΡΘΩΣΗ: Η μπάρα δείχνει το ποσοστό των ΔΙΑΘΕΣΙΜΩΝ θέσεων ───
+                // Ξεκινάει από το 100% (γεμάτη πράσινη) και μειώνεται καθώς γίνονται κρατήσεις
+                const pct = Math.round((t.available / t.quantity) * 100);
+
+                const sold = isCancelled || t.available === 0;
+                const availabilityRatio = t.available / t.quantity;
+
+                // Το χρώμα αλλάζει με βάση το πόσο τοις εκατό των θέσεων απομένει διαθέσιμο
+                const color = availabilityRatio > 0.3 
+                  ? '#27500A' // Πράσινο: Πάνω από 30% των θέσεων είναι ελεύθερο
+                  : t.available > 0 
+                    ? '#b45309' // Πορτοκαλί: Λιγότερο από 30% διαθέσιμο (κίνδυνος!)
+                    : '#791F1F'; // Κόκκινο: Εξαντλήθηκε
                 const isSelected = selectedTicket?.id === t.id
 
                 return (
@@ -351,39 +362,44 @@ export default function EventDetail() {
                     </div>
                     
                     {isActive && !sold ? (
-                      localStorage.getItem('token') ? (
-                        <button
-                          style={{
-                            ...styles.bookBtn,
-                            backgroundColor: isSelected ? COLORS.dark : COLORS.primary,
-                            color: isSelected ? COLORS.white : COLORS.dark,
-                          }}
+                      JSON.parse(localStorage.getItem('user'))?.role?.toUpperCase() === 'ATTENDEE' ? (
+                      <button
+                        style={{
+                          ...styles.bookBtn,
+                          backgroundColor: isSelected ? COLORS.dark : COLORS.primary,
+                          color: isSelected ? COLORS.white : COLORS.dark,
+                        }}
+                        onClick={() => {
+                          setSelectedTicket(t)
+                          setBookingSuccess(null)
+                          setBookingError(null)
+                          setShowModal(true)
+                        }}
+                      >
+                        ΚΡΑΤΗΣΗ
+                      </button>
+                    ) : (
+                      <div style={{ textAlign: 'center', marginTop: 10 }}>
+                        <p style={{ fontSize: 11, color: '#b45309', fontWeight: 600, marginBottom: 8 }}>
+                          {JSON.parse(localStorage.getItem('user')) 
+                            ? 'Μόνο οι συμμετέχοντες μπορούν να κάνουν κράτηση' 
+                            : 'Συνδεθείτε για κράτηση'}
+                        </p>
+                        <button 
+                          style={{ ...styles.bookBtn, backgroundColor: '#eee', color: '#777', fontSize: 10 }}
                           onClick={() => {
-                            setSelectedTicket(t)
-                            setBookingSuccess(null)
-                            setBookingError(null)
-                            setShowModal(true)
+                            // Αν είναι ήδη συνδεδεμένος (π.χ. admin/organizer), τον αποσυνδέουμε προαιρετικά ή απλά τον στέλνουμε στο login
+                            navigate('/login');
                           }}
                         >
-                          ΚΡΑΤΗΣΗ
+                          ΕΙΣΟΔΟΣ ΩΣ ΣΥΜΜΕΤΕΧΩΝ
                         </button>
-                      ) : (
-                        <div style={{ textAlign: 'center', marginTop: 10 }}>
-                          <p style={{ fontSize: 11, color: '#b45309', fontWeight: 600, marginBottom: 8 }}>
-                            Συνδεθείτε για κράτηση
-                          </p>
-                          <button 
-                            style={{ ...styles.bookBtn, backgroundColor: '#eee', color: '#777', fontSize: 10 }}
-                            onClick={() => navigate('/login')}
-                          >
-                            ΕΙΣΟΔΟΣ
-                          </button>
-                        </div>
-                      )
-                    ) : (
-                      <span style={styles.soldOut}>
-                        {isCancelled ? 'Ακυρώθηκε' : 'Εξαντλήθηκαν'}
-                      </span>
+                      </div>
+                    )
+                  ) : (
+                    <span style={styles.soldOut}>
+                      {isCancelled ? 'Ακυρώθηκε' : 'Εξαντλήθηκαν'}
+                    </span>
                     )}
                   </div>
                 )
@@ -539,8 +555,8 @@ const styles = {
   ticketCard: { backgroundColor: COLORS.white, borderRadius: 4, padding: 20, border: `1px solid ${COLORS.border}` },
   ticketName: { fontWeight: 700, fontSize: 14, marginBottom: 4, color: COLORS.dark },
   ticketPrice: { fontSize: 22, fontWeight: 700, color: COLORS.dark, marginBottom: 16 },
-  progressBg: { height: 4, background: COLORS.border, borderRadius: 2, marginBottom: 6 },
-  progressFill: { height: '100%', borderRadius: 2, transition: 'width .4s' },
+  progressBg: { height: 6, background: COLORS.border, borderRadius: 3, marginBottom: 6, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 3, transition: 'width 0.4s ease, background-color 0.4s ease' },
   bookBtn: { width: '100%', padding: '11px 0', border: 'none', borderRadius: 4, fontFamily: 'Poppins, sans-serif', fontSize: 12, fontWeight: 700, letterSpacing: 1, cursor: 'pointer', transition: 'background-color .15s' },
   soldOut: { display: 'block', textAlign: 'center', color: COLORS.textMuted, fontSize: 13 },
   photoGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 },
