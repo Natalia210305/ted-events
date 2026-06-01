@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // <-- Προσθήκη useNavigate
 import api from '../services/api';
 
 const COLORS = {
@@ -15,25 +16,32 @@ const COLORS = {
 };
 
 export default function Settings() {
+  const navigate = useNavigate(); // <-- Hook πλοήγησης
+  
+  // Παίρνουμε τον τρέχοντα χρήστη για να ελέγξουμε αν είναι Admin
+  const user = JSON.parse(localStorage.getItem('user'));
+  const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
   
+  // State για τη φόρμα επικοινωνίας με τον Admin
+  const [adminContact, setAdminContact] = useState({
+    subject: '',
+    messageText: ''
+  });
+
   const [notifications, setNotifications] = useState(() => {
     const saved = localStorage.getItem('user_email_notif');
     return saved !== null ? JSON.parse(saved) : true;
   });
 
-  const [language, setLanguage] = useState(() => {
-    return localStorage.getItem('user_lang') || 'el';
-  });
-
   const [message, setMessage] = useState({ text: '', type: '' });
   const [loading, setLoading] = useState(false);
 
-  // Αυτό το εφέ τρέχει ΜΟΝΟ μια φορά όταν "γεννιέται" η σελίδα των ρυθμίσεων
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -54,12 +62,10 @@ export default function Settings() {
 
   const handleSubmitPassword = async (e) => {
     e.preventDefault();
-    
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setMessage({ text: 'Ο νέος κωδικός και η επιβεβαίωση δεν ταιριάζουν!', type: 'error' });
       return;
     }
-
     if (passwordData.newPassword.length < 6) {
       setMessage({ text: 'Ο νέος κωδικός πρέπει να είναι τουλάχιστον 6 χαρακτήρες!', type: 'error' });
       return;
@@ -73,7 +79,6 @@ export default function Settings() {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword
       });
-
       setMessage({ text: response.data.message || 'Ο κωδικός πρόσβασης ενημερώθηκε επιτυχώς!', type: 'success' });
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error) {
@@ -83,6 +88,27 @@ export default function Settings() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handler για την αποστολή στον Admin
+  const handleContactAdminSubmit = (e) => {
+    e.preventDefault();
+    if (!adminContact.subject.trim() || !adminContact.messageText.trim()) return;
+
+    const ADMIN_UUID = "e5422843-d587-443c-8bb1-3f90ff439963"; 
+
+    // Συγχωνεύουμε το θέμα και το μήνυμα σε ένα string που θα αποθηκευτεί στη βάση
+    const fullMessageContent = `[ΘΕΜΑ: ${adminContact.subject.trim()}]\n${adminContact.messageText.trim()}`;
+
+    navigate('/messages', {
+      state: {
+        recipientId: ADMIN_UUID, 
+        recipientName: 'Διαχειριστής (Admin)',
+        subject: adminContact.subject,
+        content: fullMessageContent, // Στέλνουμε το "συνδυασμένο" μήνυμα
+        isAdminContact: true
+      }
+    });
   };
 
   return (
@@ -124,13 +150,8 @@ export default function Settings() {
           
           {/* 🔒 ΕΝΟΤΗΤΑ 1: ΑΣΦΑΛΕΙΑ & ΑΛΛΑΓΗ ΚΩΔΙΚΟΥ */}
           <div style={{ backgroundColor: COLORS.white, padding: '30px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.02)', border: `1px solid ${COLORS.border}`, textAlign: 'center' }}>
-            
             <h2 style={{ fontSize: '1.3rem', fontWeight: '700', color: COLORS.dark, marginBottom: '25px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-              <img 
-                src="/verified.png"  
-                alt="Security" 
-                style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} 
-              />
+              <img src="/verified.png" alt="Security" style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} />
               ΑΣΦΑΛΕΙΑ ΛΟΓΑΡΙΑΣΜΟΥ
             </h2>
             
@@ -148,7 +169,6 @@ export default function Settings() {
                 />
               </div>
 
-              {/* ΔΙΟΡΘΩΜΕΝΗ ΓΡΑΜΜΗ GRID (Responsive Check) */}
               <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: (typeof window !== 'undefined' && window.innerWidth < 500) ? '1fr' : '1fr 1fr', 
@@ -189,13 +209,9 @@ export default function Settings() {
           {/* 🔔 ΕΝΟΤΗΤΑ 2: ΕΙΔΟΠΟΙΗΣΕΙΣ */}
           <div style={{ backgroundColor: COLORS.white, padding: '30px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.02)', border: `1px solid ${COLORS.border}` }}>
             <h2 style={{ fontSize: '1.3rem', fontWeight: '700', color: COLORS.dark, marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-              <img 
-                src="/notification.png"  
-                alt="Notifications" 
-                style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} 
-              /> ΕΙΔΟΠΟΙΗΣΕΙΣ
+              <img src="/notification.png" alt="Notifications" style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} /> 
+              ΕΙΔΟΠΟΙΗΣΕΙΣ
             </h2>
-            
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '500px', margin: '0 auto' }}>
               <div style={toggleRowStyle} onClick={handleToggleNotif}>
                 <div style={{ textAlign: 'left' }}> 
@@ -206,6 +222,43 @@ export default function Settings() {
               </div>
             </div>
           </div>
+
+          {/* 📬 ΠΡΟΣΘΗΚΗ: ΕΝΟΤΗΤΑ 3: ΕΠΙΚΟΙΝΩΝΙΑ ΜΕ ΤΟΝ ADMIN (ΜΟΝΟ ΓΙΑ ΜΗ-ADMINS) */}
+          {!isAdmin && (
+            <div style={{ backgroundColor: COLORS.white, padding: '30px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.02)', border: `1px solid ${COLORS.border}` }}>
+              <h2 style={{ fontSize: '1.3rem', fontWeight: '700', color: COLORS.dark, marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                <img src="/live-chat.png" alt="Admin Contact" style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} /> 
+                ΕΠΙΚΟΙΝΩΝΙΑ ΜΕ ΤΟΝ ΔΙΑΧΕΙΡΙΣΤΗ
+              </h2>
+              <form onSubmit={handleContactAdminSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '500px', margin: '0 auto' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: COLORS.dark, letterSpacing: '0.5px', textAlign: 'left' }}>ΘΕΜΑ ΣΥΖΗΤΗΣΗΣ</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={adminContact.subject}
+                    onChange={(e) => setAdminContact(prev => ({ ...prev, subject: e.target.value }))}
+                    placeholder="π.χ. Αλλαγή email, Πρόβλημα με πληρωμή"
+                    style={{ ...inputStyle }} 
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: COLORS.dark, letterSpacing: '0.5px', textAlign: 'left' }}>ΜΗΝΥΜΑ</label>
+                  <textarea 
+                    required
+                    rows="4"
+                    value={adminContact.messageText}
+                    onChange={(e) => setAdminContact(prev => ({ ...prev, messageText: e.target.value }))}
+                    placeholder="Περιγράψτε το αίτημά σας..."
+                    style={{ ...inputStyle, resize: 'none' }} 
+                  />
+                </div>
+                <button type="submit" style={buttonStyle}>
+                  ΕΝΑΡΞΗ ΣΥΝΟΜΙΛΙΑΣ
+                </button>
+              </form>
+            </div>
+          )}
 
         </div>
       </div>
@@ -248,5 +301,4 @@ const toggleRowStyle = {
   gap: '20px'
 };
 
-// Δικλίδα ασφαλείας για να μην χτυπάει ποτέ ξανά ReferenceError η React
 const styles = {};

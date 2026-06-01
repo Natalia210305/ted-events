@@ -175,13 +175,15 @@ export default function EventDetail() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
-
+  
   const handleContactOrganizer = () => {
     navigate('/messages', { 
       state: { 
         recipientId: event.organizerId, 
         recipientName: `${event.organizer?.firstName || ''} ${event.organizer?.lastName || ''}`,
-        subject: event.title 
+        subject: event.title,
+        eventId: event.id,       // ✅ Αυτό λείπει!
+        eventTitle: event.title  // ✅ Αυτό λείπει!
       } 
     });
   };
@@ -449,14 +451,32 @@ export default function EventDetail() {
               </div>
             </div>
 
-            <button 
-              onClick={handleContactOrganizer}
-              style={styles.ContactBtn}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#c4aa82'}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = COLORS.primary}
-            >
-              ΕΠΙΚΟΙΝΩΝΙΑ ΜΕ ΔΙΟΡΓΑΝΩΤΗ
-            </button>
+            {(() => {
+              const currentUser = JSON.parse(localStorage.getItem('user'));
+              const role = currentUser?.role?.toUpperCase();
+              
+              if (!currentUser || role !== 'ATTENDEE') {
+                return (
+                  <button 
+                    style={{ ...styles.ContactBtn, backgroundColor: '#eee', color: '#777', cursor: 'pointer' }}
+                    onClick={() => navigate('/login')}
+                  >
+                    ΕΙΣΟΔΟΣ ΩΣ ΣΥΜΜΕΤΕΧΩΝ ΓΙΑ ΕΠΙΚΟΙΝΩΝΙΑ ΜΕ ΔΙΟΡΓΑΝΩΤΗ
+                  </button>
+                );
+              }
+              
+              return (
+                <button 
+                  onClick={handleContactOrganizer}
+                  style={styles.ContactBtn}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#c4aa82'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = COLORS.primary}
+                >
+                  ΕΠΙΚΟΙΝΩΝΙΑ ΜΕ ΔΙΟΡΓΑΝΩΤΗ
+                </button>
+              );
+            })()}
           </div>
         </div>
 

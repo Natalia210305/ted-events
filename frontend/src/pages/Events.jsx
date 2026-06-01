@@ -425,8 +425,7 @@ export default function EventsBrowse() {
             ΟΛΕΣ
           </button>
 
-          {/* ΝΕΟ ΦΙΛΤΡΟ: ΠΡΟΤΕΙΝΟΜΕΝΕΣ ΓΙΑ ΕΣΑΣ (Εμφανίζεται μόνο αν ο χρήστης είναι συνδεδεμένος) */}
-          {user && (
+          {user?.role?.toUpperCase() === 'ATTENDEE' && (
             <button 
               onClick={() => { setIsRecsActive(true); setActiveCat(null); setCurrentPage(1); }}
               style={{
@@ -440,12 +439,7 @@ export default function EventsBrowse() {
               <img 
                 src="/star (1).png" 
                 alt="Party Icon" 
-                style={{ 
-                  width: '12px',  
-                  height: '12px', 
-                  objectFit: 'contain', 
-                  marginRight: '8px'
-                }} 
+                style={{ width: '12px', height: '12px', objectFit: 'contain', marginRight: '8px' }} 
               />
               ΠΡΟΤΕΙΝΟΜΕΝΑ ΓΙΑ ΕΣΑΣ
             </button>

@@ -30,11 +30,28 @@ const createBooking = async (req, res) => {
       }
     });
 
-    // Ενημέρωση διαθέσιμων εισιτηρίων
     await prisma.ticketType.update({
       where: { id: ticketTypeId },
       data: { available: ticketType.available - numberOfTickets }
     });
+
+    // ← ΝΕΟΣ ΚΩΔΙΚΑΣ: Δημιουργία notification για τον organizer
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      select: { title: true, organizerId: true }
+    });
+
+    if (event?.organizerId) {
+      await prisma.notification.create({
+        data: {
+          userId: event.organizerId,
+          type: 'new_booking',
+          message: `Νέα κράτηση για την εκδήλωση "${event.title}" από τον χρήστη ${req.user.username || req.user.email} (x${numberOfTickets} εισιτήρια, σύνολο: €${totalCost.toFixed(2)})`,
+          eventId: eventId,
+          isRead: false
+        }
+      });
+    }
 
     res.status(201).json(booking);
   } catch (err) {

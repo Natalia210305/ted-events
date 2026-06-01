@@ -8,92 +8,108 @@ const COLORS = {
   bgLight: '#f9f7f5',
   white: '#ffffff',
   border: '#e4dfda',
-  textMuted: '#666'
+  textMuted: '#666',
+  success: '#27500A', 
+  danger: '#791F1F',  
+  info: '#2a5a7a'     
 };
 
-const NOTIF_TRANSLATIONS = {
-  'event_cancelled': 'ΑΚΥΡΩΣΗ ΕΚΔΗΛΩΣΗΣ',
-  'event cancelled': 'ΑΚΥΡΩΣΗ ΕΚΔΗΛΩΣΗΣ', 
-  'event_updated': 'ΕΝΗΜΕΡΩΣΗ ΕΚΔΗΛΩΣΗΣ',
-  'event updated': 'ΕΝΗΜΕΡΩΣΗ ΕΚΔΗΛΩΣΗΣ',
-  'new_register': 'ΝΕΑ ΕΓΓΡΑΦΗ' 
+const cleanString = (str) => {
+  if (!str) return '';
+  return String(str)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+};
+
+const getTagInfo = (type) => {
+  switch (type?.toUpperCase()) {
+    case 'NEW_BOOKING':
+      return { label: 'ΝΕΑ ΚΡΑΤΗΣΗ', bg: 'rgba(210, 184, 147, 0.2)', color: COLORS.primary };
+    case 'EVENT_UPDATED':
+      return { label: 'ΑΛΛΑΓΗ ΕΚΔΗΛΩΣΗΣ', bg: 'rgba(210, 184, 147, 0.2)', color: COLORS.primary };
+    case 'EVENT_CANCELLED':
+      return { label: 'ΑΚΥΡΩΣΗ ΕΚΔΗΛΩΣΗΣ', bg: 'rgba(121, 31, 31, 0.1)', color: COLORS.danger };
+    case 'NEW_MESSAGE':
+    case 'PROFILE_UPDATE':
+    case 'PROFILE_UPDATED':
+      return { label: 'ΑΛΛΑΓΗ ΣΤΟΙΧΕΙΩΝ ΧΡΗΣΤΗ', bg: 'rgba(210, 184, 147, 0.2)', color: COLORS.primary };
+    default:
+      return { label: 'ΕΙΔΟΠΟΙΗΣΗ', bg: 'rgba(100, 100, 100, 0.1)', color: COLORS.textMuted };
+  }
 };
 
 function Notifications() {
   const [notifications, setNotifications] = useState([]);
+  const [myEventTitles, setMyEventTitles] = useState([]); 
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   
   const user = JSON.parse(localStorage.getItem('user'));
   const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+  const isOrganizer = user?.role?.toUpperCase() === 'ORGANIZER';
+  const currentUserId = user?.id || user?.user_id;
 
   useEffect(() => {
-    fetchNotifications();
+    fetchNotificationsAndEvents();
   }, []);
 
-  const fetchNotifications = async () => {
+  const fetchNotificationsAndEvents = async () => {
     try {
+      setLoading(true);
+      
+      const eventsResponse = await api.get('/events');
+      let organizerTitles = [];
+      
+      if (isOrganizer) {
+        organizerTitles = eventsResponse.data
+          .filter(e => 
+            String(e.organizerId) === String(currentUserId) || 
+            String(e.organizer_id) === String(currentUserId) || 
+            String(e.Organizer?.UserID) === String(currentUserId)
+          )
+          .map(e => cleanString(e.title));
+        
+        setMyEventTitles(organizerTitles);
+      }
+
       const response = await api.get('/notifications');
       setNotifications(response.data);
-      setLoading(false);
       
       if (response.data.some(n => !n.isRead)) {
         await api.post('/notifications/read');
       }
     } catch (error) {
-      console.error("Error fetching notifications:", error);
+      console.error("Error fetching notifications or events:", error);
+    } finally {
       setLoading(false);
     }
   };
 
-  // 🎯 ΠΛΗΡΩΣ ΠΡΟΣΤΑΤΕΥΜΕΝΗ ΣΥΝΑΡΤΗΣΗ NAVIGATION
   const handleNotificationClick = async (notif) => {
     try {
-      // ─── ΣΕΝΑΡΙΟ 1: ΑΝ ΕΙΝΑΙ ADMIN ───
       if (isAdmin) {
         const rawMessage = notif.message ? String(notif.message) : '';
-        
-        // Ελέγχουμε αν η ειδοποίηση έχει το νέο format με το ID
         if (rawMessage.includes('|||')) {
           const parts = rawMessage.split('|||');
           const targetUserId = parts[1];
-          
           if (targetUserId && targetUserId !== 'undefined' && targetUserId !== 'null') {
             navigate('/admin/users', { state: { openModalForUserId: targetUserId } });
           }
         } else {
-          console.warn("⚠️ Παλιά ειδοποίηση χωρίς κρυμμένο User ID. Δεν γίνεται αυτόματη προβολή.");
-          navigate('/admin/users'); // Απλή μεταφορά στη σελίδα χωρίς modal
+          navigate('/admin/users');
         }
-        return; // Σταματάει εδώ για τον Admin, δεν πάει παρακάτω!
+        return;
       }
-
-      // ─── ΣΕΝΑΡΙΟ 2: ΑΝ ΕΙΝΑΙ USER/ORGANIZER ───
-      const textToSearch = notif.message ? String(notif.message).toLowerCase() : '';
-      const isProfileUpdate = textToSearch.includes('στοιχείων') || textToSearch.includes('προφίλ') || textToSearch.includes('τροποποίηση');
-      const isRegistration = textToSearch.includes('εγγραφή') || notif.type === 'new_register';
-
-      if (isProfileUpdate || isRegistration) return;
 
       let targetEventId = notif.eventId || notif.event_id || notif.EventId;
-
-      if (!targetEventId) {
-        const res = await api.get('/events');
-        const foundEvent = res.data.find(event => {
-          const eventTitle = event.title.toLowerCase().trim();
-          return textToSearch.includes(eventTitle);
-        });
-
-        if (foundEvent) {
-          targetEventId = foundEvent.id;
-        }
-      }
-
-      if (targetEventId) {
-        navigate(`/events/${targetEventId}`);
+      if (isOrganizer) {
+        navigate('/organizer/dashboard', { state: { highlightEventId: targetEventId } });
+        return;
       }
     } catch (err) {
-      console.error("❌ Κρασάρισμα κατά το click της ειδοποίησης προστατεύτηκε:", err);
+      console.error("❌ Σφάλμα κατά το κλικ της ειδοποίησης:", err);
     }
   };
 
@@ -106,32 +122,36 @@ function Notifications() {
         <div style={{ width: '100px', height: '4px', backgroundColor: COLORS.primary, marginTop: '10px', marginRight: 'auto', marginLeft: 'auto' }} /> 
       </div>
       <div style={styles.list}>
-        {notifications.length === 0 ? (
-          <p style={styles.emptyMsg}>Δεν έχετε νέες ειδοποιήσεις.</p>
-        ) : (
-          notifications.map((notif) => {
-            const textToSearch = notif.message ? String(notif.message).toLowerCase() : '';
+        {(() => {
+          const seen = new Set();
+          
+          const filteredNotifications = notifications.filter(notif => {
+            const type = notif.type?.toUpperCase();
+            const textToSearchClean = cleanString(notif.message);
+
+            if (isOrganizer) {
+              const isBooking = type === 'NEW_BOOKING' || 
+                textToSearchClean.includes('κρατηση') || 
+                textToSearchClean.includes('booking');
+              if (!isBooking) return false;
+
+              const belongsToMe = myEventTitles.some(title => textToSearchClean.includes(title));
+              if (!belongsToMe) return false;
+            }
+
+            const uniqueKey = `${notif.message}-${notif.createdAt}`;
+            if (seen.has(uniqueKey)) return false;
+            seen.add(uniqueKey);
             
-            const isRegistration = textToSearch.includes('εγγραφή') || notif.type === 'new_register';
-            const isProfileUpdate = textToSearch.includes('στοιχείων') || textToSearch.includes('προφίλ') || textToSearch.includes('τροποποίηση');
+            return true;
+          });
 
-            const displayTag = isRegistration 
-              ? 'ΔΗΜΙΟΥΡΓΙΑ ΛΟΓΑΡΙΑΣΜΟΥ' 
-              : isProfileUpdate 
-                ? 'ΑΛΛΑΓΗ ΣΤΟΙΧΕΙΩΝ' 
-                : (NOTIF_TRANSLATIONS[notif.type?.toLowerCase()] || notif.type?.replace('_', ' ') || 'ΕΙΔΟΠΟΙΗΣΗ');
+          if (filteredNotifications.length === 0) {
+            return <p style={styles.emptyMsg}>Δεν έχετε νέες ειδοποιήσεις.</p>;
+          }
 
-            const tagBgColor = isRegistration 
-              ? 'rgba(136, 72, 52, 0.1)' 
-              : isProfileUpdate 
-                ? 'rgba(44, 44, 44, 0.08)' 
-                : 'rgba(210, 184, 147, 0.1)';
-
-            const tagColor = isRegistration 
-              ? '#884834' 
-              : isProfileUpdate 
-                ? '#2c2c2c' 
-                : COLORS.primary;
+          return filteredNotifications.map((notif) => {
+            const { label, bg: tagBgColor, color: tagColor } = getTagInfo(notif.type);
 
             return (
               <div 
@@ -139,35 +159,24 @@ function Notifications() {
                 onClick={() => handleNotificationClick(notif)}
                 style={{
                   ...styles.card,
-                  borderLeft: notif.isRead ? `5px solid ${COLORS.border}` : `5px solid ${tagColor}`,
+                  borderLeft: `5px solid ${tagColor}`,
                   backgroundColor: notif.isRead ? COLORS.white : '#fffdfa',
-                  cursor: isAdmin && !notif.message?.includes('|||') ? 'default' : 'pointer' 
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
+                  cursor: 'pointer' 
                 }}
               >
                 <div style={styles.cardHeader}>
-                  <span style={{
-                    ...styles.typeTag,
-                    backgroundColor: tagBgColor,
-                    color: tagColor
-                  }}>
-                    {displayTag}
+                  <span style={{ ...styles.typeTag, backgroundColor: tagBgColor, color: tagColor }}>
+                    {label}
                   </span>
                   <span style={styles.date}>{notif.createdAt ? new Date(notif.createdAt).toLocaleString('el-GR') : '—'}</span>
                 </div>
-                {/* 🎯 Εμφανίζει μόνο το καθαρό κείμενο χωρίς το κρυμμένο ID στην οθόνη */}
                 <p style={styles.message}>
                   {notif.message ? notif.message.split('|||')[0] : 'Χωρίς περιεχόμενο'}
                 </p> 
               </div>
             );
-          })
-        )}
+          });
+        })()}
       </div>
     </div>
   );
@@ -178,7 +187,7 @@ const styles = {
   title: { fontSize: '1.9rem', fontWeight: '800', color: COLORS.dark, marginBottom: '30px', textAlign: 'center' },
   list: { display: 'flex', flexDirection: 'column', gap: '15px', maxWidth: '800px', margin: '0 auto' },
   card: { padding: '20px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', transition: 'transform 0.2s, box-shadow 0.2s' },
-  cardHeader: { display: 'flex', justifyBox: 'space-between', marginBottom: '10px', justifyContent: 'space-between' },
+  cardHeader: { display: 'flex', marginBottom: '10px', justifyContent: 'space-between' },
   typeTag: { fontSize: '0.7rem', fontWeight: 'bold', textTransform: 'uppercase', padding: '4px 8px', borderRadius: '4px' },
   date: { fontSize: '0.8rem', color: '#999' },
   message: { fontSize: '1rem', color: COLORS.dark, margin: 0, lineHeight: '1.5' },

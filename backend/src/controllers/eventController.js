@@ -331,6 +331,24 @@ const createBooking = async (req, res) => {
     ]);
 
     console.log("✅ Η κράτηση αποθηκεύτηκε στο Supabase!");
+    // Δημιουργία notification για τον organizer
+    const event = await prisma.event.findUnique({
+      where: { id: id },
+      select: { title: true, organizerId: true }
+    });
+
+    if (event?.organizerId) {
+      await prisma.notification.create({
+        data: {
+          userId: event.organizerId,
+          type: 'new_booking',
+          message: `Νέα κράτηση για την εκδήλωση "${event.title}" από χρήστη (x${numberOfTickets} εισιτήρια, σύνολο: €${parseFloat(totalCost).toFixed(2)})`,
+          isRead: false
+        }
+      });
+      console.log("✅ Notification δημιουργήθηκε για organizer:", event.organizerId);
+    }
+
     res.status(201).json({ message: 'Επιτυχία!', booking: result[0] });
 
   } catch (err) {

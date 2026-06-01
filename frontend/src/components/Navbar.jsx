@@ -28,7 +28,7 @@ function Navbar() {
 
       try {
         const msgResponse = await api.get('/messages/unread-count');
-        setUnreadCount(msgResponse.data.unreadCount);
+        setUnreadCount(msgResponse.data.count);
 
         const notifResponse = await api.get('/notifications');
         const unreadNotifs = notifResponse.data.filter(n => n.isRead === false || !n.isRead).length;
