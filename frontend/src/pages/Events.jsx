@@ -81,15 +81,18 @@ export default function EventsBrowse() {
 
         const data = await response.json();
 
-        const mapped = data.map(e => ({
-          ...e,
-          desc: e.description,
-          cats: (e.categories || []).map(c => c.name),
-          start: e.startDateTime,
-          available: (e.ticketTypes || []).reduce((sum, t) => sum + t.available, 0),
-          minPrice: e.ticketTypes?.length > 0 ? Math.min(...e.ticketTypes.map(t => t.price)) : 0,
-        }));
+        const now = new Date();
 
+        const mapped = data
+          .filter(e => new Date(e.endDateTime) > now && e.status === 'PUBLISHED')
+          .map(e => ({
+            ...e,
+            desc: e.description,
+            cats: (e.categories || []).map(c => c.name),
+            start: e.startDateTime,
+            available: (e.ticketTypes || []).reduce((sum, t) => sum + t.available, 0),
+            minPrice: e.ticketTypes?.length > 0 ? Math.min(...e.ticketTypes.map(t => t.price)) : 0,
+          }));
         setEvents(mapped); 
       } catch (error) {
         console.error("Error fetching events:", error);
