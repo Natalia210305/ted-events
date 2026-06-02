@@ -360,7 +360,23 @@ export default function Messages() {
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="Απάντηση..."
               />
-              <button style={styles.replyBtn} onClick={handleSend}>ΣΤΕΙΛΕ</button>
+              <button 
+                type="submit" 
+                className="send-image-button"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  padding: 0,
+                  margin: 0,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <img src="/sent.png" alt="Send" style={{ width: '24px', height: '24px' }} />
+              </button>           
             </div>
           </div>
         ) : (
