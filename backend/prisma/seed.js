@@ -1,6 +1,4 @@
-// ΠΡΩΤΗ ΓΡΑΜΜΗ SOS: Φορτώνει το .env ώστε το db.js να βρει το password της βάσης!
 require('dotenv').config(); 
-
 const prisma = require('../src/db'); 
 const bcrypt = require('bcryptjs');
 
@@ -16,7 +14,7 @@ async function main() {
     update: {},
     create: {
       username: 'admin',
-      password: hashed,
+      password: 'test123',
       firstName: 'Admin',
       lastName: 'System',
       email: 'admin@tedapp.gr',
@@ -27,46 +25,30 @@ async function main() {
 
   console.log(`Ο χρήστης Admin δημιουργήθηκε ή υπήρχε ήδη (ID: ${admin.id})`);
 
-  // 3. Δημιουργία Εκδηλώσεων σε διάφορες πόλεις
-  const cities = ['Αθήνα', 'Θεσσαλονίκη', 'Πάτρα', 'Λάρισα', 'Ηράκλειο'];
-  
-  console.log('Δημιουργία αρχικών εκδηλώσεων...');
-  for (const city of cities) {
-    await prisma.event.create({
-      data: {
-        title: `Συναυλία στην ${city}`,
-        description: `Μεγάλη μουσική εκδήλωση στην πόλη: ${city}. Ελάτε να απολαύσετε μια μοναδική βραδιά γεμάτη live performances και αγαπημένα τραγούδια κάτω από τα αστέρια.`,
-        eventType: 'Concert',
-        venue: 'Δημοτικό Θέατρο',
-        address: 'Κεντρική Πλατεία 1',
-        city: city,
-        country: 'Greece',
-        startDateTime: new Date('2026-07-20T21:00:00Z'),
-        endDateTime: new Date('2026-07-20T23:30:00Z'),
-        capacity: 500,
-        status: 'PUBLISHED',
-        organizerId: admin.id,
-        
-        // Σωστή δημιουργία κατηγορίας
-        categories: {
-          create: [
-            { name: 'Music' }
-          ]
-        },
-        
-        // Σωστή δημιουργία τύπων εισιτηρίων
-        ticketTypes: {
-          create: [
-            { name: 'General Admission', price: 20.0, quantity: 400, available: 400 },
-            { name: 'VIP Access', price: 50.0, quantity: 100, available: 100 }
-          ]
-        }
-      }
+  // 3. Οι επίσημες κατηγορίες από τα φίλτρα της μπάρας σου
+  const categoriesToCreate = [
+    'BOARD GAMES',
+    'LIVE PERFORMANCE',
+    'ΜΟΥΣΙΚΗ',
+    'OPEN AIR',
+    'RETRO',
+    'SPORTS',
+    'STRATEGY',
+    'ΣΙΝΕΜΑ',
+    'ΤΑΙΝΙΕΣ'
+  ];
+
+  console.log('Αρχικοποίηση εγκεκριμένων κατηγοριών στην οριζόντια μπάρα...');
+  for (const catName of categoriesToCreate) {
+    await prisma.category.upsert({
+      where: { name: catName },
+      update: {},
+      create: { name: catName }
     });
-    console.log(`+ Δημιουργήθηκε η εκδήλωση: Συναυλία στην ${city}`);
+    console.log(`+ Καταχωρήθηκε η κατηγορία: ${catName}`);
   }
 
-  console.log('Η βάση γέμισε επιτυχώς με όλα τα απαραίτητα δεδομένα!');
+  console.log('Η βάση δεδομένων αρχικοποιήθηκε επιτυχώς! Δεν δημιουργήθηκε καμία εκδήλωση.');
 }
 
 main()

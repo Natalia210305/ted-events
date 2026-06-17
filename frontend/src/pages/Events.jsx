@@ -65,7 +65,7 @@ export default function EventsBrowse() {
     window.scrollTo(0, 0);
   }, [currentPage]);
 
-  // 1. useEffect: Ανάκτηση όλων των εκδηλώσεων
+  // 1. useEffect: Ανάκτηση όλων των εκδηλώσεων με ΚΑΘΑΡΙΣΜΟ ΚΑΤΗΓΟΡΙΩΝ στη γέννηση τους
   useEffect(() => {
     const fetchEventsFromBackend = async () => {
       try {
@@ -80,19 +80,32 @@ export default function EventsBrowse() {
         }
 
         const data = await response.json();
-
         const now = new Date();
 
         const mapped = data
           .filter(e => new Date(e.endDateTime) > now && e.status === 'PUBLISHED')
-          .map(e => ({
-            ...e,
-            desc: e.description,
-            cats: (e.categories || []).map(c => c.name),
-            start: e.startDateTime,
-            available: (e.ticketTypes || []).reduce((sum, t) => sum + t.available, 0),
-            minPrice: e.ticketTypes?.length > 0 ? Math.min(...e.ticketTypes.map(t => t.price)) : 0,
-          }));
+          .map(e => {
+            // 🌟 ΕΝΟΠΟΙΗΣΗ ΕΔΩ: Μετατρέπουμε τις κατηγορίες σε καθαρά κεφαλαία ελληνικά πριν μπουν στο state
+            const processedCats = (e.categories || []).map(c => {
+              const nameStr = c && typeof c === 'object' ? (c.name || '') : c;
+              // Αφαίρεση τόνων και μετατροπή σε κεφαλαία
+              const clean = nameStr.toString().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+              
+              if (clean === 'MUSIC' || clean === 'ΜΟΥΣΙΚΗ') return 'ΜΟΥΣΙΚΗ';
+              if (clean === 'CINEMA' || clean === 'ΤΑΙΝΙΕΣ' || clean === 'ΣΙΝΕΜΑ') return 'ΣΙΝΕΜΑ';
+              return clean;
+            });
+
+            return {
+              ...e,
+              desc: e.description,
+              cats: processedCats, // 🌟 Εδώ μπαίνουν οι πεντακάθαρες ενοποιημένες κατηγορίες
+              start: e.startDateTime,
+              available: (e.ticketTypes || []).reduce((sum, t) => sum + t.available, 0),
+              minPrice: e.ticketTypes?.length > 0 ? Math.min(...e.ticketTypes.map(t => t.price)) : 0,
+            };
+          });
+          
         setEvents(mapped); 
       } catch (error) {
         console.error("Error fetching events:", error);
@@ -104,7 +117,7 @@ export default function EventsBrowse() {
 
     fetchEventsFromBackend();
   }, []);
-
+  
   // 2. useEffect: Ανάκτηση Συστάσεων αν ο χρήστης είναι συνδεδεμένος (Biased Matrix Factorization)
   useEffect(() => {
     if (user) {
@@ -119,23 +132,21 @@ export default function EventsBrowse() {
         });
     }
   }, []);
-
-  // Δυναμικός υπολογισμός των κατηγοριών
-  const CATS = [...new Set(events.flatMap(e => e.cats || e.categories || []))].sort();
+// Δυναμικός υπολογισμός των κατηγοριών (Τώρα είναι 100% εγγυημένο ότι θα βγει ΕΝΑ κουμπί)
+  const CATS = [...new Set(events.flatMap(e => e.cats || []))].sort();
 
   const handleViewEvent = (id) => { navigate(`/events/${id}`); };
   const handleBookEvent = (e, id) => { e.stopPropagation(); navigate(`/events/${id}`); };
 
-  // Λογική Φιλτραρίσματος
+  // Λογική Φιλτραρίσματος (Απλή, γρήγορη και πεντακάθαρη)
   const filteredEvents = events.filter(event => {
     const eventId = event.id || event.EventID;
 
-    // Αν το premium φίλτρο συστάσεων είναι ενεργό, δείξε μόνο όσα επέστρεψε ο αλγόριθμος
     if (isRecsActive && !recommendations.includes(eventId)) {
       return false;
     }
 
-    const eventCats = event.cats || event.categories || [];
+    const eventCats = event.cats || [];
     if (activeCat && !eventCats.includes(activeCat)) return false;
 
     if (selectedCity) {
@@ -156,12 +167,11 @@ export default function EventsBrowse() {
       if (event.minPrice < lo || event.minPrice > hi) return false;
     }
 
-    // Φίλτρο ημερομηνιών (ΑΠΟ - ΕΩΣ)
     const eventDate = new Date(event.start || event.startDateTime);
     if (startDate && eventDate < new Date(startDate)) return false;
     if (endDate) {
       const endCondition = new Date(endDate);
-      endCondition.setHours(23, 59, 59, 999); // Συμπερίληψη ολόκληρης της ημέρας λήξης
+      endCondition.setHours(23, 59, 59, 999);
       if (eventDate > endCondition) return false;
     }
 
