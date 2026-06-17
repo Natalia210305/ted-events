@@ -9,6 +9,7 @@ const COLORS = {
   primary: '#d2b893',      // Το premium μπεζ σου
   primaryHover: '#c5a982', // Σκούρο μπεζ για το hover
   dark: '#2c2c2c',         // Soft Ανθρακί
+  brown: '#815a3a',         // Το καφέ 
   white: '#ffffff',
   glassBg: 'rgba(243, 238, 231, 0.65)' // Soft warm glass background
 };
@@ -102,52 +103,61 @@ export default function Home() {
         animation: 'slideUp 0.8s ease-out forwards'
       }}>
         
-        {/* Μικρό fancy διακοσμητικό έμβλημα */}
-        <span style={{
-          fontSize: '0.7rem',
-          fontWeight: '800',
-          letterSpacing: '2px',
-          color: COLORS.dark,
-          backgroundColor: 'rgba(210, 184, 147, 0.25)',
-          padding: '5px 14px',
-          borderRadius: '50px',
-          display: 'inline-block',
-          marginBottom: '15px',
-          fontFamily: 'Poppins, sans-serif',
-          textAlign: 'center',
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '10px',
+          marginBottom: '20px'
         }}>
-          <img 
-          src="/star.png" 
-          alt="Party Icon" 
-          style={{ 
-            width: '15px',  // Ρύθμισε το μέγεθος
-            height: '15px', 
-            objectFit: 'contain', 
-            marginRight: '8px'
-          }} 
-        />
-          WELCOME TO EVENTBYUS
-        </span>
+          <span style={{
+            height: '1px',
+            width: '20px',
+            backgroundColor: COLORS.dark,
+            opacity: 0.5
+          }} />
+          <span style={{
+            fontSize: '0.8rem',
+            fontWeight: '800',
+            letterSpacing: '3px',
+            color: COLORS.dark,
+            fontFamily: 'Poppins, sans-serif',
+            textTransform: 'uppercase'
+          }}>
+            Welcome to EventByUs
+          </span>
+          <span style={{
+            height: '1px',
+            width: '20px',
+            backgroundColor: COLORS.dark,
+            opacity: 0.5
+          }} />
+        </div>
 
         <h1 style={{ 
           fontFamily: 'Poppins, sans-serif', 
-          fontSize: '1.8rem',               // Ελαφρώς πιο μικρά γράμματα για να δένει με το νέο πλάτος
+          fontSize: '1.65rem',               // Ελαφρώς πιο μικρά γράμματα για να δένει με το νέο πλάτος
           fontWeight: '800', 
           marginBottom: '15px', 
-          color: COLORS.dark,
+          color: '#000000',
           lineHeight: '1.25',
           letterSpacing: '-0.5px'
         }}>
           Οργάνωσε – Ανακάλυψε <br />
           <span style={{ 
-            color: '#a0845b',
-            borderBottom: '3px solid #d2b893',
-            paddingBottom: '2px',
-            display: 'inline-block'
+            color: '#000000',                     // Μαύρο premium χρώμα για τη λέξη
+            display: 'inline-block',
+            
+            // Η μπεζ γραμμή από κάτω (χρησιμοποιεί το COLORS.primary σου)
+            borderBottom: `3px solid ${COLORS.primary}`, 
+            paddingBottom: '3px',                 // Μικρή απόσταση από το κείμενο για να "αναπνέει"
+            
+            fontWeight: '900',                    // Extra bold για να ξεχωρίζει
+            letterSpacing: '0.5px'                // Ελαφρώς πιο clean άνοιγμα στα γράμματα
           }}>
             Εκδηλώσεις
           </span>
-        </h1>
+      </h1>
         
         <p style={{ 
           fontFamily: 'Poppins, sans-serif', 
