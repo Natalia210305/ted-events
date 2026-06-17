@@ -87,26 +87,37 @@ function Notifications() {
     }
   };
 
-  const handleNotificationClick = async (notif) => {
+const handleNotificationClick = async (notif) => {
     try {
-      if (isAdmin) {
-        const rawMessage = notif.message ? String(notif.message) : '';
-        if (rawMessage.includes('|||')) {
-          const parts = rawMessage.split('|||');
-          const targetUserId = parts[1];
-          if (targetUserId && targetUserId !== 'undefined' && targetUserId !== 'null') {
-            navigate('/admin/users', { state: { openModalForUserId: targetUserId } });
+      // 1. Πρώτα ελέγχουμε αν υπάρχει κανονικά το ID
+      let targetEventId = notif.eventId || notif.event_id || notif.EventId;
+
+      // 2. Αν ΔΕΝ υπάρχει (όπως στις δικές σου ειδοποιήσεις), ψάχνουμε με βάση τον τίτλο!
+      if (!targetEventId && notif.message) {
+        try {
+          // Φέρνουμε όλες τις εκδηλώσεις για να συγκρίνουμε τους τίτλους
+          const eventsResponse = await api.get('/events');
+          const allEvents = eventsResponse.data;
+
+          // Ψάχνουμε ποιας εκδήλωσης ο τίτλος περιέχεται μέσα στο μήνυμα της ειδοποίησης
+          const matchedEvent = allEvents.find(e => {
+            if (!e.title) return false;
+            return notif.message.toLowerCase().includes(e.title.toLowerCase());
+          });
+
+          if (matchedEvent) {
+            targetEventId = matchedEvent.id || matchedEvent.event_id;
           }
-        } else {
-          navigate('/admin/users');
+        } catch (eErr) {
+          console.error("❌ Σφάλμα κατά την αναζήτηση εκδήλωσης με τίτλο:", eErr);
         }
-        return;
       }
 
-      let targetEventId = notif.eventId || notif.event_id || notif.EventId;
-      if (isOrganizer) {
-        navigate('/organizer/dashboard', { state: { highlightEventId: targetEventId } });
-        return;
+      // 3. Πλοήγηση στο σωστό URL με "s" στο events
+      if (targetEventId && targetEventId !== 'undefined' && targetEventId !== 'null') {
+        navigate(`/events/${targetEventId}`);
+      } else {
+        navigate('/');
       }
     } catch (err) {
       console.error("❌ Σφάλμα κατά το κλικ της ειδοποίησης:", err);
