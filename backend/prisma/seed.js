@@ -14,7 +14,7 @@ async function main() {
     update: {},
     create: {
       username: 'admin',
-      password: 'test123',
+      password: 'admin123',
       firstName: 'Admin',
       lastName: 'System',
       email: 'admin@tedapp.gr',
