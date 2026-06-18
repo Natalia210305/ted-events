@@ -133,11 +133,18 @@ const updateEvent = async (req, res) => {
         address,
         city,
         country: country || 'Greece',
-        latitude: latitude !== '' && latitude !== null ? parseFloat(latitude) : null,
-        longitude: longitude !== '' && longitude !== null ? parseFloat(longitude) : null,
-        startDateTime: new Date(startDateTime),
-        endDateTime: new Date(endDateTime),
-        capacity: parseInt(capacity)
+        
+        latitude: latitude !== undefined && latitude !== '' && latitude !== null && !isNaN(parseFloat(latitude)) 
+          ? parseFloat(latitude) 
+          : oldEvent.latitude,
+          
+        longitude: longitude !== undefined && longitude !== '' && longitude !== null && !isNaN(parseFloat(longitude)) 
+          ? parseFloat(longitude) 
+          : oldEvent.longitude,
+          
+        startDateTime: startDateTime ? new Date(startDateTime) : oldEvent.startDateTime,
+        endDateTime: endDateTime ? new Date(endDateTime) : oldEvent.endDateTime,
+        capacity: capacity ? parseInt(capacity, 10) : oldEvent.capacity
       }
     });
 

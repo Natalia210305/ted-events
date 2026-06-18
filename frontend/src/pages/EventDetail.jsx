@@ -42,19 +42,36 @@ function formatDateTime(dt) {
   })
 }
 
-// ── Map Component ────────────────────────────────────────────────────────────
+// ── ΔΙΟΡΘΩΜΕΝΟ MAP COMPONENT ──────────────────────────────────────────────────
 function EventMap({ latitude, longitude, venue }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
+  const markerRef = useRef(null)
+
   useEffect(() => {
-    if (!latitude || !longitude) return
-    if (mapInstanceRef.current) return
+    // 1. Μετατροπή σε καθαρούς δεκαδικούς αριθμούς
+    const lat = parseFloat(latitude);
+    const lng = parseFloat(longitude);
+
+    if (isNaN(lat) || isNaN(lng)) return;
 
     const L = window.L
     if (!L) { console.error('Leaflet not loaded'); return }
 
+    // 2. Αν ο χάρτης υπάρχει ήδη, άλλαξε απλά το κέντρο και το Marker δυναμικά!
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.setView([lat, lng], 15);
+      
+      if (markerRef.current) {
+        markerRef.current.setLatLng([lat, lng]);
+        markerRef.current.setPopupContent(`<strong style="font-family:Montserrat,sans-serif">${venue || 'Χώρος εκδήλωσης'}</strong>`);
+      }
+      return;
+    }
+
+    // 3. Αρχική δημιουργία χάρτη αν δεν υπάρχει
     const map = L.map(mapRef.current, { zoomControl: true, scrollWheelZoom: false })
-      .setView([latitude, longitude], 15)
+      .setView([lat, lng], 15)
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -72,13 +89,23 @@ function EventMap({ latitude, longitude, venue }) {
       iconAnchor: [16, 32],
     })
 
-    L.marker([latitude, longitude], { icon })
+    const marker = L.marker([lat, lng], { icon })
       .addTo(map)
       .bindPopup(`<strong style="font-family:Montserrat,sans-serif">${venue || 'Χώρος εκδήλωσης'}</strong>`)
       .openPopup()
 
+    // Κρατάμε references για να μπορούμε να τα πειράξουμε στο επόμενο render
     mapInstanceRef.current = map
-    return () => { map.remove(); mapInstanceRef.current = null }
+    markerRef.current = marker
+
+    // Καθαρισμός κατά το unmount
+    return () => { 
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove(); 
+        mapInstanceRef.current = null;
+        markerRef.current = null;
+      }
+    }
   }, [latitude, longitude, venue])
 
   if (!latitude || !longitude) {
@@ -320,9 +347,8 @@ export default function EventDetail() {
                 {event.address || event.venue}, {event.city}, {event.country}
               </span>
             </div>
-            <EventMap latitude={lat} longitude={lng} venue={event.venue} />
+            <EventMap key={event.id} latitude={lat} longitude={lng} venue={event.venue} />
           </section>
-
           <section style={styles.section}>
             <h2 style={styles.sectionTitle}>Εισιτηρια</h2>
             <p style={styles.capacity}>

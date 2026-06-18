@@ -23,7 +23,7 @@ export default function CreateEvent() {
   const editEvent = location.state?.editEvent;
   const isEditMode = !!editEvent;
 
-  // 1. ΑΡΧΙΚΟΠΟΙΗΣΗ
+  // 1. ΑΡΧΙΚΟΠΟΙΗΣΗ (ΔΙΟΡΘΩΜΕΝΗ: Διαβάζει πρώτα τα χύμα latitude/longitude)
   const [form, setForm] = useState({
     title: editEvent?.title || '',
     description: editEvent?.description || editEvent?.desc || '',
@@ -32,8 +32,8 @@ export default function CreateEvent() {
     address: editEvent?.address || '',
     city: editEvent?.city || '',
     country: editEvent?.country || 'Greece',
-    latitude: editEvent?.geoLocation?.latitude ?? editEvent?.latitude ?? '',
-    longitude: editEvent?.geoLocation?.longitude ?? editEvent?.longitude ?? '',
+    latitude: editEvent?.latitude ?? editEvent?.geoLocation?.latitude ?? '',
+    longitude: editEvent?.longitude ?? editEvent?.geoLocation?.longitude ?? '',
     startDateTime: editEvent?.startDateTime ? editEvent.startDateTime.substring(0, 16) : '',
     endDateTime: editEvent?.endDateTime ? editEvent.endDateTime.substring(0, 16) : '',
     capacity: editEvent?.capacity || '',
@@ -51,7 +51,7 @@ export default function CreateEvent() {
       : [{ name: '', price: '', quantity: '' }]
   );
 
-  // 3. Συγχρονισμός σε περίπτωση που αλλάξει το state
+  // 3. Συγχρονισμός σε περίπτωση που αλλάξει το state (ΔΙΟΡΘΩΜΕΝΟΣ)
   useEffect(() => {
     if (editEvent) {
       setForm({
@@ -62,8 +62,8 @@ export default function CreateEvent() {
         address: editEvent.address,
         city: editEvent.city,
         country: editEvent.country || 'Greece',
-        latitude: editEvent.geoLocation?.latitude ?? editEvent.latitude ?? '',
-        longitude: editEvent.geoLocation?.longitude ?? editEvent.longitude ?? '',
+        latitude: editEvent.latitude ?? editEvent.geoLocation?.latitude ?? '',
+        longitude: editEvent.longitude ?? editEvent.geoLocation?.longitude ?? '',
         startDateTime: editEvent.startDateTime ? editEvent.startDateTime.substring(0, 16) : '',
         endDateTime: editEvent.endDateTime ? editEvent.endDateTime.substring(0, 16) : '',
         capacity: editEvent.capacity,
@@ -123,10 +123,11 @@ export default function CreateEvent() {
         startDateTime: fixDateTime(form.startDateTime), 
         endDateTime: fixDateTime(form.endDateTime),     
         categories: categoriesArray,
-        geoLocation: form.latitude && form.longitude ? {
-          latitude: parseFloat(form.latitude),
-          longitude: parseFloat(form.longitude)
-        } : null,
+        
+        // Στέλνουμε τα πεδία FLAT (χυτά) όπως τα περιμένει το Prisma Backend
+        latitude: form.latitude && form.latitude !== '' ? parseFloat(form.latitude) : null,
+        longitude: form.longitude && form.longitude !== '' ? parseFloat(form.longitude) : null,
+        
         ticketTypes: ticketTypes.map(t => ({
           id: t.id || null,
           name: t.name,
@@ -214,7 +215,6 @@ export default function CreateEvent() {
             </div>
           </div>
 
-          {/* ΕΔΩ ΕΓΙΝΑΝ ΟΙ ΑΛΛΑΓΕΣ ΣΤΑ ΠΕΔΙΑ ΕΝΑΡΞΗΣ ΚΑΙ ΛΗΞΗΣ */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
             <div>
               <label style={labelStyle}>ΕΝΑΡΞΗ *</label>
@@ -262,7 +262,6 @@ export default function CreateEvent() {
             <input name="categories" value={form.categories} onChange={handleChange} style={inputStyle} placeholder="π.χ. Μουσική, Live Performance" />
           </div>
 
-          {/* Ticket Types Ενότητα */}
           <div style={{ marginTop: '10px', borderTop: `1px solid ${COLORS.border}`, paddingTop: '20px' }}>
             <h2 style={{ fontSize: '11px', letterSpacing: '2px', color: COLORS.dark, fontWeight: '700', marginBottom: '16px' }}>ΤΥΠΟΙ ΕΙΣΙΤΗΡΙΩΝ</h2>
             
