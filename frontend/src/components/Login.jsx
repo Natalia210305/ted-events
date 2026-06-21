@@ -15,7 +15,6 @@ export default function LoginModal({ onClose }) {
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       
-      // Έλεγχος: Κλείσε το modal μόνο αν υπάρχει η συνάρτηση onClose
       if (onClose) {
         onClose();
       }
@@ -59,9 +58,9 @@ export default function LoginModal({ onClose }) {
         <button
           onClick={() => {
             if (onClose) {
-              onClose(); // Αν άνοιξε σαν modal, κλείστο
+              onClose(); 
             } else {
-              navigate('/events'); // Αν είμαστε στο /login route, γύρνα τον χρήστη πίσω
+              navigate('/events'); 
             }
           }}
           style={{

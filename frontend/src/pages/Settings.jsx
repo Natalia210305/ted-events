@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // <-- Προσθήκη useNavigate
+import { useNavigate } from 'react-router-dom'; 
 import api from '../services/api';
 
 const COLORS = {
@@ -16,9 +16,8 @@ const COLORS = {
 };
 
 export default function Settings() {
-  const navigate = useNavigate(); // <-- Hook πλοήγησης
+  const navigate = useNavigate(); 
   
-  // Παίρνουμε τον τρέχοντα χρήστη για να ελέγξουμε αν είναι Admin
   const user = JSON.parse(localStorage.getItem('user'));
   const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
 
@@ -28,7 +27,6 @@ export default function Settings() {
     confirmPassword: ''
   });
   
-  // State για τη φόρμα επικοινωνίας με τον Admin
   const [adminContact, setAdminContact] = useState({
     subject: '',
     messageText: ''
@@ -90,14 +88,12 @@ export default function Settings() {
     }
   };
 
-  // Handler για την αποστολή στον Admin
   const handleContactAdminSubmit = (e) => {
     e.preventDefault();
     if (!adminContact.subject.trim() || !adminContact.messageText.trim()) return;
 
     const ADMIN_UUID = "e5422843-d587-443c-8bb1-3f90ff439963"; 
 
-    // Συγχωνεύουμε το θέμα και το μήνυμα σε ένα string που θα αποθηκευτεί στη βάση
     const fullMessageContent = `[ΘΕΜΑ: ${adminContact.subject.trim()}]\n${adminContact.messageText.trim()}`;
 
     navigate('/messages', {
@@ -105,7 +101,7 @@ export default function Settings() {
         recipientId: ADMIN_UUID, 
         recipientName: 'Διαχειριστής (Admin)',
         subject: adminContact.subject,
-        content: fullMessageContent, // Στέλνουμε το "συνδυασμένο" μήνυμα
+        content: fullMessageContent, 
         isAdminContact: true
       }
     });
@@ -148,7 +144,6 @@ export default function Settings() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
           
-          {/* 🔒 ΕΝΟΤΗΤΑ 1: ΑΣΦΑΛΕΙΑ & ΑΛΛΑΓΗ ΚΩΔΙΚΟΥ */}
           <div style={{ backgroundColor: COLORS.white, padding: '30px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.02)', border: `1px solid ${COLORS.border}`, textAlign: 'center' }}>
             <h2 style={{ fontSize: '1.3rem', fontWeight: '700', color: COLORS.dark, marginBottom: '25px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
               <img src="/verified.png" alt="Security" style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} />
@@ -206,7 +201,6 @@ export default function Settings() {
             </form>
           </div>
 
-          {/* 🔔 ΕΝΟΤΗΤΑ 2: ΕΙΔΟΠΟΙΗΣΕΙΣ */}
           <div style={{ backgroundColor: COLORS.white, padding: '30px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.02)', border: `1px solid ${COLORS.border}` }}>
             <h2 style={{ fontSize: '1.3rem', fontWeight: '700', color: COLORS.dark, marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
               <img src="/notification.png" alt="Notifications" style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} /> 
@@ -223,7 +217,6 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* 📬 ΠΡΟΣΘΗΚΗ: ΕΝΟΤΗΤΑ 3: ΕΠΙΚΟΙΝΩΝΙΑ ΜΕ ΤΟΝ ADMIN (ΜΟΝΟ ΓΙΑ ΜΗ-ADMINS) */}
           {!isAdmin && (
             <div style={{ backgroundColor: COLORS.white, padding: '30px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.02)', border: `1px solid ${COLORS.border}` }}>
               <h2 style={{ fontSize: '1.3rem', fontWeight: '700', color: COLORS.dark, marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>

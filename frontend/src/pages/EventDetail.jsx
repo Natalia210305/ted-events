@@ -2,13 +2,12 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../services/api.js'
 
-// ── Χρωματική Παλέτα ─────────────────────────────────────────────────────────
 const COLORS = {
-  primary: '#d2b893',    // Το μπεζ/χρυσό
-  dark: '#2c2c2c',       // Σκούρο γκρι/μαύρο
-  textMuted: '#555555',  // Απαλό γκρι για περιγραφές
-  bgLight: '#f9f7f5',    // Το background του modal / badges
-  border: '#e4dfda',     // Απαλό border
+  primary: '#d2b893',    
+  dark: '#2c2c2c',       
+  textMuted: '#555555',
+  bgLight: '#f9f7f5',    
+  border: '#e4dfda',    
   white: '#ffffff',
   cancelledBg: '#FCEBEB',
   cancelledText: '#791F1F',
@@ -16,7 +15,6 @@ const COLORS = {
   publishedText: '#27500A',
 }
 
-// ── Συνάρτηση Δυναμικής Εικόνας ──────────────────────────────────────────
 const getEventImage = (type, title) => {
   const searchStr = `${type || ''} ${title || ''}`.toLowerCase().trim();
   if (searchStr.includes('συναυλία') || searchStr.includes('concert') || searchStr.includes('μουσική') || searchStr.includes('jazz') || searchStr.includes('live')) {
@@ -42,14 +40,12 @@ function formatDateTime(dt) {
   })
 }
 
-// ── ΔΙΟΡΘΩΜΕΝΟ MAP COMPONENT ──────────────────────────────────────────────────
 function EventMap({ latitude, longitude, venue }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const markerRef = useRef(null)
 
   useEffect(() => {
-    // 1. Μετατροπή σε καθαρούς δεκαδικούς αριθμούς
     const lat = parseFloat(latitude);
     const lng = parseFloat(longitude);
 
@@ -58,7 +54,6 @@ function EventMap({ latitude, longitude, venue }) {
     const L = window.L
     if (!L) { console.error('Leaflet not loaded'); return }
 
-    // 2. Αν ο χάρτης υπάρχει ήδη, άλλαξε απλά το κέντρο και το Marker δυναμικά!
     if (mapInstanceRef.current) {
       mapInstanceRef.current.setView([lat, lng], 15);
       
@@ -69,7 +64,6 @@ function EventMap({ latitude, longitude, venue }) {
       return;
     }
 
-    // 3. Αρχική δημιουργία χάρτη αν δεν υπάρχει
     const map = L.map(mapRef.current, { zoomControl: true, scrollWheelZoom: false })
       .setView([lat, lng], 15)
 
@@ -94,11 +88,9 @@ function EventMap({ latitude, longitude, venue }) {
       .bindPopup(`<strong style="font-family:Montserrat,sans-serif">${venue || 'Χώρος εκδήλωσης'}</strong>`)
       .openPopup()
 
-    // Κρατάμε references για να μπορούμε να τα πειράξουμε στο επόμενο render
     mapInstanceRef.current = map
     markerRef.current = marker
 
-    // Καθαρισμός κατά το unmount
     return () => { 
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove(); 
@@ -111,7 +103,6 @@ function EventMap({ latitude, longitude, venue }) {
   if (!latitude || !longitude) {
     return (
       <div style={styles.mapPlaceholder}>
-        Δεν υπάρχουν διαθέσιμες γεωγραφικές συντεταγμένες
       </div>
     )
   }
@@ -119,7 +110,6 @@ function EventMap({ latitude, longitude, venue }) {
   return <div ref={mapRef} style={styles.map} />
 }
 
-// ── Booking Modal Component ───────────────────────────────────────────────────
 function BookingModal({ event, ticketType, onConfirm, onCancel, isBooking }) {
   const [quantity, setQuantity] = useState(1)
   const total = (quantity * parseFloat(ticketType.price || 0)).toFixed(2)
@@ -186,7 +176,6 @@ function BookingModal({ event, ticketType, onConfirm, onCancel, isBooking }) {
   )
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
 export default function EventDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -209,8 +198,8 @@ export default function EventDetail() {
         recipientId: event.organizerId, 
         recipientName: `${event.organizer?.firstName || ''} ${event.organizer?.lastName || ''}`,
         subject: event.title,
-        eventId: event.id,       // ✅ Αυτό λείπει!
-        eventTitle: event.title  // ✅ Αυτό λείπει!
+        eventId: event.id,      
+        eventTitle: event.title  
       } 
     });
   };
@@ -357,19 +346,16 @@ export default function EventDetail() {
             <div style={styles.ticketGrid}>
               {(event.ticketTypes || []).map(t => {
                 const bookedTickets = t.quantity - t.available;
-                // ─── ΔΙΟΡΘΩΣΗ: Η μπάρα δείχνει το ποσοστό των ΔΙΑΘΕΣΙΜΩΝ θέσεων ───
-                // Ξεκινάει από το 100% (γεμάτη πράσινη) και μειώνεται καθώς γίνονται κρατήσεις
                 const pct = Math.round((t.available / t.quantity) * 100);
 
                 const sold = isCancelled || t.available === 0;
                 const availabilityRatio = t.available / t.quantity;
 
-                // Το χρώμα αλλάζει με βάση το πόσο τοις εκατό των θέσεων απομένει διαθέσιμο
                 const color = availabilityRatio > 0.3 
-                  ? '#27500A' // Πράσινο: Πάνω από 30% των θέσεων είναι ελεύθερο
+                  ? '#27500A' 
                   : t.available > 0 
-                    ? '#b45309' // Πορτοκαλί: Λιγότερο από 30% διαθέσιμο (κίνδυνος!)
-                    : '#791F1F'; // Κόκκινο: Εξαντλήθηκε
+                    ? '#b45309' 
+                    : '#791F1F'; 
                 const isSelected = selectedTicket?.id === t.id
 
                 return (
@@ -416,7 +402,6 @@ export default function EventDetail() {
                         <button 
                           style={{ ...styles.bookBtn, backgroundColor: '#eee', color: '#777', fontSize: 10 }}
                           onClick={() => {
-                            // Αν είναι ήδη συνδεδεμένος (π.χ. admin/organizer), τον αποσυνδέουμε προαιρετικά ή απλά τον στέλνουμε στο login
                             navigate('/login');
                           }}
                         >
@@ -464,7 +449,6 @@ export default function EventDetail() {
               <div style={styles.PriceValue}>{displayPrice}</div>
             </div>
             
-            {/* ΔΙΟΡΘΩΘΗΚΕ: Εδώ έγινε <div> αντί για <p> για να μην πετάει σφάλμα HTML */}
             <div style={styles.DescriptionMeta}>
               {event.eventType} · {event.venue}<br />
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
@@ -521,7 +505,6 @@ export default function EventDetail() {
   )
 }
 
-// ── Στυλ ──────────────────────────────────────────────────────────────────────
 const styles = {
   page: { backgroundColor: '#faf9f8', minHeight: '100vh', fontFamily: 'Poppins, sans-serif', color: COLORS.dark },
   statusPage: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#faf9f8', fontFamily: 'Poppins, sans-serif' },
@@ -557,7 +540,7 @@ const styles = {
     alignItems: 'flex-start', 
     flexWrap: 'wrap', 
     gap: '10px', 
-    marginBottom: '18px' // Κρατάει το σωστό κενό που ζήτησες
+    marginBottom: '18px' 
   },
   statusBadge: { fontSize: 10, fontWeight: 700, letterSpacing: 1, padding: '4px 10px', borderRadius: 2 },
   catRow: { display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' },
@@ -566,7 +549,6 @@ const styles = {
   PriceBadge: { fontSize: '11px', color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '2px' },
   PriceValue: { fontSize: '30px', fontWeight: '800', color: COLORS.dark, margin: '0', lineHeight: '1' },
   
-  // Διορθώθηκε το margin/padding conflict για αποφυγή react warning
   DescriptionMeta: { 
     color: COLORS.textMuted, 
     fontSize: '14px', 

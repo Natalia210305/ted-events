@@ -218,7 +218,6 @@ export default function Messages() {
         </div>
       </div>
 
-      {/* ── ΔΕΞΙΑ: ΠΑΡΑΘΥΡΟ ΣΥΝΟΜΙΛΙΑΣ ── */}
       <div style={styles.chatWindow}>
         {newContact ? (
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -284,7 +283,6 @@ export default function Messages() {
                   t => t.otherUser?.id === selectedConv.userId && (t.eventId || null) === selectedConv.eventId
                 );
 
-                // 🌟 ΑΠΟΛΥΤΗ ΔΙΟΡΘΩΣΗ ΤΙΤΛΟΥ ΠΑΡΑΘΥΡΟΥ: 
                 let currentEventTitle = conversation.find(m => m.event?.title)?.event?.title || currentThread?.event?.title || 'Γενική Επικοινωνία';
                 
                 if (!selectedConv.eventId) {

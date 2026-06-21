@@ -31,7 +31,7 @@ export default function RegisterModal({ onClose }) {
   });
   const [usernameError, setUsernameError] = useState('');
   const [error, setError] = useState('');
-  const [submitted, setSubmitted] = useState(false);  // ← για την "σελίδα" επιβεβαίωσης
+  const [submitted, setSubmitted] = useState(false);  
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -55,7 +55,7 @@ export default function RegisterModal({ onClose }) {
         longitude: parseFloat(data.longitude) || 0
       };
       await api.post('/auth/register', dataToSend);
-      setSubmitted(true);  // ← δείχνει μήνυμα αναμονής
+      setSubmitted(true);  
     } catch (err) {
       const msg = err.response?.data?.error || 'Σφάλμα εγγραφής';
       if (msg.includes('username')) {
@@ -87,7 +87,6 @@ export default function RegisterModal({ onClose }) {
       <div style={modalStyle}>
         <button onClick={onClose} style={{ position: 'absolute', top: '12px', right: '16px', background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#888' }}>✕</button>
 
-        {/* Αν έχει υποβληθεί επιτυχώς → μήνυμα αναμονής */}
         {submitted ? (
           <div style={{ textAlign: 'center', padding: '20px 0' }}>
             <div style={{ fontSize: '2.5rem', marginBottom: '16px' }}>✓</div>

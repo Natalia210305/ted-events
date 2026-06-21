@@ -6,12 +6,12 @@ import RegisterModal from '../components/Register';
 import api from '../services/api';
 
 const COLORS = {
-  primary: '#d2b893',      // Το premium μπεζ σου
-  primaryHover: '#c5a982', // Σκούρο μπεζ για το hover
-  dark: '#2c2c2c',         // Soft Ανθρακί
-  brown: '#815a3a',         // Το καφέ 
+  primary: '#d2b893',     
+  primaryHover: '#c5a982', 
+  dark: '#2c2c2c',        
+  brown: '#815a3a',         
   white: '#ffffff',
-  glassBg: 'rgba(243, 238, 231, 0.65)' // Soft warm glass background
+  glassBg: 'rgba(243, 238, 231, 0.65)' 
 };
 
 export default function Home() {
@@ -23,7 +23,6 @@ export default function Home() {
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
 
-  // Hover Animations για τα κουμπιά
   const handleMouseOver = (e, type) => {
     e.currentTarget.style.transform = 'translateY(-4px) scale(1.05)';
     if (type === 'primary') {
@@ -52,10 +51,8 @@ export default function Home() {
 
   useEffect(() => {
     if (user) {
-      // Χρησιμοποιούμε το api instance που βάζει αυτόματα τα σωστά headers και base URL
       api.get(`/events/recommendations?userId=${user.id || user.user_id}`)
         .then(res => {
-          // Στο axios τα δεδομένα έρχονται στο res.data
           setRecommendations(res.data);
           setLoadingRecs(false);
         })
@@ -68,15 +65,12 @@ export default function Home() {
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh', overflow: 'hidden' }}>
-      
-      {/* Το background image σου */}
-      <img
+        <img
         src={heroImage}
         alt="TED Events"
         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
       />
 
-      {/* Σκοτεινό overlay για βάθος */}
       <div style={{
         position: 'absolute',
         top: 0, left: 0, right: 0, bottom: 0,
@@ -84,17 +78,16 @@ export default function Home() {
         zIndex: 1
       }} />
 
-      {/* ─── ΚΕΝΤΡΙΚΟ ΠΛΑΙΣΙΟ (EXTRA ΜΑΖΕΜΕΝΟ & COMPACT) ─── */}
       <div style={{
         position: 'absolute',
         top: '50%', left: '50%',
         backgroundColor: COLORS.glassBg,
         backdropFilter: 'blur(20px)',      
         WebkitBackdropFilter: 'blur(20px)', 
-        padding: '30px 25px',              // Πιο μαζεμένα εσωτερικά κενά
+        padding: '30px 25px',             
         textAlign: 'center',
         borderRadius: '35px',              
-        width: '560px',                    // Μειώσαμε το πλάτος στα 560px (από 680px)
+        width: '560px',                   
         maxWidth: '92%',
         boxShadow: '0 25px 60px rgba(0, 0, 0, 0.12)',
         border: '1px solid rgba(255, 255, 255, 0.35)',
@@ -136,7 +129,7 @@ export default function Home() {
 
         <h1 style={{ 
           fontFamily: 'Poppins, sans-serif', 
-          fontSize: '1.65rem',               // Ελαφρώς πιο μικρά γράμματα για να δένει με το νέο πλάτος
+          fontSize: '1.65rem',              
           fontWeight: '800', 
           marginBottom: '15px', 
           color: '#000000',
@@ -145,15 +138,13 @@ export default function Home() {
         }}>
           Οργάνωσε – Ανακάλυψε <br />
           <span style={{ 
-            color: '#000000',                     // Μαύρο premium χρώμα για τη λέξη
+            color: '#000000',                    
             display: 'inline-block',
-            
-            // Η μπεζ γραμμή από κάτω (χρησιμοποιεί το COLORS.primary σου)
             borderBottom: `3px solid ${COLORS.primary}`, 
-            paddingBottom: '3px',                 // Μικρή απόσταση από το κείμενο για να "αναπνέει"
+            paddingBottom: '3px',                
             
-            fontWeight: '900',                    // Extra bold για να ξεχωρίζει
-            letterSpacing: '0.5px'                // Ελαφρώς πιο clean άνοιγμα στα γράμματα
+            fontWeight: '900',                   
+            letterSpacing: '0.5px'                
           }}>
             Εκδηλώσεις
           </span>
@@ -170,7 +161,6 @@ export default function Home() {
           Η πλατφόρμα σου για να βρίσκεις μοναδικές εκδηλώσεις ή να δημιουργείς τις δικές σου, εύκολα και γρήγορα.
         </p>
 
-        {/* ─── ΣΤΡΟΓΓΥΛΕΜΕΝΑ ΚΟΥΜΠΙΑ ─── */}
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
           
           <button
@@ -216,7 +206,6 @@ export default function Home() {
       {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
       {showRegister && <RegisterModal onClose={() => setShowRegister(false)} />}
 
-      {/* ─── CSS ANIMATION ΕΜΦΑΝΙΣΗΣ ─── */}
       <style>{`
         @keyframes slideUp {
           from { opacity: 0; transform: translate(-50%, -45%); }
@@ -229,7 +218,7 @@ export default function Home() {
 }
 
 const buttonStyle = {
-  padding: '10px 28px', // Ελαφρώς πιο μαζεμένα κουμπιά για να χωράνε τέλεια
+  padding: '10px 28px', 
   fontSize: '12.5px', 
   cursor: 'pointer', 
   border: 'none', 

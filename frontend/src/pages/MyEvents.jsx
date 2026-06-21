@@ -63,18 +63,17 @@ export default function MyEvents() {
         {/* ─── HEADER AREA ─── */}
         <div style={{ 
           display: 'flex', 
-          flexDirection: 'column', // Βάζει τα στοιχεία το ένα κάτω από το άλλο
-          alignItems: 'center',    // Κεντράρει αρχικά τα πάντα
+          flexDirection: 'column', 
+          alignItems: 'center',    
           marginBottom: '40px',
           width: '100%',
           position: 'relative'
         }}>
-          {/* Τίτλος & Γραμμή (Στη Μέση) */}
           <div style={{ textAlign: 'center' }}>
             <h1 style={{ 
               fontSize: '2rem', 
               fontWeight: '800', 
-              color: '#2c2c2c', // Διορθώθηκε το COLORS.dark για να μην βγάζει σφάλμα
+              color: '#2c2c2c', 
               letterSpacing: '1px', 
               margin: 0 
             }}>
@@ -86,16 +85,15 @@ export default function MyEvents() {
               backgroundColor: '#d2b893', 
               marginTop: '8px', 
               marginRight: 'auto', 
-              marginLeft: 'auto' // Κεντράρει τη γραμμή κάτω από τον τίτλο
+              marginLeft: 'auto' 
             }} />
           </div>
 
-          {/* Κουμπί Νέα Εκδήλωση (Από Κάτω και Δεξιά) */}
           <button 
             onClick={() => navigate('/create-event')} 
             style={{ 
-              marginTop: '20px',          // Δίνει απόσταση από τον τίτλο
-              alignSelf: 'flex-end',      // Σπρώχνει ΜΟΝΟ το κουμπί τέρμα δεξιά
+              marginTop: '20px',         
+              alignSelf: 'flex-end',     
               padding: '9px 20px', 
               backgroundColor: '#d2b893', 
               color: '#2c2c2c', 
@@ -135,7 +133,6 @@ export default function MyEvents() {
             return (
               <div key={event.id} style={{ backgroundColor: 'white', padding: '28px', borderRadius: '16px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #f0eae4', gap: '24px' }}>
                 
-                {/* ─── ΑΡΙΣΤΕΡΑ: ΤΙΤΛΟΣ, STATUS PILL & ΛΕΠΤΟΜΕΡΕΙΕΣ (ΟΛΑ ΜΑΖΙ) ─── */}
                 <div style={{ flex: 1 }}>
                   {/* Σειρά Τίτλου + Status Pill δίπλα-δίπλα */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px', flexWrap: 'wrap' }}>
@@ -146,8 +143,6 @@ export default function MyEvents() {
                       {styleConfig.label}
                     </span>
                   </div>
-
-                  {/* Δευτερεύουσες Πληροφορίες */}
                   <div style={{ fontSize: '0.88rem', color: '#666', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><img src="calendar (1).png" alt="" style={{ width: '19px', height: '19px', objectFit: 'contain', flexShrink: 0}} />{formatDate(event.startDateTime)}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><img src="pin.png" alt="" style={{ width: '19px', height: '19px', objectFit: 'contain', flexShrink: 0}} /> {event.city}</div>
@@ -157,8 +152,6 @@ export default function MyEvents() {
                     Συνολικές Κρατήσεις: {event.bookings?.length || 0}
                   </div>
                 </div>
-
-                {/* ─── ΔΕΞΙΑ: ΚΟΥΜΠΙΑ ΕΝΕΡΓΕΙΩΝ (ΚΑΘΑΡΑ ΚΑΙ ΜΕ ΑΠΟΣΤΑΣΕΙΣ) ─── */}
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   
                   <button onClick={() => navigate(`/events/${event.id}`)} style={{ padding: '10px 18px', backgroundColor: 'white', border: '1px solid #d2b893', color: '#2c2c2c', borderRadius: '8px', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontSize: '0.82rem', fontWeight: '600', transition: 'all 0.2s' }}>

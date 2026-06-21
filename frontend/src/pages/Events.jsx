@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api'; // Σιγουρέψου ότι το path για το api service σου είναι σωστό
+import api from '../services/api'; 
 
 const PER_PAGE = 6;
 
 // Παλέτα χρωμάτων
 const COLORS = {
-  primary: '#d2b893',      // Το μπεζ/χρυσό
-  dark: '#2c2c2c',         // Σκούρο γκρι/μαύρο
-  textMuted: '#555555',    // Απαλό γκρι για περιγραφές
-  bgLight: '#f9f7f5',      // Το background του modal
-  border: '#e4dfda',       // Απαλό border
+  primary: '#d2b893',      
+  dark: '#2c2c2c',         
+  textMuted: '#555555',    
+  bgLight: '#f9f7f5',      
+  border: '#e4dfda',       
   white: '#ffffff',
   cancelledBg: '#FCEBEB',
   cancelledText: '#791F1F',
@@ -38,16 +38,13 @@ const getEventImage = (type, title) => {
 export default function EventsBrowse() {
   const navigate = useNavigate();
   
-  // States για τα events της βάσης
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // States για τα Recommendations (Ερώτημα 13)
   const [recommendations, setRecommendations] = useState([]);
-  const [isRecsActive, setIsRecsActive] = useState(false); // State που δείχνει αν πατήθηκε το φίλτρο συστάσεων
+  const [isRecsActive, setIsRecsActive] = useState(false); 
 
-  // States για τα φίλτρα
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedPrice, setSelectedPrice] = useState('');
@@ -57,7 +54,6 @@ export default function EventsBrowse() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  // Ανάκτηση στοιχείων συνδεδεμένου χρήστη
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
 
@@ -65,7 +61,6 @@ export default function EventsBrowse() {
     window.scrollTo(0, 0);
   }, [currentPage]);
 
-  // 1. useEffect: Ανάκτηση όλων των εκδηλώσεων με ΚΑΘΑΡΙΣΜΟ ΚΑΤΗΓΟΡΙΩΝ στη γέννηση τους
   useEffect(() => {
     const fetchEventsFromBackend = async () => {
       try {
@@ -85,10 +80,8 @@ export default function EventsBrowse() {
         const mapped = data
           .filter(e => new Date(e.endDateTime) > now && e.status === 'PUBLISHED')
           .map(e => {
-            // 🌟 ΕΝΟΠΟΙΗΣΗ ΕΔΩ: Μετατρέπουμε τις κατηγορίες σε καθαρά κεφαλαία ελληνικά πριν μπουν στο state
             const processedCats = (e.categories || []).map(c => {
               const nameStr = c && typeof c === 'object' ? (c.name || '') : c;
-              // Αφαίρεση τόνων και μετατροπή σε κεφαλαία
               const clean = nameStr.toString().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
               
               if (clean === 'MUSIC' || clean === 'ΜΟΥΣΙΚΗ') return 'ΜΟΥΣΙΚΗ';
@@ -99,7 +92,7 @@ export default function EventsBrowse() {
             return {
               ...e,
               desc: e.description,
-              cats: processedCats, // 🌟 Εδώ μπαίνουν οι πεντακάθαρες ενοποιημένες κατηγορίες
+              cats: processedCats, 
               start: e.startDateTime,
               available: (e.ticketTypes || []).reduce((sum, t) => sum + t.available, 0),
               minPrice: e.ticketTypes?.length > 0 ? Math.min(...e.ticketTypes.map(t => t.price)) : 0,
@@ -118,12 +111,10 @@ export default function EventsBrowse() {
     fetchEventsFromBackend();
   }, []);
   
-  // 2. useEffect: Ανάκτηση Συστάσεων αν ο χρήστης είναι συνδεδεμένος (Biased Matrix Factorization)
   useEffect(() => {
     if (user) {
       api.get(`/events/recommendations?userId=${user.id || user.user_id}`)
         .then(res => {
-          // Κρατάμε μόνο τα IDs των προτεινόμενων εκδηλώσεων για εύκολο φιλτράρισμα
           const recIds = res.data.map(item => item.id || item.event_id);
           setRecommendations(recIds);
         })
@@ -132,13 +123,11 @@ export default function EventsBrowse() {
         });
     }
   }, []);
-// Δυναμικός υπολογισμός των κατηγοριών (Τώρα είναι 100% εγγυημένο ότι θα βγει ΕΝΑ κουμπί)
   const CATS = [...new Set(events.flatMap(e => e.cats || []))].sort();
 
   const handleViewEvent = (id) => { navigate(`/events/${id}`); };
   const handleBookEvent = (e, id) => { e.stopPropagation(); navigate(`/events/${id}`); };
 
-  // Λογική Φιλτραρίσματος (Απλή, γρήγορη και πεντακάθαρη)
   const filteredEvents = events.filter(event => {
     const eventId = event.id || event.EventID;
 
@@ -182,7 +171,6 @@ export default function EventsBrowse() {
     return new Date(a.start || a.startDateTime) - new Date(b.start || b.startDateTime);
   });
 
-  // Pagination Logic
   const totalEvents = filteredEvents.length;
   const totalPages = Math.ceil(totalEvents / PER_PAGE);
   const validCurrentPage = currentPage > totalPages ? 1 : currentPage;
@@ -220,11 +208,10 @@ export default function EventsBrowse() {
           display: 'flex', 
           flexDirection: 'column', 
           alignItems: 'center', 
-          gap: '30px',              // Δίνει καθαρό κενό ανάμεσα σε τίτλο και αναζήτηση
+          gap: '30px',              
           marginBottom: '50px' 
         }}>
           
-          {/* ─── ΔΙΟΡΘΩΘΗΚΕ: ΚΑΘΑΡΟ FLEX LAYOUT ΓΙΑ ΝΑ ΜΗΝ ΚΑΒΑΛΙΟΥΝΤΑΙ ΤΑ ΣΤΟΙΧΕΙΑ ─── */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
@@ -233,10 +220,8 @@ export default function EventsBrowse() {
           width: '100%',
           position: 'relative'
         }}>
-          {/* Empty spacer στα αριστερά για να κρατάει τον τίτλο τέλεια κεντραρισμένο */}
           <div style={{ width: '160px', display: 'block' }} className="nav-spacer" />
 
-          {/* Ο Τίτλος στη Μέση */}
           <div style={{ textAlign: 'center', flex: 1 }}>
             <h1 style={{ fontWeight: '800', fontSize: '2.2rem', letterSpacing: '1px', color: '#2c2c2c', margin: 0 }}>
               ΕΚΔΗΛΩΣΕΙΣ
@@ -244,7 +229,6 @@ export default function EventsBrowse() {
             <div style={{ width: '80px', height: '4px', backgroundColor: '#d2b893', marginTop: '10px', marginLeft: 'auto', marginRight: 'auto' }} />
           </div>
 
-          {/* Το Κουμπί στα Δεξιά (Πιάνει χώρο 160px για να ισορροπεί με τον αριστερό spacer) */}
           <div style={{ width: '160px', display: 'flex', justifyContent: 'flex-end' }}>
             {JSON.parse(localStorage.getItem('user'))?.role?.toUpperCase() === 'ORGANIZER' && (
               <button
@@ -270,25 +254,23 @@ export default function EventsBrowse() {
           </div>
         </div>
 
-          {/* ΜΠΑΡΑ ΑΝΑΖΗΤΗΣΗΣ (Απλωμένη κάτω από τον τίτλο) */}
           <div style={{ 
             width: '100%', 
             maxWidth: '700px', 
-            position: 'relative' // Απαραίτητο για να κλειδώσει το εικονίδιο μέσα εδώ
+            position: 'relative' 
           }}>
-            {/* ΤΟ ΕΙΚΟΝΙΔΙΟ PNG */}
             <img 
               src="search.png" 
               alt="search" 
               style={{
                 position: 'absolute',
-                left: '20px',         // Απόσταση από αριστερά
-                top: '50%',           // Κεντράρισμα καθ' ύψος
+                left: '20px',        
+                top: '50%',         
                 transform: 'translateY(-50%)',
-                width: '20px',        // Ρύθμισε το μέγεθος ανάλογα με το PNG σου
+                width: '20px',        
                 height: '20px',
-                opacity: '0.5',       // Το κάνει ελαφρώς ημιδιάφανο για να δένει με το γκρι
-                pointerEvents: 'none' // Ώστε αν ο χρήστης κάνει κλικ στο εικονίδιο, να πατιέται το input από πίσω
+                opacity: '0.5',     
+                pointerEvents: 'none' 
               }} 
             />
 
@@ -299,7 +281,7 @@ export default function EventsBrowse() {
               onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
               style={{ 
                 width: '100%', 
-                padding: '16px 25px 16px 55px', // Αυξήσαμε το αριστερό padding (55px) για να μην πέφτει το κείμενο πάνω στο εικονίδιο
+                padding: '16px 25px 16px 55px', 
                 border: `1px solid ${COLORS.border}`, 
                 borderRadius: '30px',  
                 fontSize: '16px', 
@@ -322,7 +304,6 @@ export default function EventsBrowse() {
 
         </div>
 
-        {/* ─── FILTERS ROW ─── */}
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '35px', backgroundColor: COLORS.white, padding: '20px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.02)', border: `1px solid ${COLORS.border}` }}>
           <span style={{ fontSize: '15px', fontWeight: '700', color: COLORS.dark, letterSpacing: '1px', textTransform: 'uppercase' }}>Φιλτρα:</span>
           
@@ -364,16 +345,15 @@ export default function EventsBrowse() {
             <option value="30+">30€+</option>
           </select>
 
-          {/* ─── ΦΙΛΤΡΟ: ΑΠΟ ─── */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: `1px solid ${COLORS.border}`, borderRadius: '30px', padding: '10px 16px', backgroundColor: '#fcfbfa' }}>
             <span style={{ fontSize: '12px', fontWeight: '700', color: '#888' }}>ΑΠΟ:</span>
             <input 
-              type="text"                       // Ξεκινάει ως κείμενο
-              placeholder="--"                  // Αυτό θα φαίνεται αντί για το ηη/μμ/εεεε
+              type="text"                       
+              placeholder="--"                
               value={startDate}
               onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }}
-              onFocus={(e) => e.target.type = 'date'} // Μόλις πατηθεί, γίνεται ημερομηνία
-              onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }} // Αν βγει και είναι άδειο, ξαναγίνεται text
+              onFocus={(e) => e.target.type = 'date'} 
+              onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }} 
               style={{ 
                 border: 'none', 
                 backgroundColor: 'transparent', 
@@ -382,12 +362,10 @@ export default function EventsBrowse() {
                 outline: 'none', 
                 color: COLORS.dark, 
                 cursor: 'pointer',
-                width: '100px'                  // Δίνουμε σταθερό πλάτος για να μην αναβοσβήνει στο focus
+                width: '100px'                
               }}
             />
           </div>
-
-          {/* ─── ΦΙΛΤΡΟ: ΕΩΣ ─── */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: `1px solid ${COLORS.border}`, borderRadius: '30px', padding: '10px 16px', backgroundColor: '#fcfbfa' }}>
             <span style={{ fontSize: '12px', fontWeight: '700', color: '#888' }}>ΕΩΣ:</span>
             <input 
@@ -395,8 +373,8 @@ export default function EventsBrowse() {
               placeholder="--"                  
               value={endDate}
               onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }}
-              onFocus={(e) => e.target.type = 'date'} // Μόλις πατηθεί, γίνεται ημερομηνία
-              onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }} // Αν βγει και είναι άδειο, ξαναγίνεται text
+              onFocus={(e) => e.target.type = 'date'}
+              onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }} 
               style={{ 
                 border: 'none', 
                 backgroundColor: 'transparent', 
@@ -405,7 +383,7 @@ export default function EventsBrowse() {
                 outline: 'none', 
                 color: COLORS.dark, 
                 cursor: 'pointer',
-                width: '100px'                  // Δίνουμε σταθερό πλάτος
+                width: '100px'               
               }}
             />
           </div>
@@ -421,10 +399,8 @@ export default function EventsBrowse() {
           </select>
         </div>
 
-        {/* ─── CATEGORY PILLS + RECOMMENDATIONS FILTER ─── */}
         <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '15px', marginBottom: '20px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           
-          {/* Κουμπί ΟΛΕΣ */}
           <button 
             onClick={() => { setIsRecsActive(false); setActiveCat(null); setCurrentPage(1); }}
             style={{
@@ -458,7 +434,6 @@ export default function EventsBrowse() {
             </button>
           )}
 
-          {/* Υπόλοιπες Κατηγορίες */}
           {CATS.map(cat => {
             const isActive = activeCat === cat && !isRecsActive;
             return (
@@ -481,12 +456,10 @@ export default function EventsBrowse() {
           })}
         </div>
 
-        {/* Results Count Info */}
         <div style={{ fontSize: '13px', color: COLORS.textMuted, marginBottom: '25px', fontWeight: '600', letterSpacing: '0.5px' }}>
           Βρέθηκαν {totalEvents} εκδηλώσεις {isRecsActive && "βάσει των ενδιαφερόντων σας"}
         </div>
 
-        {/* Events Grid */}
         {paginatedEvents.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', border: `1px dashed ${COLORS.border}`, color: COLORS.textMuted, backgroundColor: COLORS.white, borderRadius: '15px' }}>
             {isRecsActive 
@@ -575,8 +548,6 @@ export default function EventsBrowse() {
             })}
           </div>
         )}
-
-        {/* Pagination Buttons */}
         {totalPages > 1 && (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', marginTop: '40px' }}>
 
@@ -600,7 +571,7 @@ export default function EventsBrowse() {
                   height: '20px', 
                   width: '13px', 
                   objectFit: 'contain',
-                  opacity: validCurrentPage === 1 ? 0.3 : 1 // Γίνεται ημιδιάφανο αν είναι απενεργοποιημένο
+                  opacity: validCurrentPage === 1 ? 0.3 : 1 
                 }} 
               />
               Προηγούμενο                
@@ -640,8 +611,6 @@ export default function EventsBrowse() {
                 );
               });
             })()}
-
-            {/* Επόμενο */}
             <button
               onClick={() => { setCurrentPage(p => Math.min(p + 1, totalPages)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               disabled={validCurrentPage === totalPages}
@@ -663,7 +632,7 @@ export default function EventsBrowse() {
                   height: '20px', 
                   width: '13px', 
                   objectFit: 'contain',
-                  opacity: validCurrentPage === totalPages ? 0.3 : 1 // Γίνεται ημιδιάφανο αν είναι απενεργοποιημένο
+                  opacity: validCurrentPage === totalPages ? 0.3 : 1 
                 }} 
               />
             </button>

@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom'; 
 import api from '../services/api';
 
-// Ομοιόμορφο αντικείμενο χρωμάτων με βάση το MyBookings
 const COLORS = {
   primary: '#d2b893',
   dark: '#2c2c2c',

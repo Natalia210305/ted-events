@@ -3,11 +3,11 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api'; 
 
 const COLORS = {
-  primary: '#d2b893',      // Το μπεζ/χρυσό
-  dark: '#2c2c2c',         // Σκούρο γκρι/μαύρο
-  textMuted: '#555555',    // Απαλό γκρι
-  bgLight: '#f9f7f5',      // Ανοιχτό φόντο
-  border: '#e4dfda',       // Απαλό border
+  primary: '#d2b893',      
+  dark: '#2c2c2c',        
+  textMuted: '#555555',   
+  bgLight: '#f9f7f5',      
+  border: '#e4dfda',       
   white: '#ffffff',
   darkbrown: '#884834'
 };
@@ -105,7 +105,6 @@ function Navbar() {
       {/* ─── ΚΕΝΤΡΟ: ΑΝΕΤΟ, ΚΕΝΤΡΑΡΙΣΜΕΝΟ ΜΕΝΟΥ LINKS ─── */} 
       <div style={menuLinksStyle}>
         
-        {/* 🎯 ΔΙΟΡΘΩΘΗΚΕ: Προστέθηκε η καρτέλα ΑΡΧΙΚΗ για Attendee και Organizer */}
         {role !== 'ADMIN' && (
           <>
             <Link to="/" style={getActiveStyle('/')}>ΑΡΧΙΚΗ</Link>

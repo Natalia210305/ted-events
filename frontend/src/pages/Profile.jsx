@@ -32,7 +32,6 @@ export default function Profile() {
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        // 1. Παίρνουμε το id του συνδεδεμένου χρήστη από το localStorage
         const storedUser = localStorage.getItem('user');
         if (!storedUser) {
           navigate('/');
@@ -40,7 +39,6 @@ export default function Profile() {
         }
         const loggedInUser = JSON.parse(storedUser);
 
-        // 2. Κάνουμε κλήση στο backend route που φέρνει τον χρήστη με βάση το ID του
         const response = await api.get(`/users/${loggedInUser.id}`);
         
         const user = response.data;
@@ -75,7 +73,6 @@ export default function Profile() {
     setLoading(true);
 
     try {
-      // Στέλνουμε τα πεδία στο backend
       const response = await api.put('/users/profile', {
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -87,7 +84,6 @@ export default function Profile() {
         afm: formData.afm
       });
 
-      // Ανανέωση του localStorage με τα νέα στοιχεία
       localStorage.setItem('user', JSON.stringify(response.data.user));
       setSuccess('Το προφίλ σας ενημερώθηκε με επιτυχία!');
       

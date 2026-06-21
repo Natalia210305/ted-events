@@ -51,7 +51,6 @@ export default function CreateEvent() {
       : [{ name: '', price: '', quantity: '' }]
   );
 
-  // 3. Συγχρονισμός σε περίπτωση που αλλάξει το state (ΔΙΟΡΘΩΜΕΝΟΣ)
   useEffect(() => {
     if (editEvent) {
       setForm({
@@ -124,7 +123,6 @@ export default function CreateEvent() {
         endDateTime: fixDateTime(form.endDateTime),     
         categories: categoriesArray,
         
-        // Στέλνουμε τα πεδία FLAT (χυτά) όπως τα περιμένει το Prisma Backend
         latitude: form.latitude && form.latitude !== '' ? parseFloat(form.latitude) : null,
         longitude: form.longitude && form.longitude !== '' ? parseFloat(form.longitude) : null,
         

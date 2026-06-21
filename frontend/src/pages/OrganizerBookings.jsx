@@ -49,7 +49,6 @@ export default function OrganizerBookings() {
            ' · ' + new Date(str).toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Φιλτράρισμα μοναδικών events με fallback στον τίτλο αν το id λείπει ή συμπίπτει
   const uniqueEvents = Array.from(
     new Map(
       bookings
@@ -61,12 +60,10 @@ export default function OrganizerBookings() {
     ).values()
   );
 
-  // Φιλτράρισμα των κρατήσεων στην οθόνη
   const filteredBookings = selectedEventId === 'ALL' 
     ? bookings 
     : bookings.filter(b => (b.event?.id === selectedEventId || b.event?.title === selectedEventId));
 
-  // ΥΠΟΛΟΓΙΣΜΟΣ ΕΣΟΔΩΝ: Αθροίζει το totalCost μόνο των φιλτραρισμένων κρατήσεων
   const totalRevenue = filteredBookings.reduce((sum, booking) => sum + Number(booking.totalCost || 0), 0);
 
   if (loading) {
@@ -192,7 +189,6 @@ export default function OrganizerBookings() {
                   }}
                 >
                   
-                  {/* Στοιχεία Κράτησης (Αριστερά) */}
                   <div style={{ flex: 1 }}>
                     <div style={{ 
                         fontSize: '0.9rem', 
@@ -210,7 +206,6 @@ export default function OrganizerBookings() {
                         : '—'}
                     </div>
                     
-                    {/* Σειρά Συμμετέχοντα + Status Pill δίπλα-δίπλα */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px', flexWrap: 'wrap' }}>
                       <div style={{ fontWeight: '700', fontSize: '1.15rem', color: COLORS.dark }}>
                         <img 
@@ -224,14 +219,12 @@ export default function OrganizerBookings() {
                       </span>
                     </div>
 
-                    {/* Δευτερεύουσες Πληροφορίες */}
                     <div style={{ fontSize: '0.88rem', color: COLORS.textMuted, display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><img src="/ticket.png" alt="" style={{ width: '19px', height: '19px', objectFit: 'contain', flexShrink: 0}} />{booking.ticketType?.name || 'Γενική Είσοδος'} (x{booking.numberOfTickets})</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><img src="/calendar (1).png" alt="" style={{ width: '19px', height: '19px', objectFit: 'contain', flexShrink: 0}} />Ώρα κράτησης: {formatDate(booking.time)}</div>
                     </div>
                   </div>
 
-                  {/* Οικονομικά Στοιχεία (Δεξιά) */}
                   <div style={{ textAlign: 'right', minWidth: '110px' }}>
                     <div style={{ fontSize: '0.75rem', color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '500' }}>
                       Εσοδα
@@ -245,7 +238,6 @@ export default function OrganizerBookings() {
               );
             })}
 
-            {/* ─── ΣΥΝΟΛΙΚΑ ΕΣΟΔΑ (ΚΑΤΩ ΜΕΡΟΣ) ─── */}
             <div 
               style={{ 
                 backgroundColor: COLORS.white, 

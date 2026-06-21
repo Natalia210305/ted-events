@@ -15,7 +15,7 @@ import MyBookings from './pages/MyBookings'
 import Notifications from './pages/Notifications';
 import Profile from './pages/Profile';
 import AdminExport from './pages/AdminExport'
-import Settings from './pages/Settings'; // ή './components/Settings' ανάλογα πού το έσωσες
+import Settings from './pages/Settings'; 
 import OrganizerBookings from './pages/OrganizerBookings';
 
 createRoot(document.getElementById('root')).render(
