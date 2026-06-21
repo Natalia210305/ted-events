@@ -121,20 +121,15 @@ export default function Messages() {
       if (targetEventId) {
         payload.eventId = targetEventId;
       }
-
       await api.post('/messages', payload);
-      alert('Το μήνυμα στάλθηκε!');
+      alert('Το μήνυμα στάλθηκε επιτυχώς!');
       setContent('');
       await fetchMessages();
-      
-      if (newContact.recipientId !== "e5422843-d587-443c-8bb1-3f90ff439963") {
-        fetchConversation(newContact.recipientId, targetEventId);
-      }
-      
+      await fetchConversation(newContact.recipientId, targetEventId);
       navigate('/messages', { replace: true, state: null });
     } catch (error) {
       console.error('Σφάλμα αποστολής νέου μηνύματος:', error);
-      setError('Σφάλμα αποστολής.');
+      setError('Σφάλμα κατά την αποστολή του μηνύματος.');
     }
   };
 
