@@ -1,6 +1,5 @@
 const prisma = require('../db');
 
-// Δημιουργία κράτησης
 const createBooking = async (req, res) => {
   try {
     const { eventId, ticketTypeId, numberOfTickets } = req.body;
@@ -35,7 +34,6 @@ const createBooking = async (req, res) => {
       data: { available: ticketType.available - numberOfTickets }
     });
 
-    // ← ΝΕΟΣ ΚΩΔΙΚΑΣ: Δημιουργία notification για τον organizer
     const event = await prisma.event.findUnique({
       where: { id: eventId },
       select: { title: true, organizerId: true }
@@ -60,7 +58,6 @@ const createBooking = async (req, res) => {
   }
 };
 
-// Λίστα κρατήσεων χρήστη
 const getUserBookings = async (req, res) => {
   try {
     const bookings = await prisma.booking.findMany({
@@ -81,7 +78,6 @@ const getUserBookings = async (req, res) => {
   }
 };
 
-// Ακύρωση κράτησης
 const cancelBooking = async (req, res) => {
   try {
     const { id } = req.params;
@@ -103,7 +99,6 @@ const cancelBooking = async (req, res) => {
       data: { status: 'CANCELLED' }
     });
 
-    // Επιστροφή εισιτηρίων
     await prisma.ticketType.update({
       where: { id: booking.ticketTypeId },
       data: { available: { increment: booking.numberOfTickets } }

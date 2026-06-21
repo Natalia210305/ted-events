@@ -1,5 +1,3 @@
-// recommendationService.js
-
 class BiasedMatrixFactorization {
     constructor(numUsers, numItems, numFactors = 10, lr = 0.005, reg = 0.02, epochs = 15) {
         this.numFactors = numFactors;
@@ -62,7 +60,6 @@ class BiasedMatrixFactorization {
 async function getRecommendationsForUser(targetUserId, allInteractions = [], allAttendees = [], allEvents = []) {
     const interactionMap = new Map();
 
-    // 1. Ασφαλής επεξεργασία ενδιαφερόντων (αν υπάρχουν)
     if (Array.isArray(allInteractions)) {
         allInteractions.forEach(row => {
             const u = row.user || row.userId;
@@ -76,7 +73,6 @@ async function getRecommendationsForUser(targetUserId, allInteractions = [], all
         });
     }
 
-    // 2. Επεξεργασία κρατήσεων (Prisma Bookings)
     if (Array.isArray(allAttendees)) {
         allAttendees.forEach(row => {
             if (row.status === 'yes' || row.status === 'CONFIRMED') {
@@ -89,7 +85,6 @@ async function getRecommendationsForUser(targetUserId, allInteractions = [], all
         });
     }
 
-    // Συλλογή μοναδικών IDs
     const uniqueUsers = Array.from(new Set([
         ...(Array.isArray(allInteractions) ? allInteractions.map(i => i.user || i.userId) : []), 
         ...(Array.isArray(allAttendees) ? allAttendees.map(a => a.attendeeId || a.user_id || a.userId) : [])
@@ -101,7 +96,6 @@ async function getRecommendationsForUser(targetUserId, allInteractions = [], all
         ...allEvents.map(e => e.id || e.event_id)
     ].filter(Boolean))).map(id => id.toString());
 
-    // COLD START: Αν ο χρήστης δεν έχει ιστορικό ή η βάση είναι πολύ μικρή
     if (!uniqueUsers.includes(targetUserId.toString()) || interactionMap.size < 2) {
         const counts = {};
         if (Array.isArray(allAttendees)) {

@@ -151,11 +151,8 @@ const updateEvent = async (req, res) => {
     console.log(`✔ Το event "${updatedEvent.title}" ενημερώθηκε επιτυχώς στη βάση.`);
 
     if (req.body.ticketTypes && req.body.ticketTypes.length > 0) {
-      const eventId = updatedEvent.id; // Ή req.params.id ανάλογα πώς το έχεις ορίσει
-
-      // Δημιουργούμε ένα array από promises για να εκτελεστούν παράλληλα και με ασφάλεια
+      const eventId = updatedEvent.id;
       const ticketOperations = req.body.ticketTypes.map(ticket => {
-        // Αν το εισιτήριο έχει ID, κάνουμε update αντί για delete
         if (ticket.id) {
           return prisma.ticketType.update({
             where: { id: ticket.id },
@@ -163,24 +160,20 @@ const updateEvent = async (req, res) => {
               name: ticket.name,
               price: parseFloat(ticket.price),
               quantity: parseInt(ticket.quantity, 10),
-              // Εδώ αν θες ενημερώνεις και το Available σύμφωνα με τις τρέχουσες κρατήσεις
             }
           });
         } else {
-          // Αν ΔΕΝ έχει ID, σημαίνει ότι ο διοργανωτής πρόσθεσε έναν νέο τύπο εισιτηρίου τώρα
           return prisma.ticketType.create({
             data: {
               eventId: eventId,
               name: ticket.name,
               price: parseFloat(ticket.price),
               quantity: parseInt(ticket.quantity, 10),
-              available: parseInt(ticket.quantity, 10) // Αρχικά όλα είναι διαθέσιμα
+              available: parseInt(ticket.quantity, 10) 
             }
           });
         }
       });
-
-      // Εκτέλεση όλων των operations μαζί με ασφάλεια
       await prisma.$transaction(ticketOperations);
       console.log(`✔ Οι τύποι εισιτηρίων για το event "${updatedEvent.title}" ενημερώθηκαν με ασφάλεια.`);
     }
@@ -194,11 +187,8 @@ const updateEvent = async (req, res) => {
         }))
       });
     }
-
-    // ΔΙΟΡΘΩΣΗ: Προσθήκη await prisma.notification.createMany για να αποθηκεύονται οι ειδοποιήσεις αλλαγής!
     if (changeMessages.length > 0 && oldEvent.bookings && oldEvent.bookings.length > 0) {
       const MessageText = `Ο διοργανωτής τροποποίησε ${changeMessages.join(' και ')} στην εκδήλωση "${updatedEvent.title}". Παρακαλώ ελέγξτε τις νέες πληροφορίες.`;
-
       const notificationsData = oldEvent.bookings.map(booking => ({
         userId: booking.attendeeId, 
         message: MessageText,
@@ -338,7 +328,6 @@ const createBooking = async (req, res) => {
     ]);
 
     console.log("✅ Η κράτηση αποθηκεύτηκε στο Supabase!");
-    // Δημιουργία notification για τον organizer
     const event = await prisma.event.findUnique({
       where: { id: id },
       select: { title: true, organizerId: true }
@@ -407,12 +396,12 @@ const getMyBookings = async (req, res) => {
 
 const getOrganizerBookings = async (req, res) => {
   try {
-    const organizerId = req.user.id; // Το ID του συνδεδεμένου διοργανωτή από το Auth Middleware
+    const organizerId = req.user.id; 
 
     const bookings = await prisma.booking.findMany({
       where: {
         event: {
-          organizerId: organizerId // Φιλτράρουμε τις κρατήσεις για τα events αυτού του διοργανωτή
+          organizerId: organizerId 
         }
       },
       include: {
@@ -420,14 +409,14 @@ const getOrganizerBookings = async (req, res) => {
           select: { title: true }
         },
         attendee: {
-          select: { username: true, email: true } // Για να ξέρει ο διοργανωτής ποιος αγόρασε
+          select: { username: true, email: true } 
         },
         ticketType: {
           select: { name: true }
         }
       },
       orderBy: {
-        time: 'desc' // Οι πιο πρόσφατες αγορές εμφανίζονται πρώτες
+        time: 'desc' 
       }
     });
 
@@ -444,9 +433,7 @@ const exportEventsXML = async (req, res) => {
       include: { categories: true, ticketTypes: true, bookings: true }
     });
 
-    // ΕΔΩ ΕΓΙΝΕ Η ΑΛΛΑΓΗ: Προστέθηκε η γραμμή του DOCTYPE αμέσως μετά την πρώτη γραμμή του XML
-    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE Events SYSTEM "events.dtd">\n<Events>\n';
-    
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE Events SYSTEM "events.dtd">\n<Events>\n';    
     for (const e of events) {
       xml += `  <Event EventID="${e.id}">\n`;
       xml += `    <Title>${e.title}</Title>\n`;
@@ -514,7 +501,6 @@ const getRecommendations = async (req, res) => {
         const userId = req.query.userId;
         if (!userId) return res.status(400).json({ error: 'Required userId query param' });
         
-        // 1. Διαβάζουμε με ασφάλεια τα Interactions (αν δεν υπάρχει ο πίνακας, επιστρέφει άδειο array)
         let allInteractions = [];
         try {
             if (prisma.eventInterest) {
@@ -524,11 +510,9 @@ const getRecommendations = async (req, res) => {
             console.log("ℹ Ο πίνακας eventInterest δεν βρέθηκε, συνεχίζουμε με Bookings.");
         }
 
-        // 2. Διαβάζουμε κρατήσεις και εκδηλώσεις
         const allAttendees = await prisma.booking.findMany({});
         const allEvents = await prisma.event.findMany({ where: { status: 'PUBLISHED' } });
 
-        // 3. Εκτέλεση αλγορίθμου
         const recommendations = await getRecommendationsForUser(userId, allInteractions, allAttendees, allEvents);
         
         res.json(recommendations);
@@ -538,7 +522,6 @@ const getRecommendations = async (req, res) => {
     }
 };
 
-// Εξαγωγή όλων των συναρτήσεων
 module.exports = { 
   getAllEvents, 
   getEventById, 

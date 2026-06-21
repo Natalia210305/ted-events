@@ -1,7 +1,6 @@
 const prisma = require('../db');
-const bcrypt = require('bcrypt'); // <-- ΠΡΟΣΘΗΚΗ: Απαραίτητο για το hashing των κωδικών
+const bcrypt = require('bcrypt'); 
 
-// Λίστα όλων των χρηστών (μόνο Admin)
 const getAllUsers = async (req, res) => {
   try {
     const users = await prisma.user.findMany({
@@ -24,13 +23,11 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-// Ενημέρωση Στοιχείων Προφίλ (Με αυτόματη ειδοποίηση στον Admin)
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user.id; 
     const { firstName, lastName, email, phone, address, city, country, afm } = req.body;
 
-    // 1. Τραβάμε τα παλιά στοιχεία του χρήστη για να δούμε τι είχε πριν
     const oldUser = await prisma.user.findUnique({
       where: { id: userId }
     });
@@ -39,13 +36,11 @@ const updateProfile = async (req, res) => {
       return res.status(404).json({ error: 'Ο χρήστης δεν βρέθηκε.' });
     }
 
-    // Έλεγχος αν άλλαξε Email, ΑΦΜ ή Τηλέφωνο
     let hasChanges = false;
     if (oldUser.email !== email || oldUser.afm !== afm || oldUser.phone !== phone) {
       hasChanges = true;
     }
 
-    // 2. Ενημέρωση στη βάση δεδομένων
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: { firstName, lastName, email, phone, address, city, country, afm },
@@ -65,10 +60,8 @@ const updateProfile = async (req, res) => {
       }
     });
 
-    // 3. 🎯 ΔΗΜΙΟΥΡΓΙΑ ΕΙΔΟΠΟΙΗΣΗΣ (Εδώ κρύβεται όλη η μαγεία που έλειπε!)
     if (hasChanges) {
       try {
-        // Βρίσκουμε τον Admin του συστήματος
         const adminUser = await prisma.user.findFirst({
           where: { role: 'ADMIN' }
         });
@@ -76,10 +69,9 @@ const updateProfile = async (req, res) => {
         if (adminUser) {
           await prisma.notification.create({
             data: {
-              userId: adminUser.id, // Ο Admin είναι ο λήπτης
+              userId: adminUser.id, 
               message: `ℹ️ Τροποποίηση προφίλ: Ο χρήστης ${updatedUser.firstName} ${updatedUser.lastName} (${updatedUser.username}) άλλαξε τα στοιχεία του (Email/ΑΦΜ/Τηλέφωνο).`,
               isRead: false,
-              // 🎯 ΕΔΩ ΚΡΥΒΟΥΜΕ ΤΟ ID ΤΟΥ ΧΡΗΣΤΗ ΓΙΑ ΤΟ MODAL ΤΟΥ FRONTEND:
               type: updatedUser.id 
             }
           });
@@ -100,7 +92,6 @@ const updateProfile = async (req, res) => {
   }
 };
 
-// Έγκριση χρήστη (μόνο Admin)
 const approveUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -124,7 +115,6 @@ const approveUser = async (req, res) => {
   }
 };
 
-// Απόρριψη χρήστη (μόνο Admin)
 const rejectUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -148,7 +138,6 @@ const rejectUser = async (req, res) => {
   }
 };
 
-// Προβολή προφίλ χρήστη
 const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -178,13 +167,11 @@ const getUserById = async (req, res) => {
   }
 };
 
-// 🔒 ΝΕΑ ΣΥΝΑΡΤΗΣΗ: Αλλαγή Κωδικού με Έλεγχο και Αποθήκευση στην PostgreSQL
 const changePassword = async (req, res) => {
   try {
-    const userId = req.user.id; // Έρχεται αυτόματα από το auth middleware σου
+    const userId = req.user.id; 
     const { currentPassword, newPassword } = req.body;
 
-    // 1. Τραβάμε τον τρέχοντα χρήστη από τη βάση για να πάρουμε τον κρυπτογραφημένο κωδικό του
     const user = await prisma.user.findUnique({
       where: { id: userId }
     });
@@ -193,17 +180,14 @@ const changePassword = async (req, res) => {
       return res.status(404).json({ error: 'Ο χρήστης δεν βρέθηκε.' });
     }
 
-    // 2. Έλεγχος αν ο τρέχων κωδικός που έδωσε ταιριάζει με αυτόν της βάσης
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
       return res.status(400).json({ error: 'Ο τρέχων κωδικός πρόσβασης είναι λανθασμένος!' });
     }
 
-    // 3. Παραγωγή νέου salt και κρυπτογράφηση του καινούργιου κωδικού
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    // 4. Αποθήκευση του νέου κωδικού στην PostgreSQL μέσω Prisma
     await prisma.user.update({
       where: { id: userId },
       data: { password: hashedPassword }
@@ -216,5 +200,4 @@ const changePassword = async (req, res) => {
   }
 };
 
-// Κάνουμε export και τη νέα συνάρτηση μαζί με τις υπόλοιπες
 module.exports = { getAllUsers, approveUser, rejectUser, getUserById, updateProfile, changePassword };

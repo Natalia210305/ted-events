@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
-const notificationRoutes = require('./routes/notificationRoutes'); // <--- ΑΥΤΟ ΛΕΙΠΕΙ
+const notificationRoutes = require('./routes/notificationRoutes'); 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const eventRoutes = require('./routes/events');

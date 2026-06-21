@@ -1,9 +1,5 @@
 const prisma = require('../db');
 
-// ─────────────────────────────────────────────────────────────
-// POST /api/messages
-// Αποστολή νέου μηνύματος
-// ─────────────────────────────────────────────────────────────
 const sendMessage = async (req, res) => {
   try {
     const senderId = req.user.id;
@@ -13,7 +9,6 @@ const sendMessage = async (req, res) => {
       return res.status(400).json({ error: 'receiverId και content είναι υποχρεωτικά' });
     }
 
-    // 1. Αποθήκευση του μηνύματος στη βάση
     const message = await prisma.message.create({
       data: {
         senderId,
@@ -28,7 +23,6 @@ const sendMessage = async (req, res) => {
       }
     });
 
-    // 🌟 ΔΙΟΡΘΩΜΕΝΗ ΔΗΜΙΟΥΡΓΙΑ ΕΙΔΟΠΟΙΗΣΗΣ (Notification)
     try {
       const senderName = req.user.role?.toUpperCase() === 'ADMIN' 
         ? 'Ο Διαχειριστής (Admin)' 
@@ -43,16 +37,13 @@ const sendMessage = async (req, res) => {
         }
       }
 
-      // Φτιάχνουμε δυναμικά το αντικείμενο δεδομένων
       const notificationData = {
-        userId: receiverId,          // Ο παραλήπτης του μηνύματος (ο Organizer)
+        userId: receiverId,         
         message: notificationMessage,
-        type: 'new_message',         // Το type που περιμένει το frontend σου!
+        type: 'new_message',        
         isRead: false
       };
 
-      // 🌟 ΚΛΕΙΔΙ ΑΣΦΑΛΕΙΑΣ: Προσθέτουμε το eventId ΜΟΝΟ αν υπάρχει πραγματικά.
-      // Έτσι, αν είναι null, δεν το στέλνουμε καθόλου και η βάση/Prisma δεν θα κρασάρει ποτέ ξανά!
       if (message.eventId) {
         notificationData.eventId = message.eventId;
       }
@@ -73,12 +64,6 @@ const sendMessage = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────
-// GET /api/messages/my
-// Επιστρέφει όλες τις συνομιλίες του χρήστη
-// ✅ Ομαδοποιημένες ανά (otherUserId + eventId) — κάθε event = ξεχωριστή συνομιλία
-// ✅ Κάθε thread περιέχει event: { id, title } ώστε το frontend να εμφανίζει τον τίτλο
-// ─────────────────────────────────────────────────────────────
 const getMyMessages = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -94,7 +79,6 @@ const getMyMessages = async (req, res) => {
         receiver: {
           select: { id: true, firstName: true, lastName: true, email: true, phone: true }
         },
-        // ✅ ΚΛΕΙΔΙ: Φέρνουμε τον τίτλο του event απευθείας
         event: {
           select: { id: true, title: true }
         }
@@ -102,7 +86,6 @@ const getMyMessages = async (req, res) => {
       orderBy: { sentAt: 'desc' }
     });
 
-    // ✅ Ομαδοποίηση: κάθε μοναδικός συνδυασμός (otherUser + eventId) = 1 thread στη λίστα
     const threadsMap = new Map();
 
     for (const msg of messages) {
@@ -111,38 +94,31 @@ const getMyMessages = async (req, res) => {
       const key = `${otherUser.id}_${eventKey}`;
 
       if (!threadsMap.has(key)) {
-        // Αυτό είναι το ΠΙΟ ΠΡΟΣΦΑΤΟ μήνυμα (λόγω desc), το κρατάμε για ημερομηνία & preview κειμένου
         threadsMap.set(key, {
           id: key,
           otherUser,
           eventId: msg.eventId || null,
           event: msg.event || null,
-          content: msg.content, // Το κείμενο του τελευταίου μηνύματος για preview
-          firstContent: msg.content, // 🌟 ΕΔΩ θα αποθηκεύσουμε το ΠΡΩΤΟ μήνυμα για το Θέμα
+          content: msg.content, 
+          firstContent: msg.content, 
           sentAt: msg.sentAt,
           senderId: msg.senderId,
           receiverId: msg.receiverId,
           unreadCount: 0
         });
       } else {
-        // 🌟 Επειδή πηγαίνουμε από το πιο πρόσφατο στο πιο παλιό (desc), 
-        // το τελευταίο msg που θα βρει το loop για αυτό το key είναι το ΠΡΩΤΟ (αρχικό) μήνυμα της συνομιλίας!
         const thread = threadsMap.get(key);
         thread.firstContent = msg.content; 
       }
 
-      // Μετράμε τα αδιάβαστα μηνύματα για τον τρέχοντα χρήστη
       const thread = threadsMap.get(key);
       if (msg.receiverId === userId && msg.readAt === null) {
         thread.unreadCount += 1;
       }
     }
 
-    // ✅ Πριν στείλουμε τα threads, αντικαθιστούμε το content με το firstContent 
-    // ΜΟΝΟ αν περιέχει το [ΘΕΜΑ:], ώστε το frontend να διαβάζει ΠΑΝΤΑ το αρχικό θέμα!
     const finalThreads = Array.from(threadsMap.values()).map(thread => {
       if (thread.firstContent && thread.firstContent.includes('[ΘΕΜΑ:')) {
-        // Αν το αρχικό μήνυμα είχε θέμα, «μπολιάζουμε» το tag του θέματος στην αρχή του preview
         const match = thread.firstContent.match(/\[ΘΕΜΑ:\s*(.*?)\]/);
         if (match) {
           thread.content = `[ΘΕΜΑ: ${match[1]}] ` + thread.content;
@@ -158,16 +134,10 @@ const getMyMessages = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────
-// GET /api/messages/conversation/:userId?eventId=xxx
-// Επιστρέφει τα μηνύματα μιας συγκεκριμένης συνομιλίας
-// ✅ Φιλτράρει και με eventId — άρα κάθε event έχει τη δική του συνομιλία
-// ─────────────────────────────────────────────────────────────
 const getConversation = async (req, res) => {
   try {
     const userId = req.user.id;
     const otherUserId = req.params.userId;
-    // ✅ Παίρνουμε το eventId από το query string (?eventId=...)
     const eventId = req.query.eventId && req.query.eventId !== 'null' ? req.query.eventId : null;
 
     const messages = await prisma.message.findMany({
@@ -176,7 +146,6 @@ const getConversation = async (req, res) => {
           { senderId: userId, receiverId: otherUserId },
           { senderId: otherUserId, receiverId: userId }
         ],
-        // ✅ Φιλτράρουμε με eventId: αν null, παίρνουμε μόνο τα "Γενικής Επικοινωνίας"
         eventId: eventId ? eventId : null
       },
       include: {
@@ -186,12 +155,11 @@ const getConversation = async (req, res) => {
         receiver: {
           select: { id: true, firstName: true, lastName: true, email: true, phone: true }
         },
-        // ✅ Φέρνουμε τον τίτλο και εδώ για να τον εμφανίζει το chat header
         event: {
           select: { id: true, title: true }
         }
       },
-      orderBy: { sentAt: 'asc' } // Χρονολογική σειρά μέσα στη συνομιλία
+      orderBy: { sentAt: 'asc' } 
     });
 
     res.json(messages);
@@ -201,10 +169,6 @@ const getConversation = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────
-// GET /api/messages/unread-count
-// Αριθμός αδιάβαστων μηνυμάτων
-// ─────────────────────────────────────────────────────────────
 const getUnreadCount = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -212,7 +176,7 @@ const getUnreadCount = async (req, res) => {
     const count = await prisma.message.count({
       where: {
         receiverId: userId,
-        readAt: null  // ✅ αδιάβαστα = readAt null
+        readAt: null  
       }
     });
 
@@ -223,10 +187,6 @@ const getUnreadCount = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────
-// PUT /api/messages/read/:userId
-// Σημειώνει ως διαβασμένα όλα τα μηνύματα από έναν χρήστη
-// ─────────────────────────────────────────────────────────────
 const markAsRead = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -236,9 +196,9 @@ const markAsRead = async (req, res) => {
       where: {
         senderId: senderId,
         receiverId: userId,
-        readAt: null  // ✅ μόνο τα αδιάβαστα
+        readAt: null 
       },
-      data: { readAt: new Date() }  // ✅ βάζουμε timestamp αντί για isRead:true
+      data: { readAt: new Date() }  
     });
 
     res.json({ success: true });
@@ -248,10 +208,6 @@ const markAsRead = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────
-// DELETE /api/messages/:id
-// Διαγραφή μηνύματος (μόνο ο αποστολέας)
-// ─────────────────────────────────────────────────────────────
 const deleteMessage = async (req, res) => {
   try {
     const userId = req.user.id;

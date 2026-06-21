@@ -8,7 +8,7 @@ const register = async (req, res) => {
 
     const existingUser = await prisma.user.findUnique({ where: { username } });
     if (existingUser) {
-      return res.status(400).json({ error: 'Το username χρησιμοποιείται ήδη' }); // [cite: 22]
+      return res.status(400).json({ error: 'Το username χρησιμοποιείται ήδη' }); 
     }
 
     const existingEmail = await prisma.user.findUnique({ where: { email } });
@@ -22,13 +22,12 @@ const register = async (req, res) => {
       data: {
         username, password: hashed,
         firstName, lastName, email,
-        phone, address, city, country, afm, // [cite: 21]
-        role: role === 'ORGANIZER' ? 'ORGANIZER' : 'ATTENDEE',  // ← μόνο αυτοί οι 2 ρόλοι [cite: 13]
+        phone, address, city, country, afm, 
+        role: role === 'ORGANIZER' ? 'ORGANIZER' : 'ATTENDEE', 
         status: 'PENDING' // 
       }
     });
 
-    // 🎯 ΝΕΟ: Αυτόματη Ειδοποίηση στον Admin για τη νέα αίτηση εγγραφής [cite: 30, 173]
     try {
       const adminUser = await prisma.user.findFirst({
         where: { role: 'ADMIN' }
@@ -47,7 +46,7 @@ const register = async (req, res) => {
       console.error('Σφάλμα δημιουργίας ειδοποίησης Admin:', notifError);
     }
 
-    res.status(201).json({ message: 'Εγγραφή επιτυχής! Αναμένετε έγκριση από τον διαχειριστή.' }); // 
+    res.status(201).json({ message: 'Εγγραφή επιτυχής! Αναμένετε έγκριση από τον διαχειριστή.' });  
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Σφάλμα server' });
@@ -56,7 +55,7 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const { username, password } = req.body; // [cite: 19]
+    const { username, password } = req.body; 
 
     const user = await prisma.user.findUnique({ where: { username } });
     if (!user) {
@@ -64,11 +63,11 @@ const login = async (req, res) => {
     }
 
     if (user.status === 'PENDING') {
-      return res.status(403).json({ error: 'Η αίτησή σας αναμένει έγκριση' }); // 
+      return res.status(403).json({ error: 'Η αίτησή σας αναμένει έγκριση' }); 
     }
 
     if (user.status === 'REJECTED') {
-      return res.status(403).json({ error: 'Η αίτησή σας απορρίφθηκε' }); // [cite: 30]
+      return res.status(403).json({ error: 'Η αίτησή σας απορρίφθηκε' }); 
     }
 
     const valid = await bcrypt.compare(password, user.password);
@@ -79,7 +78,7 @@ const login = async (req, res) => {
     const token = jwt.sign(
       { id: user.id, role: user.role, username: user.username },
       process.env.JWT_SECRET,
-      { expiresIn: '24h' } // [cite: 202]
+      { expiresIn: '24h' } 
     );
 
     res.json({
@@ -92,7 +91,7 @@ const login = async (req, res) => {
         email: user.email,
         role: user.role
       }
-    }); // [cite: 31]
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Σφάλμα server' });

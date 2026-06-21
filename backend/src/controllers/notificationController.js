@@ -1,6 +1,5 @@
 const prisma = require('../db');
 
-// Παίρνουμε όλες τις ειδοποιήσεις του χρήστη
 const getNotifications = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -17,7 +16,6 @@ const getNotifications = async (req, res) => {
   }
 };
 
-// Τις κάνουμε όλες "διαβασμένες" όταν ανοίγει το καμπανάκι
 const markAsRead = async (req, res) => {
   try {
     await prisma.notification.updateMany({
