@@ -88,23 +88,37 @@ export default function Settings() {
     }
   };
 
-  const handleContactAdminSubmit = (e) => {
+  // 2. Μέσα στο component, άλλαξε τη συνάρτηση handleContactAdminSubmit σε async:
+  const handleContactAdminSubmit = async (e) => {
     e.preventDefault();
     if (!adminContact.subject.trim() || !adminContact.messageText.trim()) return;
 
-    const ADMIN_UUID = "e5422843-d587-443c-8bb1-3f90ff439963"; 
+    try {
+      setLoading(true);
+      // Καλούμε το API για να πάρουμε το ID του Admin live από τη βάση
+      const response = await api.get('/messages/admin-id');
+      const realAdminId = response.data.adminId;
 
-    const fullMessageContent = `[ΘΕΜΑ: ${adminContact.subject.trim()}]\n${adminContact.messageText.trim()}`;
+      const fullMessageContent = `[ΘΕΜΑ: ${adminContact.subject.trim()}]\n${adminContact.messageText.trim()}`;
 
-    navigate('/messages', {
-      state: {
-        recipientId: ADMIN_UUID, 
-        recipientName: 'Διαχειριστής (Admin)',
-        subject: adminContact.subject,
-        content: fullMessageContent, 
-        isAdminContact: true
-      }
-    });
+      navigate('/messages', {
+        state: {
+          recipientId: realAdminId, // Το ID που ήρθε από τη βάση!
+          recipientName: 'Διαχειριστής (Admin)',
+          subject: adminContact.subject,
+          content: fullMessageContent, 
+          isAdminContact: true
+        }
+      });
+    } catch (error) {
+      console.error("Αποτυχία εύρεσης Admin ID:", error);
+      setMessage({ 
+        text: error.response?.data?.error || 'Δεν ήταν δυνατή η επικοινωνία με τον διαχειριστή αυτή τη στιγμή.', 
+        type: 'error' 
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

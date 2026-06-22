@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { sendMessage, getMyMessages, getConversation, deleteMessage, getUnreadCount, markAsRead } = require('../controllers/messageController');
+const { sendMessage, getMyMessages, getConversation, deleteMessage, getUnreadCount, markAsRead, getAdminId } = require('../controllers/messageController');
 const { authenticate } = require('../middleware/auth');
+
+// Πρόσθεσε τη διαδρομή (κατά προτίμηση πριν από routes με παραμέτρους όπως το /:id)
+router.get('/admin-id', authenticate, getAdminId);
 
 router.post('/', authenticate, sendMessage);
 router.get('/my', authenticate, getMyMessages);

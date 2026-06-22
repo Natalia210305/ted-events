@@ -297,7 +297,7 @@ function UserDetailsModal({ user, onClose, onChat }) {
                   }}
                   style={{ width: '100%', padding: '12px', backgroundColor: COLORS.dark, color: COLORS.white, border: 'none', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.5px' }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><img src="/paper-plane.png" alt="" style={{ width: '20px', height: '20px', objectFit: 'contain', flexShrink: 0}} /> ΑΠΟΣΤΟΛΗ ΜΗΝΥΜΑΤΟΣ ΔΙΕΥΚΡΙΝΙΣΕΩΝ </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><img src="/paper-plane.png" alt="" style={{ marginLeft: '10px', width: '20px', height: '20px', objectFit: 'contain', flexShrink: 0}} /> ΑΠΟΣΤΟΛΗ ΜΗΝΥΜΑΤΟΣ ΔΙΕΥΚΡΙΝΙΣΕΩΝ </div>
                 </button>
               </div>
             )}

@@ -234,11 +234,33 @@ const deleteMessage = async (req, res) => {
   }
 };
 
+const getAdminId = async (req, res) => {
+  try {
+    // Ψάχνουμε τον πρώτο χρήστη που έχει role 'ADMIN'
+    const adminUser = await prisma.user.findFirst({
+      where: {
+        role: 'ADMIN' // Ή "Admin" ανάλογα πώς το έχεις αποθηκεύσει
+      },
+      select: { id: true }
+    });
+
+    if (!adminUser) {
+      return res.status(404).json({ error: 'Δεν βρέθηκε διαχειριστής στο σύστημα' });
+    }
+
+    res.json({ adminId: adminUser.id });
+  } catch (err) {
+    console.error('getAdminId error:', err);
+    res.status(500).json({ error: 'Σφάλμα κατά την εύρεση του Admin' });
+  }
+};
+
 module.exports = {
   sendMessage,
   getMyMessages,
   getConversation,
   getUnreadCount,
   markAsRead,
-  deleteMessage
+  deleteMessage,
+  getAdminId
 };

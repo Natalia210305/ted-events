@@ -45,7 +45,12 @@ export default function Messages() {
   const [conversation, setConversation] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [error, setError] = useState('');
-  const [content, setContent] = useState(newContact?.content || '');
+  const [content, setContent] = useState(() => {
+    if (newContact?.content) {
+      return newContact.content.replace(/\[ΘΕΜΑ:\s*.*?\]\n?/, '');
+    }
+    return '';
+  });
 
   const user = JSON.parse(localStorage.getItem('user'));
   const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
@@ -110,29 +115,55 @@ export default function Messages() {
   };
 
   const handleSendNewMessage = async () => {
-    if (!content.trim() || !newContact) return;
+    // 1. Έλεγχος αν υπάρχει κείμενο στο textarea
+    if (!content || !content.trim()) {
+      alert("Παρακαλώ γράψτε ένα μήνυμα πριν την αποστολή.");
+      return;
+    }
+
+    if (!newContact) {
+      console.error("Missing newContact data");
+      return;
+    }
+
     try {
       const targetEventId = newContact.eventId && newContact.eventId !== 'null' ? newContact.eventId : null;
+      
+      // 2. Ασφαλής εύρεση του θέματος (αν δεν υπάρχει subject, βάζουμε safe fallback)
+      const subjectTitle = newContact.subject ? newContact.subject.trim() : "Γενικό Αίτημα";
+      
+      // 3. Σύνθεση του τελικού μηνύματος
+      const fullMessageContent = `[ΘΕΜΑ: ${subjectTitle}]\n${content.trim()}`;
+
       const payload = {
         receiverId: newContact.recipientId,
-        content: content,
+        content: fullMessageContent,
       };
 
       if (targetEventId) {
         payload.eventId = targetEventId;
       }
-      await api.post('/messages', payload);
+
+      console.log("Στέλνω payload:", payload); // Debug log
+
+      const res = await api.post('/messages', payload);
+      
       alert('Το μήνυμα στάλθηκε επιτυχώς!');
       setContent('');
+      
+      // 4. Ανανέωση συνομιλιών
       await fetchMessages();
       await fetchConversation(newContact.recipientId, targetEventId);
+      
+      // 5. Καθαρισμός του state πλοήγησης
       navigate('/messages', { replace: true, state: null });
     } catch (error) {
       console.error('Σφάλμα αποστολής νέου μηνύματος:', error);
       setError('Σφάλμα κατά την αποστολή του μηνύματος.');
+      alert('Αποτυχία αποστολής: ' + (error.response?.data?.error || error.message));
     }
   };
-
+  
   useEffect(() => {
     fetchMessages();
   }, [newContact]);
@@ -255,11 +286,8 @@ export default function Messages() {
               <textarea
                 style={styles.textarea}
                 placeholder="Γράψτε το μήνυμά σας εδώ..."
-                value={content.replace(/\[ΘΕΜΑ:\s*.*?\]\n?/, '')}
-                onChange={(e) => {
-                  const prefix = content.match(/\[ΘΕΜΑ:\s*.*?\]\n?/) ? content.match(/\[ΘΕΜΑ:\s*.*?\]\n?/)[0] : `[ΘΕΜΑ: ${newContact.subject}]\n`;
-                  setContent(prefix + e.target.value);
-                }}
+                value={content} // Πλέον το state έχει μόνο το καθαρό κείμενο
+                onChange={(e) => setContent(e.target.value)} // Απλή ανάθεση
               />
               <button onClick={handleSendNewMessage} style={styles.sendBtn}>ΑΠΟΣΤΟΛΗ ΜΗΝΥΜΑΤΟΣ</button>
             </div>
