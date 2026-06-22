@@ -163,7 +163,7 @@ export default function Messages() {
       alert('Αποτυχία αποστολής: ' + (error.response?.data?.error || error.message));
     }
   };
-  
+
   useEffect(() => {
     fetchMessages();
   }, [newContact]);
@@ -384,6 +384,7 @@ export default function Messages() {
               <button 
                 type="submit" 
                 className="send-image-button"
+                onClick={handleSend}
                 style={{
                   background: 'transparent',
                   border: 'none',

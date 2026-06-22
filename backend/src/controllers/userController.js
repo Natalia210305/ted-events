@@ -70,7 +70,7 @@ const updateProfile = async (req, res) => {
           await prisma.notification.create({
             data: {
               userId: adminUser.id, 
-              message: `ℹ️ Τροποποίηση προφίλ: Ο χρήστης ${updatedUser.firstName} ${updatedUser.lastName} (${updatedUser.username}) άλλαξε τα στοιχεία του (Email/ΑΦΜ/Τηλέφωνο).`,
+              message: `Τροποποίηση προφίλ: Ο χρήστης ${updatedUser.firstName} ${updatedUser.lastName} (${updatedUser.username}) άλλαξε τα στοιχεία του (Email/ΑΦΜ/Τηλέφωνο).`,
               isRead: false,
               type: updatedUser.id 
             }

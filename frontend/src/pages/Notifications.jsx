@@ -32,9 +32,11 @@ const getTagInfo = (type) => {
     case 'EVENT_CANCELLED':
       return { label: 'ΑΚΥΡΩΣΗ ΕΚΔΗΛΩΣΗΣ', bg: 'rgba(121, 31, 31, 0.1)', color: COLORS.danger };
     case 'NEW_MESSAGE':
+      return { label: 'ΝΕΟ ΜΗΝΥΜΑ', bg: 'rgba(210, 184, 147, 0.2)', color: COLORS.primary };
     case 'PROFILE_UPDATE':
     case 'PROFILE_UPDATED':
       return { label: 'ΑΛΛΑΓΗ ΣΤΟΙΧΕΙΩΝ ΧΡΗΣΤΗ', bg: 'rgba(210, 184, 147, 0.2)', color: COLORS.primary };
+    
     default:
       return { label: 'ΕΙΔΟΠΟΙΗΣΗ', bg: 'rgba(100, 100, 100, 0.1)', color: COLORS.textMuted };
   }
@@ -87,8 +89,28 @@ function Notifications() {
     }
   };
 
-const handleNotificationClick = async (notif) => {
+  const handleNotificationClick = async (notif) => {
     try {
+      const type = notif.type?.toUpperCase();
+      const messageClean = cleanString(notif.message); // Καθαρισμός κειμένου για ασφαλή έλεγχο
+
+      // 1. Έλεγχος αν πρόκειται για Τροποποίηση Προφίλ (είτε από type είτε από το κείμενο)
+      if (
+        type === 'PROFILE_UPDATE' || 
+        type === 'PROFILE_UPDATED' || 
+        messageClean.includes('τροποποιηση προφιλ') || 
+        messageClean.includes('αλλαξε τα στοιχεια')
+      ) {
+        navigate('/admin/users'); // 👈 Σε στέλνει κατευθείαν στη διαχείριση χρηστών!
+        return;
+      }
+      
+      // 2. Αν η ειδοποίηση αφορά νέο μήνυμα (απλή συνομιλία)
+      if (type === 'NEW_MESSAGE') {
+        navigate('/messages');
+        return;
+      }
+
       let targetEventId = notif.eventId || notif.event_id || notif.EventId;
 
       if (!targetEventId && notif.message) {
@@ -136,15 +158,24 @@ const handleNotificationClick = async (notif) => {
             const textToSearchClean = cleanString(notif.message);
 
             if (isOrganizer) {
-              const isBooking = type === 'NEW_BOOKING' || 
+              // 1. Ο Organizer θέλει να βλέπει Κρατήσεις, Αλλαγές και Ακυρώσεις εκδηλώσεων
+              const isValidType = 
+                type === 'NEW_BOOKING' || 
+                type === 'EVENT_UPDATED' || 
+                type === 'EVENT_CANCELLED' ||
                 textToSearchClean.includes('κρατηση') || 
+                textToSearchClean.includes('αλλαξε') || 
+                textToSearchClean.includes('ακυρωθηκε') ||
                 textToSearchClean.includes('booking');
-              if (!isBooking) return false;
+                
+              if (!isValidType) return false;
 
+              // 2. Έλεγχος αν η ειδοποίηση αφορά όντως δική του εκδήλωση (βάσει τίτλου)
               const belongsToMe = myEventTitles.some(title => textToSearchClean.includes(title));
               if (!belongsToMe) return false;
             }
 
+            // Αφαίρεση διπλότυπων ειδοποιήσεων
             const uniqueKey = `${notif.message}-${notif.createdAt}`;
             if (seen.has(uniqueKey)) return false;
             seen.add(uniqueKey);

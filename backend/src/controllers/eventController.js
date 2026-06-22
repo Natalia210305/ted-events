@@ -113,14 +113,15 @@ const updateEvent = async (req, res) => {
       return res.status(403).json({ error: 'Δεν έχετε δικαίωμα να τροποποιήσετε αυτή την εκδήλωση' });
     }
 
-    let changeMessages = [];
-
-    if (startDateTime && new Date(startDateTime).getTime() !== new Date(oldEvent.startDateTime).getTime()) {
-      changeMessages.push("την ημερομηνία/ώρα διεξαγωγής");
-    }
-
-    if (venue && venue !== oldEvent.venue) {
-      changeMessages.push("τον χώρο διεξαγωγής (venue)");
+    // --- ΕΛΕΓΧΟΣ ΑΛΛΑΓΗΣ ΗΜΕΡΟΜΗΝΙΑΣ ---
+    let dateChanged = false;
+    if (startDateTime) {
+      const incomingDate = new Date(startDateTime).toISOString();
+      const existingDate = new Date(oldEvent.startDateTime).toISOString();
+      
+      if (incomingDate !== existingDate) {
+        dateChanged = true;
+      }
     }
 
     const updatedEvent = await prisma.event.update({
@@ -150,6 +151,7 @@ const updateEvent = async (req, res) => {
 
     console.log(`✔ Το event "${updatedEvent.title}" ενημερώθηκε επιτυχώς στη βάση.`);
 
+    // Ενημέρωση εισιτηρίων
     if (req.body.ticketTypes && req.body.ticketTypes.length > 0) {
       const eventId = updatedEvent.id;
       const ticketOperations = req.body.ticketTypes.map(ticket => {
@@ -178,6 +180,7 @@ const updateEvent = async (req, res) => {
       console.log(`✔ Οι τύποι εισιτηρίων για το event "${updatedEvent.title}" ενημερώθηκαν με ασφάλεια.`);
     }
 
+    // Ενημέρωση κατηγοριών
     if (req.body.categories && req.body.categories.length > 0) {
       await prisma.eventCategory.deleteMany({ where: { eventId: id } });
       await prisma.eventCategory.createMany({
@@ -187,8 +190,10 @@ const updateEvent = async (req, res) => {
         }))
       });
     }
-    if (changeMessages.length > 0 && oldEvent.bookings && oldEvent.bookings.length > 0) {
-      const MessageText = `Ο διοργανωτής τροποποίησε ${changeMessages.join(' και ')} στην εκδήλωση "${updatedEvent.title}". Παρακαλώ ελέγξτε τις νέες πληροφορίες.`;
+
+    // --- ΑΠΟΣΤΟΛΗ ΕΙΔΟΠΟΙΗΣΗΣ ΜΟΝΟ ΑΝ ΑΛΛΑΞΕ Η ΗΜΕΡΟΜΗΝΙΑ ---
+    if (dateChanged && oldEvent.bookings && oldEvent.bookings.length > 0) {
+      const MessageText = `Ο διοργανωτής άλλαξε την ημερομηνία διεξαγωγής στην εκδήλωση "${updatedEvent.title}". Παρακαλώ ελέγξτε τις νέες πληροφορίες.`;
       const notificationsData = oldEvent.bookings.map(booking => ({
         userId: booking.attendeeId, 
         message: MessageText,
@@ -200,7 +205,7 @@ const updateEvent = async (req, res) => {
         data: notificationsData
       });
 
-      console.log(`✅ Δημιουργήθηκαν ${notificationsData.length} ειδοποιήσεις για αλλαγή στοιχείων.`);
+      console.log(`✅ Δημιουργήθηκαν ${notificationsData.length} ειδοποιήσεις αποκλειστικά για αλλαγή ημερομηνίας.`);
     }
 
     return res.json({ message: 'Η εκδήλωση ενημερώθηκε επιτυχώς.', updatedEvent });

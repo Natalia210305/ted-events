@@ -26,17 +26,18 @@ const sendMessage = async (req, res) => {
     try {
       const senderName = req.user.role?.toUpperCase() === 'ADMIN' 
         ? 'Ο Διαχειριστής (Admin)' 
-        : `${message.sender.firstName || ''} ${message.sender.lastName || ''}`.trim();
+        : `${message.sender.firstName || ''} ${message.sender.lastName || ''}`.trim() || 'Κάποιος χρήστης';
 
       let notificationMessage = `${senderName} σάς έστειλε ένα νέο μήνυμα.`;
-      
+
+      // 2. Αν υπάρχει θέμα, το βάζουμε δυναμικά δίπλα στο όνομα αυτού που το έστειλε!
       if (content.includes('[ΘΕΜΑ:')) {
         const match = content.match(/\[ΘΕΜΑ:\s*(.*?)\]/);
         if (match && match[1]) {
-          notificationMessage = `Νέο μήνυμα από τον Admin με θέμα: "${match[1]}"`;
+          notificationMessage = `Νέο μήνυμα από ${senderName} με θέμα: "${match[1]}"`;
         }
       }
-
+      
       const notificationData = {
         userId: receiverId,         
         message: notificationMessage,

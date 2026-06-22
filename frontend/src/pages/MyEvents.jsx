@@ -37,7 +37,8 @@ export default function MyEvents() {
   const handleCancel = async (id) => {
     if (!window.confirm('Είστε σίγουροι ότι θέλετε να ακυρώσετε την εκδήλωση;')) return;
     try {
-      await api.patch(`/events/${id}/cancel`);
+      // Καλούμε το σωστό endpoint του backend με DELETE
+      await api.delete(`/events/${id}`); 
       fetchEvents();
     } catch (err) {
       setError('Σφάλμα ακύρωσης');
