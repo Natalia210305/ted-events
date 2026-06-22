@@ -204,7 +204,7 @@ function UserCard({ user, onApprove, onReject, onView, onChat }) {
       </span>
 
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {user.role !== 'ADMIN' && (
+          {user.role !== 'ADMIN' && user.status === 'APPROVED' && (
             <button
               onClick={() => onChat(user)}
               style={{ padding: '8px 14px', backgroundColor: COLORS.dark, color: COLORS.white, border: 'none', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Poppins, sans-serif', fontSize: '0.8rem', fontWeight: '600', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '4px' }}
@@ -288,7 +288,7 @@ function UserDetailsModal({ user, onClose, onChat }) {
             </div>
             ))}
 
-            {user.role !== 'ADMIN' && (
+            {user.role !== 'ADMIN' && user.status === 'APPROVED' && (
               <div style={{ marginTop: '28px', display: 'flex', justifyContent: 'center' }}>
                 <button
                   onClick={() => {
