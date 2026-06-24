@@ -441,27 +441,35 @@ const exportEventsXML = async (req, res) => {
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE Events SYSTEM "events.dtd">\n<Events>\n';    
     for (const e of events) {
       xml += `  <Event EventID="${e.id}">\n`;
-      xml += `    <Title>${e.title}</Title>\n`;
-      for (const c of e.categories) xml += `    <Category>${c.name}</Category>\n`;
-      xml += `    <EventType>${e.eventType}</EventType>\n`;
-      xml += `    <Venue>${e.venue}</Venue>\n`;
-      xml += `    <Address>${e.address}</Address>\n`;
-      xml += `    <City>${e.city}</City>\n`;
-      xml += `    <Country>${e.country}</Country>\n`;
-      if (e.latitude && e.longitude) xml += `    <GeoLocation Latitude="${e.latitude}" Longitude="${e.longitude}"/>\n`;
+      xml += `    <Title><![CDATA[${e.title}]]></Title>\n`; 
+      for (const c of e.categories) {
+        xml += `    <Category><![CDATA[${c.name}]]></Category>\n`; 
+      }
+      xml += `    <EventType><![CDATA[${e.eventType}]]></EventType>\n`; 
+      xml += `    <Venue><![CDATA[${e.venue}]]></Venue>\n`; 
+      xml += `    <Address><![CDATA[${e.address}]]></Address>\n`; 
+      xml += `    <City><![CDATA[${e.city}]]></City>\n`; 
+      xml += `    <Country><![CDATA[${e.country}]]></Country>\n`; 
+      
+      if (e.latitude && e.longitude) {
+        xml += `    <GeoLocation Latitude="${e.latitude}" Longitude="${e.longitude}"/>\n`;
+      }
+      
       xml += `    <StartDateTime>${e.startDateTime.toISOString()}</StartDateTime>\n`;
       xml += `    <EndDateTime>${e.endDateTime.toISOString()}</EndDateTime>\n`;
       xml += `    <Capacity>${e.capacity}</Capacity>\n`;
+      
       xml += `    <TicketTypes>\n`;
       for (const t of e.ticketTypes) {
         xml += `      <TicketType TicketTypeID="${t.id}">\n`;
-        xml += `        <Name>${t.name}</Name>\n`;
+        xml += `        <Name><![CDATA[${t.name}]]></Name>\n`; 
         xml += `        <Price>${t.price}</Price>\n`;
         xml += `        <Quantity>${t.quantity}</Quantity>\n`;
         xml += `        <Available>${t.available}</Available>\n`;
         xml += `      </TicketType>\n`;
       }
       xml += `    </TicketTypes>\n`;
+      
       xml += `    <Bookings>\n`;
       for (const b of e.bookings) {
         xml += `      <Booking BookingID="${b.id}">\n`;
@@ -474,9 +482,10 @@ const exportEventsXML = async (req, res) => {
         xml += `      </Booking>\n`;
       }
       xml += `    </Bookings>\n`;
+      
       xml += `    <Organizer UserID="${e.organizerId}"/>\n`;
       xml += `    <Status>${e.status}</Status>\n`;
-      xml += `    <Description>${e.description}</Description>\n`;
+      xml += `    <Description><![CDATA[${e.description || ''}]]></Description>\n`; 
       xml += `  </Event>\n`;
     }
     xml += '</Events>';
@@ -485,6 +494,7 @@ const exportEventsXML = async (req, res) => {
     res.setHeader('Content-Disposition', 'attachment; filename="events.xml"');
     res.send(xml);
   } catch (err) {
+    console.error("XML Export Error:", err); 
     res.status(500).json({ error: 'Σφάλμα export' });
   }
 };
